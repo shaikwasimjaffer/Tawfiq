@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, memo } from "react";
+import React, { useState, useEffect, useMemo, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Sparkles, ChevronDown, Clock } from "lucide-react";
 
@@ -321,7 +321,7 @@ export default function Login() {
       />
 
       {/* Floating Emerald Ambient Light */}
-      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-emerald-500/10 blur-[140px] rounded-full animate-[spin_25s_linear_infinite] z-0 pointer-events-none" />
+      <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-emerald-500/10 blur-[140px] rounded-full animate-[spin_30s_linear_infinite] z-0 pointer-events-none" />
 
       {/* Floating Ambient Time */}
       <div
@@ -339,6 +339,7 @@ export default function Login() {
       <div
         className={`w-full max-w-[320px] mx-auto relative z-10 transition-all duration-[700ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${morphing ? "opacity-0 scale-95 blur-[2px]" : "opacity-100 scale-100"}`}
       >
+        {/* Gateway Header */}
         <div className="flex flex-col items-center text-center mb-[48px]">
           <div
             className="animate-in fade-in slide-in-from-bottom-2 duration-[800ms] fill-mode-both"
@@ -348,38 +349,28 @@ export default function Login() {
           </div>
 
           <h2
-            className={`text-2xl font-arabic tracking-wide mt-6 mb-2 ${atmosphere.text} animate-in fade-in blur-in duration-[800ms] fill-mode-both`}
+            className={`text-2xl font-bold tracking-tight mt-6 mb-2 ${atmosphere.text} animate-in fade-in blur-in duration-[800ms] fill-mode-both`}
             style={{ animationDelay: "80ms" }}
           >
-            السلام عليكم
-          </h2>
-
-          <h1
-            className={`text-xl font-bold tracking-tight mb-2 ${atmosphere.text} animate-in fade-in slide-in-from-bottom-2 duration-[800ms] fill-mode-both`}
-            style={{ animationDelay: "160ms" }}
-          >
             {greeting}
-          </h1>
+          </h2>
 
           <p
             className={`text-[13px] font-medium tracking-wide ${atmosphere.muted} animate-in fade-in slide-in-from-bottom-2 duration-[800ms] fill-mode-both`}
-            style={{ animationDelay: "240ms" }}
+            style={{ animationDelay: "160ms" }}
           >
             {message}
           </p>
 
-          {isFajrEasterEgg && (
-            <div
-              className="mt-3 animate-in fade-in slide-in-from-bottom-2 duration-700 fill-mode-both"
-              style={{ animationDelay: "320ms" }}
-            >
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-500/10 px-3 py-1 rounded-full">
-                May Allah reward your effort.
-              </span>
-            </div>
-          )}
-
-          <InteractivePrayerChip atmosphere={atmosphere} isExiting={morphing} />
+          <div
+            className="animate-in fade-in slide-in-from-bottom-2 duration-[800ms] fill-mode-both"
+            style={{ animationDelay: "240ms" }}
+          >
+            <InteractivePrayerChip
+              atmosphere={atmosphere}
+              isExiting={morphing}
+            />
+          </div>
         </div>
 
         {/* Inputs */}
@@ -395,7 +386,7 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               onFocus={() => triggerHaptic("light")}
               className={`peer w-full h-[56px] px-4 pt-4 rounded-2xl border border-transparent ${atmosphere.inputBg} ${atmosphere.focusRing} focus:bg-transparent focus:scale-[1.01] focus:shadow-sm outline-none transition-all duration-[180ms] text-[15px] font-medium ${atmosphere.text} placeholder-transparent`}
-              placeholder="Enter your email"
+              placeholder="Email Address"
             />
             <label
               htmlFor="email"
@@ -413,7 +404,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               onFocus={() => triggerHaptic("light")}
               className={`peer w-full h-[56px] pl-4 pr-12 pt-4 rounded-2xl border border-transparent ${atmosphere.inputBg} ${atmosphere.focusRing} focus:bg-transparent focus:scale-[1.01] focus:shadow-sm outline-none transition-all duration-[180ms] text-[15px] font-medium tracking-widest ${atmosphere.text} placeholder-transparent`}
-              placeholder="Enter your password"
+              placeholder="Password"
             />
             <label
               htmlFor="password"
@@ -468,7 +459,7 @@ export default function Login() {
                 />
               </div>
             ) : (
-              "Continue"
+              "Log In"
             )}
           </button>
         </div>
@@ -477,12 +468,13 @@ export default function Login() {
           className="mt-[48px] flex flex-col items-center gap-[24px] animate-in fade-in duration-[800ms] fill-mode-both"
           style={{ animationDelay: "560ms" }}
         >
-          <button
+          <Link
+            to="/forgot-password"
             onClick={() => triggerHaptic("light")}
             className={`text-[12px] font-medium transition-all duration-200 ${atmosphere.muted} hover:${atmosphere.text} active:scale-95`}
           >
-            Continue with Google
-          </button>
+            Forgot your password?
+          </Link>
           <Link
             to="/register"
             onClick={() => triggerHaptic("light")}
@@ -492,60 +484,18 @@ export default function Login() {
             <span
               className={`underline underline-offset-4 decoration-opacity-40 decoration-current ${atmosphere.accent}`}
             >
-              Create one
+              Sign up
             </span>
           </Link>
         </div>
       </div>
 
-      {/* --- Premium Astrolabe Morphing Entrance --- */}
+      {/* Morphing state loader overlay */}
       {morphing && (
-        <div
-          className={`fixed inset-0 z-[100] flex items-center justify-center transition-all duration-1000 ${atmosphere.bg} animate-in fade-in duration-700`}
-        >
-          <div className="absolute top-[10%] right-[10%] w-[60%] h-[60%] bg-emerald-500/10 blur-[120px] rounded-full animate-[spin_10s_linear_infinite] pointer-events-none" />
-
-          <div className="relative flex flex-col items-center gap-8 animate-in slide-in-from-bottom-4 fade-in duration-1000 delay-300 fill-mode-both">
-            {/* Beautiful Astrolabe Spinner */}
-            <div className="relative flex items-center justify-center w-36 h-36">
-              {/* Outer Ring */}
-              <div className="absolute inset-0 rounded-full border border-emerald-500/20" />
-              <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500/60 animate-[spin_3s_cubic-bezier(0.4,0,0.2,1)_infinite]" />
-
-              {/* Middle Ring */}
-              <div className="absolute inset-4 rounded-full border border-emerald-500/15" />
-              <div className="absolute inset-4 rounded-full border-l-2 border-emerald-400/60 animate-[spin_2.5s_cubic-bezier(0.4,0,0.2,1)_infinite_reverse]" />
-
-              {/* Inner Dotted Ring */}
-              <div className="absolute inset-8 rounded-full border-2 border-dashed border-emerald-500/30 animate-[spin_4s_linear_infinite]" />
-
-              {/* Core Glow */}
-              <div className="absolute inset-0 bg-emerald-500/10 blur-2xl rounded-full animate-pulse" />
-
-              {/* Center Moon */}
-              <div className="relative z-10 scale-125">
-                <LivingMoon isDark={atmosphere.isDark} />
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-2.5">
-              <h2
-                className={`text-2xl font-arabic tracking-widest ${atmosphere.text}`}
-              >
-                بِسْمِ اللَّهِ
-              </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${atmosphere.accent} animate-ping`}
-                />
-                <span
-                  className={`text-[10px] uppercase tracking-[0.3em] font-bold ${atmosphere.muted}`}
-                >
-                  Entering Tawfiq
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="absolute inset-0 z-50 flex items-center justify-center animate-in fade-in duration-300">
+          <div
+            className={`w-12 h-12 rounded-full border-4 ${atmosphere.borderColor} border-t-emerald-500 animate-spin`}
+          />
         </div>
       )}
     </div>

@@ -19,6 +19,7 @@ export function AuthProvider({ children }) {
 
       setUser(session?.user ?? null);
       setIsAuthenticated(!!session?.user);
+      setIsAuthenticated(false);
       setIsLoadingAuth(false);
     });
 

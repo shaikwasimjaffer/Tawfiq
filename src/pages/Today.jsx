@@ -350,12 +350,6 @@ export default function Today() {
                   )}
                 </div>
               </div>
-
-              <div className="w-[52px] h-[52px] bg-white dark:bg-emerald-900/20 rounded-full shadow-[0_4px_14px_rgba(0,0,0,0.06)] flex items-center justify-center border border-black/[0.03] shrink-0">
-                <span className="text-[15px] font-bold text-emerald-950 dark:text-emerald-100">
-                  {completedPrayers}/5
-                </span>
-              </div>
             </div>
           </div>
         </header>
