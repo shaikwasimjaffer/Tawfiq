@@ -1,16 +1,82 @@
-# React + Vite
+# Tawfiq
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Tawfiq is an Islamic companion designed to help Muslims stay consistent with their worship.
 
-Currently, two official plugins are available:
+It brings together prayer tracking, Quran reading, Qaza management, daily Dhikr, and other essential tools into one calm, focused experience. The goal isn't to gamify worship or turn it into another productivity app. It's simply to remove friction and help you build consistency over time.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Whether you're trying to establish your five daily prayers, make up missed Salah, read more Quran, or remember Allah more often, Tawfiq is built to support that journey.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the ESLint configuration
+- Prayer tracking
+- Qaza prayer management
+- Quran reader
+- Audio Quran
+- Daily Dhikr
+- Prayer reminders
+- Prayer insights
+- Islamic AI companion
+- Bookmarks
+- Continue reading
+- Prayer history
+- Streaks and progress
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Tech Stack
+
+- React
+- Vite
+- Tailwind CSS
+- Supabase
+- Capacitor
+
+---
+
+## Getting Started
+
+Clone the repository.
+
+```bash
+git clone https://github.com/tawfiq-official/tawfiq.git
+```
+
+Install dependencies.
+
+```bash
+npm install
+```
+
+Start the development server.
+
+```bash
+npm run dev
+```
+
+Create a production build.
+
+```bash
+npm run build
+```
+
+---
+
+## Contributing
+
+Contributions are always welcome.
+
+If you find a bug, have an idea for a feature, or want to improve the project, feel free to open an issue or submit a pull request.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+
+---
+
+> "Indeed, prayer has been decreed upon the believers at specified times."
+>
+> **Qur'an 4:103**
