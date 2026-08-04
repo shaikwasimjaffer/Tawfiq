@@ -8,6 +8,9 @@ Whether you're trying to establish your five daily prayers, make up missed Salah
 
 ---
 
+## Live URL
+https://www.tawfiq.in/
+
 ## Features
 
 - Prayer tracking
@@ -71,12 +74,3 @@ If you find a bug, have an idea for a feature, or want to improve the project, f
 
 ---
 
-## License
-
-This project is licensed under the MIT License.
-
----
-
-> "Indeed, prayer has been decreed upon the believers at specified times."
->
-> **Qur'an 4:103**
