@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthContext";
 
 const DEFAULTS = {
-  calculation_method: 2,
+  calculation_method: "india",
   dark_mode: false,
   exempt_mode: false,
   travel_mode: false,

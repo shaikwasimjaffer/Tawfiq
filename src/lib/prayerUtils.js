@@ -9,6 +9,8 @@ export const PRAYER_NAMES = {
 };
 
 export const CALCULATION_METHODS = [
+  { id: "india", name: "Indian Timing" },
+
   { id: 2, name: "Islamic Society of North America (ISNA)" },
   { id: 1, name: "University of Islamic Sciences, Karachi" },
   { id: 3, name: "Muslim World League" },
@@ -24,7 +26,7 @@ export const CALCULATION_METHODS = [
 export async function fetchPrayerTimes(
   lat,
   lon,
-  method = 2,
+  method = "india",
   date = new Date(),
 ) {
   const d = date.getDate().toString().padStart(2, "0");
@@ -32,13 +34,23 @@ export async function fetchPrayerTimes(
   const y = date.getFullYear();
   const dateStr = `${y}-${m}-${d}`;
 
+  // Indian timing = Karachi calculation (method 1) + Hanafi Asr (school 1)
+  const apiMethod = method === "india" ? 1 : method;
+  const school = method === "india" ? 1 : 0;
+
   // Try cache first
   try {
     const { getCachedTimes, setCachedTimes } = await import("./prayerCache");
     const cached = getCachedTimes(lat, lon, method, dateStr);
     if (cached) return cached;
 
-    const url = `https://api.aladhan.com/v1/timings/${d}-${m}-${y}?latitude=${lat}&longitude=${lon}&method=${method}`;
+    const url =
+      `https://api.aladhan.com/v1/timings/${d}-${m}-${y}` +
+      `?latitude=${lat}` +
+      `&longitude=${lon}` +
+      `&method=${apiMethod}` +
+      `&school=${school}` +
+      `&timezonestring=Asia/Kolkata`;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch prayer times");
     const data = await res.json();
@@ -46,7 +58,13 @@ export async function fetchPrayerTimes(
     return data.data;
   } catch (e) {
     // If cache import fails, fall through to direct fetch
-    const url = `https://api.aladhan.com/v1/timings/${d}-${m}-${y}?latitude=${lat}&longitude=${lon}&method=${method}`;
+    const url =
+      `https://api.aladhan.com/v1/timings/${d}-${m}-${y}` +
+      `?latitude=${lat}` +
+      `&longitude=${lon}` +
+      `&method=${apiMethod}` +
+      `&school=${school}` +
+      `&timezonestring=Asia/Kolkata`;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch prayer times");
     const data = await res.json();

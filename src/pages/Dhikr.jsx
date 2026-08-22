@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { dhikrHadiths } from "@/data/dhikrHadiths";
 import DhikrCounter from "@/components/dhikr/DhikrCounter";
 import DhikrSelector from "@/components/dhikr/DhikrSelector";
@@ -28,6 +29,7 @@ function todayString() {
 }
 
 export default function Dhikr() {
+  const navigate = useNavigate();
   const [selectedDhikr, setSelectedDhikr] = useState(DEFAULT_DHIKR);
 
   const [goal, setGoal] = useState(DEFAULT_GOAL);
@@ -126,13 +128,20 @@ export default function Dhikr() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-6 py-5">
-        <h1 className="text-3xl font-bold">Dhikr</h1>
-
-        <p className="text-muted-foreground mt-1">
-          Remember Allah throughout your day.
-        </p>
+      <header className="border-b border-border px-6 py-5 flex items-center">
+        <button
+          onClick={() => navigate("/today")}
+          className="p-2 rounded hover:bg-emerald-50/30 transition-colors text-emerald-600 hover:text-emerald-800"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h1 className="flex-1 text-center text-3xl font-bold">Dhikr</h1>
+        <div className="w-8"> {/* spacer to balance button width */} </div>
       </header>
+
+      <p className="text-muted-foreground text-center px-6 mt-2">
+        Remember Allah throughout your day.
+      </p>
 
       <main className="max-w-md mx-auto px-4 py-6 pb-28 space-y-6">
         <DhikrSelector

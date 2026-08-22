@@ -74,22 +74,20 @@ export function useQaza() {
     [user],
   );
 
-  const adjust = useCallback(
-    async (prayer, delta) => {
-      const next = {
-        ...qaza,
-        [`${prayer}_count`]: Math.max(
-          0,
-          (qaza[`${prayer}_count`] || 0) + delta,
-        ),
-      };
+  // Fixed: Remove useCallback to avoid stale closure issues with qaza
+  async function adjust(prayer, delta) {
+    const next = {
+      ...qaza,
+      [`${prayer}_count`]: Math.max(
+        0,
+        (qaza[`${prayer}_count`] || 0) + delta,
+      ),
+    };
 
-      await save(next);
-    },
-    [qaza, save],
-  );
+    await save(next);
+  }
 
-  const addFullDay = async () => {
+  async function addFullDay() {
     const next = { ...qaza };
 
     Object.keys(DEFAULTS).forEach((key) => {
@@ -97,9 +95,9 @@ export function useQaza() {
     });
 
     await save(next);
-  };
+  }
 
-  const subtractFullDay = async () => {
+  async function subtractFullDay() {
     const next = { ...qaza };
 
     Object.keys(DEFAULTS).forEach((key) => {
@@ -107,16 +105,16 @@ export function useQaza() {
     });
 
     await save(next);
-  };
+  }
 
-  const setAmount = async (prayer, amount) => {
+  async function setAmount(prayer, amount) {
     const next = {
       ...qaza,
       [`${prayer}_count`]: Math.max(0, amount),
     };
 
     await save(next);
-  };
+  }
 
   const total = Object.values(qaza).reduce(
     (sum, value) => sum + (typeof value === "number" ? value : 0),

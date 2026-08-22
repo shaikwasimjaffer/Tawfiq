@@ -719,9 +719,17 @@ export default function QuranPage() {
 
       {/* Header */}
       <header
-        className={`sticky top-0 z-40 bg-[#F6F8F7]/80 backdrop-blur-xl transition-all ${view === "reader" ? "py-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border-b border-[#ECECEC]" : "py-5"}`}
+        className={`sticky top-0 z-40 transition-all ${
+          view === "reader"
+            ? "bg-[#F6F8F7]/80 backdrop-blur-xl py-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border-b border-[#ECECEC]"
+            : "bg-background border-b border-border px-6 py-5"
+        }`}
       >
-        <div className="max-w-md mx-auto px-5 flex items-center justify-between gap-3 relative z-10">
+        <div
+          className={`max-w-md mx-auto flex items-center justify-between gap-3 relative z-10 ${
+            view === "reader" ? "px-5" : ""
+          }`}
+        >
           {view === "reader" ? (
             <>
               <button
@@ -759,16 +767,14 @@ export default function QuranPage() {
               </button>
             </>
           ) : (
-            <>
-              <div>
-                <h1 className="text-[26px] font-bold tracking-tight text-slate-800">
-                  Quran
-                </h1>
-                <p className="text-[13px] text-slate-500 font-medium mt-0.5">
-                  Al-Quran Al-Kareem
-                </p>
-              </div>
-            </>
+            <div className="w-full">
+              <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+                Quran
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Al-Quran Al-Kareem
+              </p>
+            </div>
           )}
         </div>
       </header>
@@ -949,8 +955,14 @@ export default function QuranPage() {
                               {ar}
                             </span>
                             <span
-                              className="text-[19px] text-slate-500 font-arabic flex-shrink-0 ml-3"
+                              className="text-[19px] text-slate-500 flex-shrink-0 ml-3"
                               dir="rtl"
+                              style={{
+                                fontFamily: "serif",
+                                fontWeight: 300,
+                                WebkitFontSmoothing: "antialiased",
+                                MozOsxFontSmoothing: "grayscale",
+                              }}
                             >
                               {ARABIC_NAMES[num - 1]}
                             </span>
@@ -1205,6 +1217,9 @@ function ReaderView({
               fontFamily: "serif",
               direction: "rtl",
               fontSize: `${fontSize + 12}px`,
+              fontWeight: 300,
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale",
             }}
           >
             {verses.map((v, i) => {
@@ -1229,7 +1244,7 @@ function ReaderView({
                     className={`inline transition-colors cursor-pointer ${playingAyah === v.globalNumber ? "text-[#10b981] bg-[#ecfdf5] rounded-xl px-1" : "text-slate-800 hover:text-[#10b981]/70"}`}
                   >
                     <TajweedText text={displayArabic} active={showTajweed} />
-                    <span className="inline-flex items-center justify-center w-9 h-9 text-[14px] mx-2 text-slate-400 tabular-nums align-middle relative top-[-4px] border border-slate-200 rounded-full">
+                    <span className="inline-flex items-center justify-center w-9 h-9 text-[14px] mx-2 text-slate-400 tabular-nums align-middle relative top-[-4px] border border-slate-200 rounded-full font-sans font-medium">
                       {v.number}
                     </span>
                   </span>
@@ -1261,6 +1276,9 @@ function ReaderView({
                         fontFamily: "serif",
                         direction: "rtl",
                         fontSize: `${fontSize + 6}px`,
+                        fontWeight: 300,
+                        WebkitFontSmoothing: "antialiased",
+                        MozOsxFontSmoothing: "grayscale",
                       }}
                     >
                       {bismillahText}
@@ -1269,7 +1287,7 @@ function ReaderView({
                 )}
 
                 <div className="text-center mb-10">
-                  <span className="text-[12px] font-bold text-slate-400 mb-6 block">
+                  <span className="text-[12px] font-bold text-slate-400 mb-6 block font-sans">
                     {v.number}
                   </span>
                   {showWordByWord ? (
@@ -1287,6 +1305,9 @@ function ReaderView({
                         fontFamily: "serif",
                         direction: "rtl",
                         fontSize: `${fontSize + 12}px`,
+                        fontWeight: 300,
+                        WebkitFontSmoothing: "antialiased",
+                        MozOsxFontSmoothing: "grayscale",
                       }}
                     >
                       <TajweedText text={displayArabic} active={showTajweed} />
@@ -1295,11 +1316,11 @@ function ReaderView({
                 </div>
 
                 {showTransliteration && (
-                  <p className="text-[16px] text-[#10b981]/80 italic leading-relaxed mb-4">
+                  <p className="text-[16px] text-[#10b981]/80 italic leading-relaxed mb-4 font-sans">
                     {v.transliteration}
                   </p>
                 )}
-                <p className="text-[16px] font-medium text-slate-600 leading-relaxed">
+                <p className="text-[16px] font-medium text-slate-600 leading-relaxed font-sans">
                   {v.translation}
                 </p>
 
@@ -1666,11 +1687,17 @@ function WordByWordDisplay({ arabic, translation, fontSize, showTajweed }) {
         <div key={i} className="flex flex-col items-center gap-3 min-w-[50px]">
           <span
             className="text-slate-800 transition-all"
-            style={{ fontFamily: "serif", fontSize: `${fontSize}px` }}
+            style={{
+              fontFamily: "serif",
+              fontSize: `${fontSize}px`,
+              fontWeight: 300,
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale",
+            }}
           >
             <TajweedText text={w} active={showTajweed} />
           </span>
-          <span className="text-[12px] font-medium text-slate-500 text-center">
+          <span className="text-[12px] font-medium text-slate-500 text-center font-sans">
             {trWords[i] || ""}
           </span>
         </div>
@@ -1681,18 +1708,10 @@ function WordByWordDisplay({ arabic, translation, fontSize, showTajweed }) {
 
 function applyTajweed(text) {
   let res = text;
-  res = res.replace(
-    /([نم])(ّ[َُِ]?)/g,
-    '<span class="text-[#10b981] font-bold">$1$2</span>',
-  );
-  res = res.replace(
-    /([قطبجد])(ْ)/g,
-    '<span class="text-blue-500 font-bold">$1$2</span>',
-  );
-  res = res.replace(
-    /([آئؤاوي])(ٓ)/g,
-    '<span class="text-red-500 font-bold">$1$2</span>',
-  );
+  // Let the browser inherit the thin font-weight instead of forcing bold classes
+  res = res.replace(/([نم])(ّ[َُِ]?)/g, '<span class="text-[#10b981]">$1$2</span>');
+  res = res.replace(/([قطبجد])(ْ)/g, '<span class="text-blue-500">$1$2</span>');
+  res = res.replace(/([آئؤاوي])(ٓ)/g, '<span class="text-red-500">$1$2</span>');
   return res;
 }
 
@@ -1866,8 +1885,14 @@ function BookmarksTab({ bookmarks, onOpen, onRemove }) {
               {b.surahName} • Verse {b.ayah}
             </p>
             <p
-              className="text-[17px] font-medium text-slate-800 mt-1 truncate"
-              style={{ direction: "rtl", fontFamily: "serif" }}
+              className="text-[17px] text-slate-800 mt-1 truncate"
+              style={{
+                direction: "rtl",
+                fontFamily: "serif",
+                fontWeight: 300,
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale",
+              }}
             >
               {b.text}
             </p>

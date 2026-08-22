@@ -459,10 +459,8 @@ export default function SettingsModal({ open, onClose, settings, onUpdate }) {
                 </div>
               </div>
               <Select
-                value={String(settings.calculation_method ?? 2)}
-                onValueChange={(v) =>
-                  onUpdate({ calculation_method: Number(v) })
-                }
+                value={String(settings.calculation_method ?? "india")}
+                onValueChange={(v) => onUpdate({ calculation_method: v })}
               >
                 <SelectTrigger className="rounded-xl h-11 bg-gray-50 dark:bg-white/5 border-none font-medium text-sm">
                   <SelectValue />

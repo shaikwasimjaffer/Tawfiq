@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Play,
   Plus,
@@ -9,6 +9,46 @@ import {
   Share2,
   ThumbsUp,
   Download,
+  ArrowLeft,
+  Search,
+  Droplet,
+  Waves,
+  Landmark,
+  Moon,
+  Heart,
+  FileText,
+  CheckCircle2,
+  ListOrdered,
+  Clock,
+  BookOpen,
+  Info,
+  Pause,
+  Repeat,
+  Bookmark,
+  BookmarkCheck,
+  AlertCircle,
+  Video,
+  PlayCircle,
+  Trophy,
+  BookMarked,
+  Star,
+  GraduationCap,
+  Map,
+  Scale,
+  Palette,
+  Users,
+  MessageCircle,
+  Flame,
+  MapPin,
+  CalendarDays,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Sun,
+  Sparkles,
+  Shield,
+  Compass,
+  Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
@@ -17,9 +57,9 @@ import BottomNav from "@/components/BottomNav";
 const hideScrollbar =
   "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
 
-// A reliable sample MP4 video for the auto-playing trailers
+// Using the provided local video file
 const SAMPLE_TRAILER =
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+  "/How to Make Wudu Step by Step - Majed Mahmoud (1080p).mp4";
 
 // ─── MOCK DATA ─────────────────────────────────────────────────────────────
 const heroCarousel = [
@@ -28,7 +68,7 @@ const heroCarousel = [
     title: "Stories of the Prophets",
     subtitle: "Quran • Authentic • Series",
     image:
-      "https://images.unsplash.com/photo-1542128962-9d50ad7bf014?q=80&w=1200&auto=format&fit=crop",
+      "/ChatGPT Image Jul 24, 2026, 06_15_52 PM.png",
     trailerUrl: SAMPLE_TRAILER,
   },
   {
@@ -58,7 +98,7 @@ const continueWatching = [
     progress: 65,
     timeLeft: "18m left",
     image:
-      "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?q=80&w=800&h=450&auto=format&fit=crop",
+      "/ChatGPT Image Jul 24, 2026, 06_15_52 PM.png",
     trailerUrl: SAMPLE_TRAILER,
   },
   {
@@ -77,10 +117,9 @@ const continueWatching = [
 const newReleases = [
   {
     id: 201,
-    title: "Nuh (AS)",
-    episodes: "8 Episodes",
+   
     image:
-      "https://images.unsplash.com/photo-1564769662533-4f00abce0bc4?q=80&w=400&h=600&auto=format&fit=crop",
+      "/wudu2.png",
     trailerUrl: SAMPLE_TRAILER,
   },
   {
@@ -115,7 +154,7 @@ const quranSeries = [
     title: "Juz Amma Explained",
     episodes: "Series",
     image:
-      "https://images.unsplash.com/photo-1604871000636-074fa5117945?q=80&w=400&h=600&auto=format&fit=crop",
+      "/ChatGPT Image Jul 24, 2026, 06_15_52 PM.png",
     trailerUrl: SAMPLE_TRAILER,
   },
   {
@@ -139,7 +178,7 @@ const quranSeries = [
     title: "Heart of the Believer",
     episodes: "Series",
     image:
-      "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?q=80&w=400&h=600&auto=format&fit=crop",
+      "/ChatGPT Image Jul 24, 2026, 06_15_52 PM.png",
     trailerUrl: SAMPLE_TRAILER,
   },
 ];
@@ -150,7 +189,7 @@ const kids = [
     title: "Stories of Animals",
     episodes: "Kids",
     image:
-      "https://images.unsplash.com/photo-1542128962-9d50ad7bf014?q=80&w=400&h=600&auto=format&fit=crop",
+      "/ChatGPT Image Jul 24, 2026, 06_15_52 PM.png",
     trailerUrl: SAMPLE_TRAILER,
   },
   {
@@ -179,13 +218,199 @@ const kids = [
   },
 ];
 
+// Mock episode list for the detailed view
+const mockEpisodesList = [
+  {
+    title: "Children of the Comet",
+    meta: "S1 E2 • 12 May 2022 • 49m",
+    image: heroCarousel[0].image,
+  },
+  {
+    title: "Ghosts of Illyria",
+    meta: "S1 E3 • 19 May 2022 • 43m",
+    image: heroCarousel[1].image,
+  },
+  {
+    title: "Memento Mori",
+    meta: "S1 E4 • 26 May 2022 • 51m",
+    image: heroCarousel[2].image,
+  },
+];
+
 // ─── COMPONENTS ────────────────────────────────────────────────────────────
 
 const MediaDetailsModal = ({ item, onClose }) => {
   const [isMuted, setIsMuted] = useState(true);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const handleFullscreenChange = async () => {
+      const isFullscreen =
+        document.fullscreenElement || document.webkitFullscreenElement;
+
+      if (isFullscreen) {
+        try {
+          if (
+            window.screen &&
+            window.screen.orientation &&
+            window.screen.orientation.lock
+          ) {
+            await window.screen.orientation.lock("landscape");
+          }
+        } catch (error) {
+          console.warn("Screen orientation lock failed:", error);
+        }
+      } else {
+        try {
+          if (
+            window.screen &&
+            window.screen.orientation &&
+            window.screen.orientation.unlock
+          ) {
+            window.screen.orientation.unlock();
+          }
+        } catch (error) {
+          console.warn("Screen orientation unlock failed:", error);
+        }
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
+    };
+  }, []);
 
   if (!item) return null;
 
+  // ─── PLAYING VIEW (Triggered when a user clicks Play or an Episode) ───
+  if (showPlayer) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] bg-[#0A0A0A] overflow-y-auto text-white flex flex-col"
+      >
+        {/* Sticky Video Player Header - Updated to fill landscape/cover cleanly */}
+        <div className="sticky top-0 z-50 w-full aspect-video bg-black flex-shrink-0 relative overflow-hidden">
+          <video
+            ref={videoRef}
+            src={item.trailerUrl || SAMPLE_TRAILER}
+            autoPlay
+            controls
+            playsInline
+            className="w-full h-full object-cover bg-black outline-none"
+          />
+          {/* Custom Overlay for Back Button */}
+          <div className="absolute top-0 left-0 w-full p-4 bg-gradient-to-b from-black/60 to-transparent pointer-events-none flex justify-between items-start z-10">
+            <button
+              onClick={() => setShowPlayer(false)}
+              className="pointer-events-auto text-white hover:text-gray-300 drop-shadow-md transition-colors"
+            >
+              <ArrowLeft size={26} />
+            </button>
+          </div>
+        </div>
+
+        {/* Mock Ad Banner */}
+        <div className="bg-[#18181A] px-4 py-3 flex items-center justify-between border-b border-[#2A2A2A]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded flex items-center justify-center text-black text-[10px] font-black leading-tight text-center uppercase">
+              Ad
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-white leading-tight">
+                Gillette Guard 3in1
+              </p>
+              <p className="text-[11px] text-gray-400">Guard 3in1</p>
+            </div>
+          </div>
+          <button className="bg-[#1D4ED8] hover:bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded transition-colors">
+            Buy Now
+          </button>
+        </div>
+
+        {/* Episodes List */}
+        <div className="p-4 space-y-4">
+          {mockEpisodesList.map((ep, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-4 cursor-pointer group"
+            >
+              <div className="relative w-[130px] aspect-video bg-gray-800 rounded flex-shrink-0 overflow-hidden">
+                <img
+                  src={ep.image}
+                  alt="Episode thumbnail"
+                  className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                />
+                <Play
+                  size={18}
+                  fill="white"
+                  className="absolute bottom-2 left-2 text-white drop-shadow-md"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-white truncate">
+                  {ep.title}
+                </h4>
+                <p className="text-[11px] text-gray-400 mt-1">{ep.meta}</p>
+              </div>
+              <button className="p-2 text-gray-400 hover:text-white transition">
+                <Download size={20} />
+              </button>
+            </div>
+          ))}
+
+          <div className="pt-2 flex justify-center">
+            <button className="flex items-center gap-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-colors border border-gray-800">
+              <ChevronDown size={16} /> View More
+            </button>
+          </div>
+        </div>
+
+        {/* More Like This Section */}
+        <div className="p-4 pb-12 border-t border-[#1A1A1A]">
+          <h3 className="text-[15px] font-bold text-white mb-4">
+            More Like This
+          </h3>
+          <div
+            className={`flex gap-3 overflow-x-auto snap-x snap-mandatory ${hideScrollbar}`}
+          >
+            {newReleases.map((poster) => (
+              <div
+                key={poster.id}
+                className="w-[120px] flex-shrink-0 snap-start cursor-pointer group rounded overflow-hidden relative bg-[#1A1A1A]"
+              >
+                <div className="w-full aspect-[2/3] relative">
+                  <img
+                    src={poster.image}
+                    alt={poster.title}
+                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent opacity-90" />
+                  <div className="absolute bottom-2 left-2 right-2 text-center pointer-events-none">
+                    <h4 className="text-white text-xs font-bold leading-tight drop-shadow-md">
+                      {poster.title}
+                    </h4>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ─── STANDARD DETAILS VIEW (Default when card is clicked) ───
   return (
     <motion.div
       initial={{ y: "100%" }}
@@ -264,7 +489,11 @@ const MediaDetailsModal = ({ item, onClose }) => {
           <span>2 Languages</span>
         </div>
 
-        <button className="w-full bg-white text-black py-3.5 rounded-md text-sm font-bold flex items-center justify-center gap-2 mb-6 hover:bg-gray-200 transition active:scale-[0.98]">
+        {/* ─── PLAY FULL VIDEO BUTTON ─── */}
+        <button
+          onClick={() => setShowPlayer(true)}
+          className="w-full bg-white text-black py-3.5 rounded-md text-sm font-bold flex items-center justify-center gap-2 mb-6 hover:bg-gray-200 transition active:scale-[0.98]"
+        >
           <Play size={18} fill="currentColor" /> Watch First Episode{" "}
           <span className="text-gray-500 font-medium ml-1">S1 E1</span>
         </button>
@@ -296,7 +525,6 @@ const MediaDetailsModal = ({ item, onClose }) => {
             <span className="text-[10px] text-gray-400 font-medium">
               Watchlist
             </span>
-            {/* Tooltip mimicking the reference image */}
             <div className="absolute -top-10 bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity pointer-events-none shadow-lg">
               Click to add to Watchlist
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
@@ -330,59 +558,35 @@ const MediaDetailsModal = ({ item, onClose }) => {
 
         {/* ─── EPISODES LIST ─── */}
         <div className="space-y-4 pb-12">
-          {/* Episode Item */}
-          <div className="flex items-center gap-4 cursor-pointer group">
-            <div className="relative w-[130px] aspect-video bg-gray-800 rounded flex-shrink-0 overflow-hidden">
-              <img
-                src={item.image}
-                alt="Episode thumbnail"
-                className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity"
-              />
-              <Play
-                size={18}
-                fill="white"
-                className="absolute bottom-2 left-2 text-white"
-              />
+          {mockEpisodesList.map((ep, idx) => (
+            <div
+              key={idx}
+              onClick={() => setShowPlayer(true)}
+              className="flex items-center gap-4 cursor-pointer group opacity-90 hover:opacity-100 transition-opacity"
+            >
+              <div className="relative w-[130px] aspect-video bg-gray-800 rounded flex-shrink-0 overflow-hidden">
+                <img
+                  src={ep.image}
+                  alt="Episode thumbnail"
+                  className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                />
+                <Play
+                  size={18}
+                  fill="white"
+                  className="absolute bottom-2 left-2 text-white"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-white truncate">
+                  {ep.title}
+                </h4>
+                <p className="text-[11px] text-gray-400 mt-1">{ep.meta}</p>
+              </div>
+              <button className="p-2 text-gray-400 hover:text-white transition">
+                <Download size={20} />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-bold text-white truncate">
-                1. The Beginning
-              </h4>
-              <p className="text-[11px] text-gray-400 mt-1">
-                S1 E1 • 5 May 2024 • 50m
-              </p>
-            </div>
-            <button className="p-2 text-gray-400 hover:text-white transition">
-              <Download size={20} />
-            </button>
-          </div>
-
-          {/* Episode Item 2 */}
-          <div className="flex items-center gap-4 cursor-pointer group opacity-70 hover:opacity-100 transition-opacity">
-            <div className="relative w-[130px] aspect-video bg-gray-800 rounded flex-shrink-0 overflow-hidden">
-              <img
-                src={item.image}
-                alt="Episode thumbnail"
-                className="w-full h-full object-cover opacity-50"
-              />
-              <Play
-                size={18}
-                fill="white"
-                className="absolute bottom-2 left-2 text-white"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-bold text-white truncate">
-                2. The Journey
-              </h4>
-              <p className="text-[11px] text-gray-400 mt-1">
-                S1 E2 • 12 May 2024 • 48m
-              </p>
-            </div>
-            <button className="p-2 text-gray-400 hover:text-white transition">
-              <Download size={20} />
-            </button>
-          </div>
+          ))}
         </div>
       </div>
     </motion.div>
