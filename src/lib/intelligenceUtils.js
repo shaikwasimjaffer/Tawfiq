@@ -30,7 +30,6 @@ export function calcHealthScore(logs) {
   });
   return total > 0 ? Math.min(100, Math.round((earned / total) * 100)) : null;
 }
-
 /** Per-prayer on-time % for recent N days */
 export function prayerRates(logs, days = 30) {
   const recent = logs.filter((l) => !l.is_exempt).slice(0, days);

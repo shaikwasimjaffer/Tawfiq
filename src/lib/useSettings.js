@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthContext";
 
 const DEFAULTS = {
-  calculation_method: "india",
+  calculation_method: 99,
   dark_mode: false,
   exempt_mode: false,
   travel_mode: false,
@@ -22,84 +22,230 @@ export function useSettings() {
   const [settings, setSettings] = useState(DEFAULTS);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      load();
+  // ============================================================
+  // LOAD SETTINGS
+  // ============================================================
+
+  const load = useCallback(async () => {
+    if (!user?.id) {
+      setSettings(DEFAULTS);
+      setLoading(false);
+      return;
     }
-  }, [user]);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", settings.dark_mode);
-  }, [settings.dark_mode]);
-
-  async function load() {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("user_settings")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    try {
+      console.log("SETTINGS: Loading for user:", user.id);
 
-    console.log("Settings Data:", data);
-    console.log("Settings Error:", error);
-
-    if (data) {
-      setSettings({
-        ...DEFAULTS,
-        ...data,
-      });
-    } else {
-      // First time user
-      const { error: insertError } = await supabase
+      const {
+        data,
+        error,
+      } = await supabase
         .from("user_settings")
-        .insert({
-          user_id: user.id,
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("SETTINGS LOAD ERROR:", error);
+
+        // IMPORTANT:
+        // Do NOT automatically INSERT when SELECT fails.
+        // A 401/403/etc. is an authentication/RLS problem,
+        // not proof that the row doesn't exist.
+
+        setSettings(DEFAULTS);
+        return;
+      }
+
+      // ========================================================
+      // SETTINGS ROW EXISTS
+      // ========================================================
+
+      if (data) {
+        console.log("SETTINGS: Existing row found");
+
+        setSettings({
           ...DEFAULTS,
+          ...data,
         });
 
-      console.log("Insert Settings Error:", insertError);
+        return;
+      }
+
+      // ========================================================
+      // SETTINGS ROW DOES NOT EXIST
+      // ========================================================
+
+      console.log(
+        "SETTINGS: No row found. Creating one..."
+      );
+
+      const {
+        data: newSettings,
+        error: insertError,
+      } = await supabase
+        .from("user_settings")
+        .upsert(
+          {
+            user_id: user.id,
+            ...DEFAULTS,
+          },
+          {
+            onConflict: "user_id",
+          }
+        )
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error(
+          "SETTINGS CREATE ERROR:",
+          insertError
+        );
+
+        setSettings(DEFAULTS);
+        return;
+      }
+
+      console.log(
+        "SETTINGS: Row created successfully"
+      );
+
+      setSettings({
+        ...DEFAULTS,
+        ...newSettings,
+      });
+    } catch (error) {
+      console.error(
+        "SETTINGS LOAD EXCEPTION:",
+        error
+      );
 
       setSettings(DEFAULTS);
+    } finally {
+      setLoading(false);
     }
+  }, [user?.id]);
 
-    setLoading(false);
-  }
+  // ============================================================
+  // AUTH USER CHANGE
+  // ============================================================
 
-const updateSettings = useCallback(
-  async (updates) => {
-    console.log("========== UPDATE SETTINGS ==========");
-    console.log("updates =", updates);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-    const { data, error } = await supabase
-      .from("user_settings")
-      .update(updates)
-      .eq("user_id", user.id)
-      .select();
+  // ============================================================
+  // DARK MODE
+  // ============================================================
 
-    console.log("UPDATE DATA:", data);
-    console.log("UPDATE ERROR:", error);
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "dark",
+      settings.dark_mode
+    );
+  }, [settings.dark_mode]);
 
-    if (error) {
-      console.error("THROWING ERROR");
-      throw error;
-    }
+  // ============================================================
+  // UPDATE SETTINGS
+  // ============================================================
 
-    console.log("BEFORE setSettings");
+  const updateSettings = useCallback(
+    async (updates) => {
+      if (!user?.id) {
+        throw new Error(
+          "No authenticated user found."
+        );
+      }
 
-    if (data?.length) {
-      setSettings(data[0]);
-    }
+      // Don't mutate the object passed by the component.
+      const cleanUpdates = {
+        ...updates,
+      };
 
-    console.log("AFTER setSettings");
+      // calculation_method must be an integer.
+      if (
+        cleanUpdates.calculation_method !== undefined
+      ) {
+        cleanUpdates.calculation_method = Number(
+          cleanUpdates.calculation_method
+        );
+      }
 
-    return data;
-  },
-  [user],
-);
+      // Optimistic UI update.
+      setSettings((previous) => ({
+        ...previous,
+        ...cleanUpdates,
+      }));
+
+      console.log(
+        "SETTINGS: Updating:",
+        cleanUpdates
+      );
+
+      try {
+        const {
+          data: updatedData,
+          error,
+        } = await supabase
+          .from("user_settings")
+          .upsert(
+            {
+              user_id: user.id,
+              ...cleanUpdates,
+            },
+            {
+              onConflict: "user_id",
+            }
+          )
+          .select()
+          .single();
+
+        if (error) {
+          console.error(
+            "SETTINGS UPDATE ERROR:",
+            error
+          );
+
+          throw error;
+        }
+
+        console.log(
+          "SETTINGS: Update successful:",
+          updatedData
+        );
+
+        // Update local state with the actual database row.
+        setSettings({
+          ...DEFAULTS,
+          ...updatedData,
+        });
+
+        // IMPORTANT:
+        // Return the variable that actually exists.
+        return updatedData;
+      } catch (error) {
+        console.error(
+          "SETTINGS UPDATE EXCEPTION:",
+          error
+        );
+
+        throw error;
+      }
+    },
+    [user?.id]
+  );
+
+  // ============================================================
+  // RETURN
+  // ============================================================
+
   return {
     settings,
     updateSettings,
     loading,
+    reloadSettings: load,
   };
 }

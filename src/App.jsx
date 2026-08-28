@@ -3,19 +3,21 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
 
 import {
-  BrowserRouter as Router,
   Route,
   Routes,
   Navigate,
+  BrowserRouter,
 } from "react-router-dom";
 
 import { useEffect } from "react";
 
+// Pages
 import Dhikr from "./pages/Dhikr";
 import Today from "./pages/Today";
 import Qaza from "./pages/Qaza";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import LoadingScreen from "./pages/LoadingScreen";
 import TawfiqTV from "./pages/TawfiqTV";
 import Onboarding from "./pages/Onboarding";
@@ -27,17 +29,20 @@ import Settings from "./pages/Settings";
 
 import PageNotFound from "./lib/PageNotFound";
 
+// Notifications
 import {
   requestNotificationPermission,
   startPrayerReminder,
 } from "@/utils/notificationScheduler";
 
-import {
-  AuthProvider,
-  useAuth,
-} from "@/lib/AuthContext";
+// Auth
+import { AuthProvider, useAuth } from "@/lib/AuthContext";
 
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
+
+// ─────────────────────────────────────────────────────────────
+// Authenticated App
+// ─────────────────────────────────────────────────────────────
 
 const AuthenticatedApp = () => {
   const {
@@ -47,7 +52,14 @@ const AuthenticatedApp = () => {
     navigateToLogin,
   } = useAuth();
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  // ───────────────────────────────────────────────────────────
+  // Authentication Loading
+  // ───────────────────────────────────────────────────────────
+
+  if (
+    isLoadingPublicSettings ||
+    isLoadingAuth
+  ) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
@@ -55,16 +67,28 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // ───────────────────────────────────────────────────────────
+  // Authentication Errors
+  // ───────────────────────────────────────────────────────────
+
   if (authError) {
-    if (authError.type === "user_not_registered") {
+    if (
+      authError.type === "user_not_registered"
+    ) {
       return <UserNotRegisteredError />;
     }
 
-    if (authError.type === "auth_required") {
+    if (
+      authError.type === "auth_required"
+    ) {
       navigateToLogin();
       return null;
     }
   }
+
+  // ───────────────────────────────────────────────────────────
+  // Routes
+  // ───────────────────────────────────────────────────────────
 
   return (
     <Routes>
@@ -72,45 +96,109 @@ const AuthenticatedApp = () => {
       {/* Root */}
       <Route
         path="/"
-        element={<Navigate to="/today" replace />}
+        element={
+          <Navigate
+            to="/today"
+            replace
+          />
+        }
       />
 
+      {/* ─────────────────────────────────────────────── */}
       {/* Authentication */}
-      <Route path="/register" element={<Register />} />
-      <Route path="/login" element={<Login />} />
+      {/* ─────────────────────────────────────────────── */}
+
+      <Route
+        path="/register"
+        element={<Register />}
+      />
+
+      <Route
+        path="/login"
+        element={<Login />}
+      />
+
       <Route
         path="/forgot-password"
         element={<ForgotPassword />}
       />
 
+      {/* Password recovery */}
+      <Route
+        path="/reset-password"
+        element={<ResetPassword />}
+      />
+
+      {/* ─────────────────────────────────────────────── */}
       {/* Onboarding */}
+      {/* ─────────────────────────────────────────────── */}
+
       <Route
         path="/onboarding"
         element={<Onboarding />}
       />
 
+      {/* ─────────────────────────────────────────────── */}
       {/* Loading */}
+      {/* ─────────────────────────────────────────────── */}
+
       <Route
         path="/loading"
         element={<LoadingScreen />}
       />
 
+      {/* ─────────────────────────────────────────────── */}
       {/* Main App */}
-      <Route path="/today" element={<Today />} />
-      <Route path="/quran" element={<Quran />} />
-      <Route path="/learn" element={<Learn />} />
-      <Route path="/tv" element={<TawfiqTV />} />
-      <Route path="/qaza" element={<Qaza />} />
-      <Route path="/sawm" element={<Sawm />} />
-      <Route path="/dhikr" element={<Dhikr />} />
+      {/* ─────────────────────────────────────────────── */}
 
+      <Route
+        path="/today"
+        element={<Today />}
+      />
+
+      <Route
+        path="/quran"
+        element={<Quran />}
+      />
+
+      <Route
+        path="/learn"
+        element={<Learn />}
+      />
+
+      <Route
+        path="/tv"
+        element={<TawfiqTV />}
+      />
+
+      <Route
+        path="/qaza"
+        element={<Qaza />}
+      />
+
+      <Route
+        path="/sawm"
+        element={<Sawm />}
+      />
+
+      <Route
+        path="/dhikr"
+        element={<Dhikr />}
+      />
+
+      {/* ─────────────────────────────────────────────── */}
       {/* Settings */}
+      {/* ─────────────────────────────────────────────── */}
+
       <Route
         path="/settings"
         element={<Settings />}
       />
 
+      {/* ─────────────────────────────────────────────── */}
       {/* 404 */}
+      {/* ─────────────────────────────────────────────── */}
+
       <Route
         path="*"
         element={<PageNotFound />}
@@ -120,6 +208,10 @@ const AuthenticatedApp = () => {
   );
 };
 
+// ─────────────────────────────────────────────────────────────
+// App
+// ─────────────────────────────────────────────────────────────
+
 function App() {
   useEffect(() => {
     requestNotificationPermission();
@@ -127,17 +219,14 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-
-        <Router basename={import.meta.env.BASE_URL}>
+    <BrowserRouter>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
           <AuthenticatedApp />
-        </Router>
-
-        <Toaster />
-
-      </QueryClientProvider>
-    </AuthProvider>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

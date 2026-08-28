@@ -72,7 +72,7 @@ export async function fetchPrayerTimes(
   }
 }
 
-export async function fetchHijriDate(date = new Date()) {
+async function fetchHijriDate(date = new Date()) {
   const d = date.getDate().toString().padStart(2, "0");
   const m = (date.getMonth() + 1).toString().padStart(2, "0");
   const y = date.getFullYear();
@@ -81,6 +81,8 @@ export async function fetchHijriDate(date = new Date()) {
   const data = await res.json();
   return data.data?.hijri;
 }
+
+export { fetchHijriDate };
 
 export function getCurrentLocation() {
   return new Promise((resolve, reject) => {

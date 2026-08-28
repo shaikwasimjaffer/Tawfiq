@@ -260,7 +260,7 @@ ${settings.longitude ?? "Not available"}
 
       {/* =====================================================
           HEADER
-      ===================================================== */}
+      ======================================================= */}
 
       <header className="sticky top-0 z-40 bg-[#F7F9F6]/95 dark:bg-background/95 backdrop-blur-xl border-b border-black/[0.04] dark:border-white/[0.06]">
 
@@ -287,7 +287,7 @@ ${settings.longitude ?? "Not available"}
 
       {/* =====================================================
           CONTENT
-      ===================================================== */}
+      ======================================================= */}
 
       <main className="max-w-xl mx-auto px-5 pt-7 pb-16">
 
@@ -379,19 +379,19 @@ ${settings.longitude ?? "Not available"}
                       </SelectContent>
                     </Select>
 
-                  </div>
+                    <button
+                      onClick={testNotification}
+                      className="w-full mt-3 h-9 rounded-lg bg-white dark:bg-white/[0.06] text-emerald-700 dark:text-emerald-400 text-[11px] font-bold border border-emerald-900/[0.05] dark:border-white/[0.06]"
+                    >
+                      {testNotificationStatus === "testing"
+                        ? "Sending..."
+                        : testNotificationStatus ===
+                            "success"
+                          ? "✓ Notification sent"
+                          : "Test notification"}
+                    </button>
 
-                  <button
-                    onClick={testNotification}
-                    className="w-full mt-3 h-9 rounded-lg bg-white dark:bg-white/[0.06] text-emerald-700 dark:text-emerald-400 text-[11px] font-bold border border-emerald-900/[0.05] dark:border-white/[0.06]"
-                  >
-                    {testNotificationStatus === "testing"
-                      ? "Sending..."
-                      : testNotificationStatus ===
-                          "success"
-                        ? "✓ Notification sent"
-                        : "Test notification"}
-                  </button>
+                  </div>
 
                 </div>
 
@@ -477,13 +477,12 @@ ${settings.longitude ?? "Not available"}
               right={
                 <Select
                   value={String(
-                    settings.calculation_method ??
-                      "india"
+                    settings.calculation_method ?? 99
                   )}
                   onValueChange={(value) =>
                     updateSettings({
                       calculation_method:
-                        value,
+                        parseInt(value, 10),
                     })
                   }
                 >
@@ -593,8 +592,9 @@ ${settings.longitude ?? "Not available"}
                 label="Location"
                 value={
                   settings.latitude
-                    ? "Available"
-                    : "Not available"
+                    ? settings.city ||
+                      "Location available"
+                    : "Location not available"
                 }
                 active={!!settings.latitude}
               />
@@ -720,6 +720,7 @@ ${settings.longitude ?? "Not available"}
         </p>
 
       </main>
+
     </div>
   );
 }

@@ -1,12 +1,18 @@
-import React, { useState, useEffect, useMemo, memo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  memo,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import {
   MapPin,
   Compass,
   Bell,
   CheckCircle2,
   ChevronRight,
-  Sparkles,
   MoonStar,
   Check,
   TrendingUp,
@@ -16,9 +22,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import { supabase } from "@/lib/supabase";
 import { useSettings } from "@/lib/useSettings";
 import { getCurrentLocation } from "@/lib/prayerUtils";
+import { useAuth } from "@/lib/AuthContext";
 
 // ─────────────────────────────────────────────────────────────
 // CONFIG
@@ -26,9 +32,7 @@ import { getCurrentLocation } from "@/lib/prayerUtils";
 
 const TOTAL_STEPS = 5;
 
-// IMPORTANT:
-// user_settings.calculation_method is int4.
-// Keep these values numeric.
+// user_settings.calculation_method is int4
 const CALCULATION_METHODS = {
   INDIA: 1,
   ISNA: 2,
@@ -43,61 +47,109 @@ const CALCULATION_METHODS = {
 const getAtmosphere = (hour) => {
   const greenAccents = {
     accent: "text-emerald-600",
+
     accentBg: "bg-emerald-600/10",
+
     button:
       "bg-emerald-600 hover:bg-emerald-500 shadow-[0_8px_20px_rgba(5,150,105,0.25)]",
-    cardBg: "bg-black/[0.02] hover:bg-black/[0.04]",
-    focusRing: "ring-emerald-500/50",
+
+    cardBg:
+      "bg-black/[0.02] hover:bg-black/[0.04]",
+
+    focusRing:
+      "ring-emerald-500/50",
   };
 
   const darkGreenAccents = {
     accent: "text-emerald-400",
+
     accentBg: "bg-emerald-400/10",
+
     button:
       "bg-emerald-600 hover:bg-emerald-500 shadow-[0_8px_20px_rgba(5,150,105,0.3)]",
-    cardBg: "bg-white/[0.03] hover:bg-white/[0.06]",
-    focusRing: "ring-emerald-400/50",
+
+    cardBg:
+      "bg-white/[0.03] hover:bg-white/[0.06]",
+
+    focusRing:
+      "ring-emerald-400/50",
   };
 
   if (hour >= 4 && hour < 7) {
     return {
-      bg: "bg-gradient-to-br from-[#ecfdf5] via-[#f0fdf4] to-[#ffffff]",
-      text: "text-emerald-950",
-      muted: "text-emerald-700/60",
-      borderColor: "border-emerald-900/10",
+      bg:
+        "bg-gradient-to-br from-[#ecfdf5] via-[#f0fdf4] to-[#ffffff]",
+
+      text:
+        "text-emerald-950",
+
+      muted:
+        "text-emerald-700/60",
+
+      borderColor:
+        "border-emerald-900/10",
+
       isDark: false,
+
       ...greenAccents,
     };
   }
 
   if (hour >= 7 && hour < 18) {
     return {
-      bg: "bg-gradient-to-br from-[#f0fdf4] via-[#ffffff] to-[#ecfdf5]",
-      text: "text-emerald-950",
-      muted: "text-emerald-700/60",
-      borderColor: "border-emerald-900/10",
+      bg:
+        "bg-gradient-to-br from-[#f0fdf4] via-[#ffffff] to-[#ecfdf5]",
+
+      text:
+        "text-emerald-950",
+
+      muted:
+        "text-emerald-700/60",
+
+      borderColor:
+        "border-emerald-900/10",
+
       isDark: false,
+
       ...greenAccents,
     };
   }
 
   if (hour >= 18 && hour < 20) {
     return {
-      bg: "bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857]",
-      text: "text-emerald-50",
-      muted: "text-emerald-200/60",
-      borderColor: "border-emerald-100/10",
+      bg:
+        "bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857]",
+
+      text:
+        "text-emerald-50",
+
+      muted:
+        "text-emerald-200/60",
+
+      borderColor:
+        "border-emerald-100/10",
+
       isDark: true,
+
       ...darkGreenAccents,
     };
   }
 
   return {
-    bg: "bg-gradient-to-br from-[#022c22] via-[#014737] to-[#020617]",
-    text: "text-emerald-50",
-    muted: "text-emerald-200/50",
-    borderColor: "border-emerald-100/10",
+    bg:
+      "bg-gradient-to-br from-[#022c22] via-[#014737] to-[#020617]",
+
+    text:
+      "text-emerald-50",
+
+    muted:
+      "text-emerald-200/50",
+
+    borderColor:
+      "border-emerald-100/10",
+
     isDark: true,
+
     ...darkGreenAccents,
   };
 };
@@ -108,11 +160,16 @@ const getAtmosphere = (hour) => {
 
 const triggerHaptic = (type = "light") => {
   if (typeof navigator === "undefined") return;
+
   if (!navigator.vibrate) return;
 
-  if (type === "light") navigator.vibrate(10);
+  if (type === "light") {
+    navigator.vibrate(10);
+  }
 
-  if (type === "medium") navigator.vibrate(25);
+  if (type === "medium") {
+    navigator.vibrate(25);
+  }
 
   if (type === "success") {
     navigator.vibrate([20, 40, 20]);
@@ -131,7 +188,9 @@ const LivingMoon = memo(({ isDark }) => (
   <div className="relative group flex items-center justify-center w-14 h-14">
     <div
       className={`absolute inset-0 rounded-full blur-xl animate-[pulse_3s_ease-in-out_infinite] ${
-        isDark ? "bg-emerald-400/20" : "bg-emerald-500/20"
+        isDark
+          ? "bg-emerald-400/20"
+          : "bg-emerald-500/20"
       }`}
     />
 
@@ -152,8 +211,6 @@ const LivingMoon = memo(({ isDark }) => (
 
 // ─────────────────────────────────────────────────────────────
 // MOCK NEXT PRAYER
-// Keep your current visual behaviour.
-// Replace with real prayer data later.
 // ─────────────────────────────────────────────────────────────
 
 const getMockNextPrayer = (hour) => {
@@ -202,17 +259,46 @@ const getMockNextPrayer = (hour) => {
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { updateSettings } = useSettings();
 
-  const [now, setNow] = useState(new Date());
+  // IMPORTANT:
+  // AuthContext is now the source of truth for authentication.
+  const {
+    user,
+    isLoadingAuth,
+  } = useAuth();
+
+  // IMPORTANT:
+  // useSettings is now the ONLY place responsible
+  // for creating/updating user_settings.
+  const {
+    settings,
+    updateSettings,
+    loading: settingsLoading,
+  } = useSettings();
 
   // ───────────────────────────────────────────────────────────
-  // USER
+  // TIME
   // ───────────────────────────────────────────────────────────
 
-  const [user, setUser] = useState(null);
-  const [userLoading, setUserLoading] = useState(true);
-  const [userError, setUserError] = useState("");
+  const [now, setNow] = useState(
+    new Date()
+  );
+
+  const hour = now.getHours();
+
+  const atmosphere = useMemo(
+    () => getAtmosphere(hour),
+    [hour]
+  );
+
+  const mockPrayer = useMemo(
+    () => getMockNextPrayer(hour),
+    [hour]
+  );
+
+  // ───────────────────────────────────────────────────────────
+  // USER NAME
+  // ───────────────────────────────────────────────────────────
 
   const [userName, setUserName] = useState("");
 
@@ -222,99 +308,97 @@ export default function Onboarding() {
 
   const [step, setStep] = useState(0);
 
-  const [locStatus, setLocStatus] = useState("idle");
-  const [notifStatus, setNotifStatus] = useState("idle");
+  const [locStatus, setLocStatus] =
+    useState("idle");
 
-  const [selectedMethod, setSelectedMethod] = useState(
-    CALCULATION_METHODS.INDIA,
-  );
+  const [notifStatus, setNotifStatus] =
+    useState("idle");
 
-  const [selectedGoals, setSelectedGoals] = useState([]);
+  const [selectedMethod, setSelectedMethod] =
+    useState(
+      CALCULATION_METHODS.INDIA
+    );
 
-  const [morphing, setMorphing] = useState(false);
+  const [selectedGoals, setSelectedGoals] =
+    useState([]);
 
-  const [saveError, setSaveError] = useState("");
+  const [morphing, setMorphing] =
+    useState(false);
 
-  // ───────────────────────────────────────────────────────────
-  // TIME
-  // ───────────────────────────────────────────────────────────
-
-  const hour = now.getHours();
-
-  const atmosphere = useMemo(
-    () => getAtmosphere(hour),
-    [hour],
-  );
-
-  const mockPrayer = useMemo(
-    () => getMockNextPrayer(hour),
-    [hour],
-  );
+  const [saveError, setSaveError] =
+    useState("");
 
   // ───────────────────────────────────────────────────────────
-  // LOAD AUTH USER
+  // GET USER NAME
   // ───────────────────────────────────────────────────────────
 
   useEffect(() => {
-    let mounted = true;
+    if (!user) {
+      setUserName("");
+      return;
+    }
 
-    const loadUser = async () => {
-      setUserLoading(true);
-      setUserError("");
+    const metadataName =
+      user.user_metadata?.name ||
+      user.user_metadata?.full_name ||
+      "";
 
-      try {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
+    setUserName(
+      metadataName.trim()
+    );
+  }, [user]);
 
-        if (error) {
-          throw error;
-        }
+  // ───────────────────────────────────────────────────────────
+  // LOAD EXISTING SETTINGS INTO ONBOARDING
+  // ───────────────────────────────────────────────────────────
 
-        if (!user) {
-          if (mounted) {
-            setUser(null);
-            setUserError(
-              "Your session has expired. Please log in again.",
-            );
-          }
+  useEffect(() => {
+    if (!user?.id) return;
 
-          return;
-        }
+    if (settingsLoading) return;
 
-        if (!mounted) return;
+    if (!settings) return;
 
-        setUser(user);
+    // Existing calculation method
+    if (
+      settings.calculation_method !==
+        null &&
+      settings.calculation_method !==
+        undefined
+    ) {
+      setSelectedMethod(
+        Number(
+          settings.calculation_method
+        )
+      );
+    }
 
-        // Name comes from Supabase Auth metadata.
-        const metadataName =
-          user.user_metadata?.name ||
-          user.user_metadata?.full_name ||
-          "";
+    // Existing goals
+    if (
+      Array.isArray(
+        settings.primary_goals
+      )
+    ) {
+      setSelectedGoals(
+        settings.primary_goals
+      );
+    }
 
-        setUserName(metadataName.trim());
-      } catch (error) {
-        console.error("Unable to load authenticated user:", error);
-
-        if (mounted) {
-          setUserError(
-            "We couldn't load your account. Please log in again.",
-          );
-        }
-      } finally {
-        if (mounted) {
-          setUserLoading(false);
-        }
-      }
-    };
-
-    loadUser();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    // If onboarding is already completed,
+    // don't show onboarding again.
+    if (
+      settings.onboarding_done === true
+    ) {
+      navigate("/today", {
+        replace: true,
+      });
+    }
+  }, [
+    user?.id,
+    settings,
+    settingsLoading,
+    navigate,
+  ]);
 
   // ───────────────────────────────────────────────────────────
   // CLOCK
@@ -325,118 +409,9 @@ export default function Onboarding() {
       setNow(new Date());
     }, 60000);
 
-    return () => clearInterval(interval);
+    return () =>
+      clearInterval(interval);
   }, []);
-
-  // ───────────────────────────────────────────────────────────
-  // ENSURE SETTINGS ROW EXISTS
-  // ───────────────────────────────────────────────────────────
-
-  const ensureSettingsRow = async (userId) => {
-    if (!userId) {
-      throw new Error("No authenticated user found.");
-    }
-
-    const {
-      data: existingSettings,
-      error: fetchError,
-    } = await supabase
-      .from("user_settings")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (fetchError) {
-      throw fetchError;
-    }
-
-    if (existingSettings) {
-      return existingSettings;
-    }
-
-    const {
-      data: newSettings,
-      error: insertError,
-    } = await supabase
-      .from("user_settings")
-      .insert({
-        user_id: userId,
-        onboarding_done: false,
-        primary_goals: [],
-      })
-      .select("id")
-      .single();
-
-    if (insertError) {
-      throw insertError;
-    }
-
-    return newSettings;
-  };
-
-  // ───────────────────────────────────────────────────────────
-  // LOAD EXISTING SETTINGS
-  // This means if onboarding was partially completed and user
-  // returns, we don't automatically throw away their choices.
-  // ───────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let mounted = true;
-
-    const loadSettings = async () => {
-      try {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from("user_settings")
-          .select(
-            "calculation_method, primary_goals, onboarding_done",
-          )
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error(
-            "Unable to load user settings:",
-            error,
-          );
-          return;
-        }
-
-        if (!mounted || !data) return;
-
-        if (
-          typeof data.calculation_method === "number"
-        ) {
-          setSelectedMethod(data.calculation_method);
-        }
-
-        if (Array.isArray(data.primary_goals)) {
-          setSelectedGoals(data.primary_goals);
-        }
-
-        // If onboarding is already complete, don't force
-        // the user through it again.
-        if (data.onboarding_done === true) {
-          navigate("/today", { replace: true });
-        }
-      } catch (error) {
-        console.error(
-          "Failed loading onboarding settings:",
-          error,
-        );
-      }
-    };
-
-    loadSettings();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user?.id, navigate]);
 
   // ───────────────────────────────────────────────────────────
   // NEXT STEP
@@ -448,7 +423,10 @@ export default function Onboarding() {
     setSaveError("");
 
     setStep((current) =>
-      Math.min(current + 1, TOTAL_STEPS),
+      Math.min(
+        current + 1,
+        TOTAL_STEPS
+      )
     );
   };
 
@@ -458,24 +436,32 @@ export default function Onboarding() {
 
   const handleLocation = async () => {
     if (!user?.id) {
-      setSaveError("Please log in again.");
+      setSaveError(
+        "Please log in again."
+      );
       return;
     }
 
     triggerHaptic("medium");
 
     setLocStatus("loading");
+
     setSaveError("");
 
     try {
-      const pos = await getCurrentLocation();
+      const pos =
+        await getCurrentLocation();
 
       if (
         !pos ||
-        typeof pos.lat !== "number" ||
-        typeof pos.lon !== "number"
+        typeof pos.lat !==
+          "number" ||
+        typeof pos.lon !==
+          "number"
       ) {
-        throw new Error("Invalid location returned.");
+        throw new Error(
+          "Invalid location returned."
+        );
       }
 
       await updateSettings({
@@ -491,15 +477,17 @@ export default function Onboarding() {
         nextStep();
       }, 1000);
     } catch (error) {
-      console.error("Location error:", error);
+      console.error(
+        "LOCATION ERROR:",
+        error
+      );
 
       setLocStatus("idle");
 
       setSaveError(
-        "Location access wasn't available. You can set it later.",
+        "Location access wasn't available. You can set it later."
       );
 
-      // Don't trap the user.
       setTimeout(() => {
         nextStep();
       }, 500);
@@ -510,66 +498,81 @@ export default function Onboarding() {
   // NOTIFICATIONS
   // ───────────────────────────────────────────────────────────
 
-  const handleNotifications = async () => {
-    if (!user?.id) {
-      setSaveError("Please log in again.");
-      return;
-    }
-
-    triggerHaptic("medium");
-
-    setNotifStatus("loading");
-    setSaveError("");
-
-    try {
-      let notificationsOn = false;
-
-      if ("Notification" in window) {
-        const permission =
-          await Notification.requestPermission();
-
-        notificationsOn = permission === "granted";
+  const handleNotifications =
+    async () => {
+      if (!user?.id) {
+        setSaveError(
+          "Please log in again."
+        );
+        return;
       }
 
-      await updateSettings({
-        notifications_on: notificationsOn,
-      });
+      triggerHaptic("medium");
 
-      triggerHaptic("success");
+      setNotifStatus("loading");
 
-      setNotifStatus("done");
+      setSaveError("");
 
-      setTimeout(() => {
-        nextStep();
-      }, 800);
-    } catch (error) {
-      console.error(
-        "Notification permission error:",
-        error,
-      );
+      try {
+        let notificationsOn =
+          false;
 
-      setNotifStatus("idle");
+        if (
+          "Notification" in
+          window
+        ) {
+          const permission =
+            await Notification.requestPermission();
 
-      setSaveError(
-        "Notifications could not be enabled. You can change this later.",
-      );
+          notificationsOn =
+            permission ===
+            "granted";
+        }
 
-      setTimeout(() => {
-        nextStep();
-      }, 500);
-    }
-  };
+        await updateSettings({
+          notifications_on:
+            notificationsOn,
+        });
+
+        triggerHaptic("success");
+
+        setNotifStatus("done");
+
+        setTimeout(() => {
+          nextStep();
+        }, 800);
+      } catch (error) {
+        console.error(
+          "NOTIFICATION ERROR:",
+          error
+        );
+
+        setNotifStatus("idle");
+
+        setSaveError(
+          "Notifications could not be enabled. You can change this later."
+        );
+
+        setTimeout(() => {
+          nextStep();
+        }, 500);
+      }
+    };
 
   // ───────────────────────────────────────────────────────────
   // CALCULATION METHOD
   // ───────────────────────────────────────────────────────────
 
-  const handleMethodChange = (methodId) => {
-    triggerHaptic("light");
+  const handleMethodChange =
+    (methodId) => {
+      triggerHaptic("light");
 
-    setSelectedMethod(Number(methodId));
-    setSaveError("");
-  };
+      setSelectedMethod(
+        Number(methodId)
+      );
+
+      setSaveError("");
+    };
 
   // ───────────────────────────────────────────────────────────
   // GOALS
@@ -580,10 +583,17 @@ export default function Onboarding() {
 
     setSaveError("");
 
-    setSelectedGoals((current) =>
-      current.includes(id)
-        ? current.filter((goal) => goal !== id)
-        : [...current, id],
+    setSelectedGoals(
+      (current) =>
+        current.includes(id)
+          ? current.filter(
+              (goal) =>
+                goal !== id
+            )
+          : [
+              ...current,
+              id,
+            ]
     );
   };
 
@@ -594,7 +604,7 @@ export default function Onboarding() {
   const finish = async () => {
     if (!user?.id) {
       setSaveError(
-        "Your session is no longer active. Please log in again.",
+        "Your session is no longer active. Please log in again."
       );
       return;
     }
@@ -602,29 +612,69 @@ export default function Onboarding() {
     triggerHaptic("success");
 
     setSaveError("");
+
     setMorphing(true);
 
     try {
-      // Make absolutely sure settings exists.
-      await ensureSettingsRow(user.id);
+      console.log(
+        "ONBOARDING: Saving settings..."
+      );
+
+      console.log(
+        "ONBOARDING USER:",
+        user.id
+      );
+
+      console.log(
+        "ONBOARDING METHOD:",
+        selectedMethod
+      );
+
+      console.log(
+        "ONBOARDING GOALS:",
+        selectedGoals
+      );
 
       // IMPORTANT:
-      // calculation_method is an INT4 in your database.
+      // We DO NOT manually insert into user_settings here.
+      //
+      // useSettings() handles both:
+      // 1. Creating the row if necessary
+      // 2. Updating the existing row
+      //
       await updateSettings({
-        calculation_method: Number(selectedMethod),
-        primary_goals: selectedGoals,
-        onboarding_done: true,
+        calculation_method:
+          Number(selectedMethod),
+
+        primary_goals:
+          selectedGoals,
+
+        onboarding_done:
+          true,
       });
 
-      // Supabase Auth is now the source of truth.
-      // No fake authentication flags are needed.
-      localStorage.removeItem("isAuthenticated");
-      localStorage.removeItem("tawfiq_registered_user");
+      console.log(
+        "ONBOARDING: Settings saved successfully."
+      );
 
-      // Keep this only as an optional UI convenience.
+      // Remove old authentication flags from
+      // previous versions of the application.
+      localStorage.removeItem(
+        "isAuthenticated"
+      );
+
+      localStorage.removeItem(
+        "tawfiq_registered_user"
+      );
+
+      // Optional UI convenience.
       localStorage.setItem(
         "tawfiq_onboarding_done",
-        "1",
+        "1"
+      );
+
+      console.log(
+        "ONBOARDING: Navigating to /today..."
       );
 
       setTimeout(() => {
@@ -634,15 +684,15 @@ export default function Onboarding() {
       }, 1800);
     } catch (error) {
       console.error(
-        "Failed to finish onboarding:",
-        error,
+        "FAILED TO FINISH ONBOARDING:",
+        error
       );
 
       setMorphing(false);
 
       setSaveError(
         error?.message ||
-          "We couldn't save your settings. Please try again.",
+          "We couldn't save your settings. Please try again."
       );
 
       triggerHaptic("error");
@@ -650,10 +700,50 @@ export default function Onboarding() {
   };
 
   // ───────────────────────────────────────────────────────────
-  // AUTH ERROR
+  // AUTH LOADING
   // ───────────────────────────────────────────────────────────
 
-  if (!userLoading && !user) {
+  if (isLoadingAuth) {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${atmosphere.bg}`}
+      >
+        <div className="flex flex-col items-center gap-5">
+          <LivingMoon
+            isDark={
+              atmosphere.isDark
+            }
+          />
+
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
+
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce"
+              style={{
+                animationDelay:
+                  "120ms",
+              }}
+            />
+
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce"
+              style={{
+                animationDelay:
+                  "240ms",
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────
+  // NO USER
+  // ───────────────────────────────────────────────────────────
+
+  if (!user) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center px-6 ${atmosphere.bg}`}
@@ -675,8 +765,8 @@ export default function Onboarding() {
           <p
             className={`text-[13px] leading-relaxed mt-3 ${atmosphere.muted}`}
           >
-            {userError ||
-              "Please log in again to continue setting up Tawfiq."}
+            Your session could not be
+            restored. Please log in again.
           </p>
 
           <button
@@ -695,31 +785,37 @@ export default function Onboarding() {
   }
 
   // ───────────────────────────────────────────────────────────
-  // LOADING USER
+  // SETTINGS LOADING
   // ───────────────────────────────────────────────────────────
 
-  if (userLoading) {
+  if (settingsLoading) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${atmosphere.bg}`}
       >
         <div className="flex flex-col items-center gap-5">
-          <LivingMoon isDark={atmosphere.isDark} />
+          <LivingMoon
+            isDark={
+              atmosphere.isDark
+            }
+          />
 
           <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
+
             <span
-              className={`w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce`}
-            />
-            <span
-              className={`w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce`}
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce"
               style={{
-                animationDelay: "120ms",
+                animationDelay:
+                  "120ms",
               }}
             />
+
             <span
-              className={`w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce`}
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce"
               style={{
-                animationDelay: "240ms",
+                animationDelay:
+                  "240ms",
               }}
             />
           </div>
@@ -728,19 +824,19 @@ export default function Onboarding() {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────
   // UI
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────
 
   return (
     <div
       className={`relative min-h-screen flex flex-col items-center justify-center px-6 sm:px-12 transition-colors duration-[1500ms] ease-in-out ${atmosphere.bg} ${
-        morphing ? "overflow-hidden" : ""
+        morphing
+          ? "overflow-hidden"
+          : ""
       }`}
     >
-      {/* ──────────────────────────────────────────────── */}
       {/* Grain */}
-      {/* ──────────────────────────────────────────────── */}
 
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay z-0"
@@ -750,11 +846,10 @@ export default function Onboarding() {
       />
 
       {/* Ambient light */}
+
       <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-emerald-500/10 blur-[140px] rounded-full animate-[spin_25s_linear_infinite] z-0 pointer-events-none" />
 
-      {/* ──────────────────────────────────────────────── */}
       {/* Progress Header */}
-      {/* ──────────────────────────────────────────────── */}
 
       <div
         className={`fixed top-0 inset-x-0 z-40 transition-all duration-700 ${
@@ -769,7 +864,11 @@ export default function Onboarding() {
           <div
             className="h-full bg-emerald-500 transition-all duration-1000 ease-out"
             style={{
-              width: `${(step / TOTAL_STEPS) * 100}%`,
+              width: `${
+                (step /
+                  TOTAL_STEPS) *
+                100
+              }%`,
             }}
           />
         </div>
@@ -783,15 +882,14 @@ export default function Onboarding() {
             <span
               className={`text-[10px] font-bold uppercase tracking-widest ${atmosphere.text}`}
             >
-              {mockPrayer.name} in {mockPrayer.in}
+              {mockPrayer.name} in{" "}
+              {mockPrayer.in}
             </span>
           </div>
         </div>
       </div>
 
-      {/* ──────────────────────────────────────────────── */}
       {/* Main */}
-      {/* ──────────────────────────────────────────────── */}
 
       <div
         className={`w-full max-w-[340px] relative z-10 transition-all duration-[700ms] ${
@@ -800,15 +898,15 @@ export default function Onboarding() {
             : "opacity-100 scale-100"
         }`}
       >
-        {/* ══════════════════════════════════════════════ */}
         {/* STEP 0 */}
-        {/* ══════════════════════════════════════════════ */}
 
         {step === 0 && (
           <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-700">
             <div className="mb-8">
               <LivingMoon
-                isDark={atmosphere.isDark}
+                isDark={
+                  atmosphere.isDark
+                }
               />
             </div>
 
@@ -829,9 +927,11 @@ export default function Onboarding() {
             <p
               className={`text-[14px] leading-relaxed font-medium ${atmosphere.muted}`}
             >
-              Your companion for every prayer.
+              Your companion for every
+              prayer.
               <br />
-              Built to help you stay consistent.
+              Built to help you stay
+              consistent.
             </p>
 
             <button
@@ -839,14 +939,14 @@ export default function Onboarding() {
               className={`w-full mt-12 h-[56px] rounded-2xl text-[14px] font-semibold tracking-wide text-white transition-all active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300 fill-mode-both flex items-center justify-center gap-2 ${atmosphere.button}`}
             >
               Continue
-              <ChevronRight size={16} />
+              <ChevronRight
+                size={16}
+              />
             </button>
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════ */}
         {/* STEP 1 LOCATION */}
-        {/* ══════════════════════════════════════════════ */}
 
         {step === 1 && (
           <div className="flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
@@ -860,53 +960,64 @@ export default function Onboarding() {
             <h1
               className={`text-2xl font-extrabold tracking-tight mb-3 ${atmosphere.text}`}
             >
-              Prayer times depend on where you are.
+              Prayer times depend on
+              where you are.
             </h1>
 
             <p
               className={`text-[13px] font-medium mb-8 ${atmosphere.muted}`}
             >
-              We'll use your location to provide:
+              We'll use your location to
+              provide:
             </p>
 
             <div className="space-y-4 mb-10">
               {[
                 {
                   icon: Clock,
-                  title: "Accurate prayer times",
+                  title:
+                    "Accurate prayer times",
                 },
                 {
                   icon: Compass,
-                  title: "Precise Qibla direction",
+                  title:
+                    "Precise Qibla direction",
                 },
                 {
                   icon: MoonStar,
-                  title: "Local Islamic calendar",
+                  title:
+                    "Local Islamic calendar",
                 },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both"
-                  style={{
-                    animationDelay: `${i * 100}ms`,
-                  }}
-                >
+              ].map(
+                (item, i) => (
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${atmosphere.accentBg}`}
+                    key={i}
+                    className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both"
+                    style={{
+                      animationDelay: `${
+                        i * 100
+                      }ms`,
+                    }}
                   >
-                    <item.icon
-                      size={14}
-                      className={atmosphere.accent}
-                    />
-                  </div>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${atmosphere.accentBg}`}
+                    >
+                      <item.icon
+                        size={14}
+                        className={
+                          atmosphere.accent
+                        }
+                      />
+                    </div>
 
-                  <span
-                    className={`text-[14px] font-semibold ${atmosphere.text}`}
-                  >
-                    {item.title}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      className={`text-[14px] font-semibold ${atmosphere.text}`}
+                    >
+                      {item.title}
+                    </span>
+                  </div>
+                )
+              )}
             </div>
 
             {saveError && (
@@ -916,22 +1027,32 @@ export default function Onboarding() {
             )}
 
             <button
-              onClick={handleLocation}
-              disabled={locStatus !== "idle"}
+              onClick={
+                handleLocation
+              }
+              disabled={
+                locStatus !==
+                "idle"
+              }
               className={`w-full h-[56px] rounded-2xl text-[14px] font-semibold tracking-wide text-white transition-all active:scale-[0.98] disabled:opacity-90 flex items-center justify-center gap-2 ${
-                locStatus === "done"
+                locStatus ===
+                "done"
                   ? "bg-emerald-500 shadow-none"
                   : atmosphere.button
               }`}
             >
-              {locStatus === "loading" ? (
+              {locStatus ===
+              "loading" ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Locating...
                 </>
-              ) : locStatus === "done" ? (
+              ) : locStatus ===
+                "done" ? (
                 <>
-                  <Check size={18} />
+                  <Check
+                    size={18}
+                  />
                   Location Saved
                 </>
               ) : (
@@ -943,27 +1064,28 @@ export default function Onboarding() {
               onClick={nextStep}
               className={`mt-4 text-[12px] font-medium ${atmosphere.muted} transition-colors text-center w-full`}
             >
-              I'll set it manually later
+              I'll set it manually
+              later
             </button>
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════ */}
         {/* STEP 2 CALCULATION */}
-        {/* ══════════════════════════════════════════════ */}
 
         {step === 2 && (
           <div className="flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
             <h1
               className={`text-2xl font-extrabold tracking-tight mb-2 ${atmosphere.text}`}
             >
-              How should we calculate?
+              How should we
+              calculate?
             </h1>
 
             <p
               className={`text-[13px] font-medium mb-8 ${atmosphere.muted}`}
             >
-              Select the standard used in your region.
+              Select the standard used
+              in your region.
             </p>
 
             <div className="space-y-3 mb-10">
@@ -971,65 +1093,80 @@ export default function Onboarding() {
                 {
                   id: CALCULATION_METHODS.INDIA,
                   name: "Indian Timing",
-                  desc: "Karachi calculation + Hanafi Asr",
+                  desc:
+                    "Karachi calculation + Hanafi Asr",
                 },
                 {
                   id: CALCULATION_METHODS.ISNA,
                   name: "ISNA",
-                  desc: "North America",
+                  desc:
+                    "North America",
                 },
                 {
                   id: CALCULATION_METHODS.MWL,
                   name: "MWL",
-                  desc: "Europe, Far East, parts of Asia",
+                  desc:
+                    "Europe, Far East, parts of Asia",
                 },
                 {
                   id: CALCULATION_METHODS.KARACHI,
                   name: "Karachi",
-                  desc: "Pakistan, Bangladesh, India",
+                  desc:
+                    "Pakistan, Bangladesh, India",
                 },
-              ].map((method, i) => {
-                const isSelected =
-                  selectedMethod === method.id;
+              ].map(
+                (method, i) => {
+                  const isSelected =
+                    selectedMethod ===
+                    method.id;
 
-                return (
-                  <button
-                    key={`${method.name}-${method.id}`}
-                    onClick={() =>
-                      handleMethodChange(method.id)
-                    }
-                    className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both ${
-                      isSelected
-                        ? `border-emerald-500 ${atmosphere.accentBg} ring-1 ring-emerald-500/50 scale-[1.02]`
-                        : `${atmosphere.borderColor} ${atmosphere.cardBg}`
-                    }`}
-                    style={{
-                      animationDelay: `${i * 100}ms`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`text-[15px] font-bold ${atmosphere.text}`}
-                      >
-                        {method.name}
-                      </span>
-
-                      {isSelected && (
-                        <CheckCircle2
-                          size={18}
-                          className="text-emerald-600 animate-in zoom-in"
-                        />
-                      )}
-                    </div>
-
-                    <span
-                      className={`text-[12px] font-medium mt-1 block ${atmosphere.muted}`}
+                  return (
+                    <button
+                      key={`${method.name}-${method.id}`}
+                      onClick={() =>
+                        handleMethodChange(
+                          method.id
+                        )
+                      }
+                      className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both ${
+                        isSelected
+                          ? `border-emerald-500 ${atmosphere.accentBg} ring-1 ring-emerald-500/50 scale-[1.02]`
+                          : `${atmosphere.borderColor} ${atmosphere.cardBg}`
+                      }`}
+                      style={{
+                        animationDelay: `${
+                          i * 100
+                        }ms`,
+                      }}
                     >
-                      {method.desc}
-                    </span>
-                  </button>
-                );
-              })}
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-[15px] font-bold ${atmosphere.text}`}
+                        >
+                          {
+                            method.name
+                          }
+                        </span>
+
+                        {isSelected && (
+                          <CheckCircle2
+                            size={18}
+                            className="text-emerald-600 animate-in zoom-in"
+                          />
+                        )}
+                      </div>
+
+                      <span
+                        className={`text-[12px] font-medium mt-1 block ${atmosphere.muted}`}
+                      >
+                        {
+                          method.desc
+                        }
+                      </span>
+                    </button>
+                  );
+                }
+              )}
             </div>
 
             <button
@@ -1037,14 +1174,14 @@ export default function Onboarding() {
               className={`w-full h-[56px] rounded-2xl text-[14px] font-semibold tracking-wide text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${atmosphere.button}`}
             >
               Continue
-              <ChevronRight size={16} />
+              <ChevronRight
+                size={16}
+              />
             </button>
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════ */}
         {/* STEP 3 NOTIFICATIONS */}
-        {/* ══════════════════════════════════════════════ */}
 
         {step === 3 && (
           <div className="flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
@@ -1064,7 +1201,8 @@ export default function Onboarding() {
             <p
               className={`text-[13px] font-medium mb-8 ${atmosphere.muted}`}
             >
-              We'll gently remind you before the window closes.
+              We'll gently remind you
+              before the window closes.
             </p>
 
             <div
@@ -1074,7 +1212,9 @@ export default function Onboarding() {
                 <div className="flex items-center gap-1.5">
                   <MoonStar
                     size={12}
-                    className={atmosphere.accent}
+                    className={
+                      atmosphere.accent
+                    }
                   />
 
                   <span
@@ -1094,13 +1234,15 @@ export default function Onboarding() {
               <p
                 className={`text-[14px] font-bold ${atmosphere.text}`}
               >
-                Maghrib begins in 15 minutes.
+                Maghrib begins in 15
+                minutes.
               </p>
 
               <p
                 className={`text-[13px] font-medium mt-0.5 ${atmosphere.muted}`}
               >
-                Take a moment to prepare.
+                Take a moment to
+                prepare.
               </p>
             </div>
 
@@ -1111,22 +1253,32 @@ export default function Onboarding() {
             )}
 
             <button
-              onClick={handleNotifications}
-              disabled={notifStatus !== "idle"}
+              onClick={
+                handleNotifications
+              }
+              disabled={
+                notifStatus !==
+                "idle"
+              }
               className={`w-full h-[56px] rounded-2xl text-[14px] font-semibold tracking-wide text-white transition-all active:scale-[0.98] disabled:opacity-90 flex items-center justify-center gap-2 ${
-                notifStatus === "done"
+                notifStatus ===
+                "done"
                   ? "bg-emerald-500 shadow-none"
                   : atmosphere.button
               }`}
             >
-              {notifStatus === "loading" ? (
+              {notifStatus ===
+              "loading" ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Enabling...
                 </>
-              ) : notifStatus === "done" ? (
+              ) : notifStatus ===
+                "done" ? (
                 <>
-                  <Check size={18} />
+                  <Check
+                    size={18}
+                  />
                   Reminders On
                 </>
               ) : (
@@ -1143,9 +1295,7 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════ */}
         {/* STEP 4 GOALS */}
-        {/* ══════════════════════════════════════════════ */}
 
         {step === 4 && (
           <div className="flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
@@ -1158,8 +1308,9 @@ export default function Onboarding() {
             <p
               className={`text-[13px] font-medium mb-6 ${atmosphere.muted}`}
             >
-              We'll personalize your dashboard based on what you want to
-              achieve.
+              We'll personalize your
+              dashboard based on what
+              you want to achieve.
             </p>
 
             <div className="space-y-3 mb-8">
@@ -1167,60 +1318,75 @@ export default function Onboarding() {
                 {
                   id: "fajr",
                   icon: Sunrise,
-                  text: "Wake up for Fajr consistently.",
+                  text:
+                    "Wake up for Fajr consistently.",
                 },
                 {
                   id: "qaza",
                   icon: TrendingUp,
-                  text: "Reduce my missed prayers.",
+                  text:
+                    "Reduce my missed prayers.",
                 },
                 {
                   id: "jamaah",
                   icon: Users,
-                  text: "Pray more in congregation.",
+                  text:
+                    "Pray more in congregation.",
                 },
-              ].map((goal, i) => {
-                const isActive =
-                  selectedGoals.includes(goal.id);
+              ].map(
+                (goal, i) => {
+                  const isActive =
+                    selectedGoals.includes(
+                      goal.id
+                    );
 
-                return (
-                  <button
-                    key={goal.id}
-                    onClick={() =>
-                      toggleGoal(goal.id)
-                    }
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both ${
-                      isActive
-                        ? `border-emerald-500 ${atmosphere.accentBg} ring-1 ring-emerald-500/50 scale-[1.02]`
-                        : `${atmosphere.borderColor} ${atmosphere.cardBg}`
-                    }`}
-                    style={{
-                      animationDelay: `${i * 100}ms`,
-                    }}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  return (
+                    <button
+                      key={goal.id}
+                      onClick={() =>
+                        toggleGoal(
+                          goal.id
+                        )
+                      }
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both ${
                         isActive
-                          ? "bg-emerald-500 text-white"
-                          : `${atmosphere.accentBg} ${atmosphere.accent}`
+                          ? `border-emerald-500 ${atmosphere.accentBg} ring-1 ring-emerald-500/50 scale-[1.02]`
+                          : `${atmosphere.borderColor} ${atmosphere.cardBg}`
                       }`}
+                      style={{
+                        animationDelay: `${
+                          i * 100
+                        }ms`,
+                      }}
                     >
-                      <goal.icon
-                        size={18}
-                        strokeWidth={
-                          isActive ? 2.5 : 2
-                        }
-                      />
-                    </div>
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                          isActive
+                            ? "bg-emerald-500 text-white"
+                            : `${atmosphere.accentBg} ${atmosphere.accent}`
+                        }`}
+                      >
+                        <goal.icon
+                          size={18}
+                          strokeWidth={
+                            isActive
+                              ? 2.5
+                              : 2
+                          }
+                        />
+                      </div>
 
-                    <span
-                      className={`text-[14px] font-semibold text-left ${atmosphere.text}`}
-                    >
-                      {goal.text}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span
+                        className={`text-[14px] font-semibold text-left ${atmosphere.text}`}
+                      >
+                        {
+                          goal.text
+                        }
+                      </span>
+                    </button>
+                  );
+                }
+              )}
             </div>
 
             <button
@@ -1228,14 +1394,14 @@ export default function Onboarding() {
               className={`w-full h-[56px] rounded-2xl text-[14px] font-semibold tracking-wide text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${atmosphere.button}`}
             >
               Continue
-              <ChevronRight size={16} />
+              <ChevronRight
+                size={16}
+              />
             </button>
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════ */}
         {/* STEP 5 FINISH */}
-        {/* ══════════════════════════════════════════════ */}
 
         {step === 5 && (
           <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-700">
@@ -1255,7 +1421,9 @@ export default function Onboarding() {
             <p
               className={`text-[14px] font-medium leading-relaxed ${atmosphere.muted}`}
             >
-              May Allah grant you consistency and accept your worship.
+              May Allah grant you
+              consistency and accept
+              your worship.
             </p>
 
             <div
@@ -1271,13 +1439,18 @@ export default function Onboarding() {
                 <span
                   className={`text-2xl font-black tracking-tight ${atmosphere.text} mb-1`}
                 >
-                  {mockPrayer.name}
+                  {
+                    mockPrayer.name
+                  }
                 </span>
 
                 <span
                   className={`text-sm font-semibold ${atmosphere.accent}`}
                 >
-                  Starts in {mockPrayer.in}
+                  Starts in{" "}
+                  {
+                    mockPrayer.in
+                  }
                 </span>
               </div>
             </div>
@@ -1306,9 +1479,7 @@ export default function Onboarding() {
         )}
       </div>
 
-      {/* ═════════════════════════════════════════════════════ */}
       {/* PREMIUM TRANSITION */}
-      {/* ═════════════════════════════════════════════════════ */}
 
       {morphing && (
         <div
@@ -1317,7 +1488,6 @@ export default function Onboarding() {
           <div className="absolute top-[10%] right-[10%] w-[60%] h-[60%] bg-emerald-500/10 blur-[120px] rounded-full animate-[spin_10s_linear_infinite] pointer-events-none" />
 
           <div className="relative flex flex-col items-center gap-8 animate-in slide-in-from-bottom-4 fade-in duration-1000 delay-300 fill-mode-both">
-            {/* Astrolabe */}
             <div className="relative flex items-center justify-center w-36 h-36">
               <div className="absolute inset-0 rounded-full border border-emerald-500/20" />
 
@@ -1333,7 +1503,9 @@ export default function Onboarding() {
 
               <div className="relative z-10 scale-125">
                 <LivingMoon
-                  isDark={atmosphere.isDark}
+                  isDark={
+                    atmosphere.isDark
+                  }
                 />
               </div>
             </div>
@@ -1346,9 +1518,7 @@ export default function Onboarding() {
               </h2>
 
               <div className="flex items-center gap-2 mt-1">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping`}
-                />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
 
                 <span
                   className={`text-[10px] uppercase tracking-[0.3em] font-bold ${atmosphere.muted}`}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, memo } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Compass } from "lucide-react";
-import { CALCULATION_METHODS } from "@/lib/prayerUtils";
+import { CALCULATION_METHODS } from "@/lib/prayerUtils"; // Ensure path is correct
 
 function parseTimeToDate(timeStr) {
   if (!timeStr) return null;
@@ -84,6 +84,7 @@ const NextPrayerHero = memo(function NextPrayerHero({
   const methodName =
     CALCULATION_METHODS.find((m) => m.id === calcMethod)?.name ||
     "Standard Method";
+    
   const bgUrl =
     "https://images.unsplash.com/photo-1512632578888-169bbbc64f33?w=1800&q=80&auto=format&fit=crop";
 
@@ -112,7 +113,6 @@ const NextPrayerHero = memo(function NextPrayerHero({
       className="relative overflow-hidden rounded-3xl shadow-2xl border border-white/10 ring-1 ring-white/10"
       style={{ minHeight: 220 }}
     >
-      {/* Background image — decorative, generic Islamic architecture (not tied to a specific named institution) */}
       <div
         className="absolute inset-0 bg-cover bg-center scale-110"
         style={{
@@ -121,13 +121,10 @@ const NextPrayerHero = memo(function NextPrayerHero({
           animation: "heroZoom 35s ease-in-out infinite alternate",
         }}
       />
-      {/* Guaranteed-contrast overlay — works regardless of photo brightness */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/35" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
 
-      {/* Content */}
       <div className="relative px-5 pt-5 pb-5 flex flex-col gap-5">
-        {/* Top row: status only */}
         <div className="flex items-center justify-between">
           {st ? (
             <span
@@ -143,7 +140,6 @@ const NextPrayerHero = memo(function NextPrayerHero({
           )}
         </div>
 
-        {/* Prayer name + time — single hero focal point, aligned baseline */}
         <div className="space-y-2">
           <div className="flex items-end gap-3">
             <p className="text-5xl font-extrabold tracking-tight text-white leading-[0.9]">
@@ -154,14 +150,15 @@ const NextPrayerHero = memo(function NextPrayerHero({
             </p>
           </div>
           {rawTimings && (
-            <p className="flex items-center gap-1.5 text-[11px] text-white/50 font-medium">
-              <Compass size={11} />
-              {methodName}
-            </p>
+            <div className="flex flex-col">
+              <p className="flex items-center gap-1.5 text-[12px] text-white/70 font-medium">
+                <Compass size={12} />
+                {methodName}
+              </p>
+            </div>
           )}
         </div>
 
-        {/* Countdown */}
         {next && (
           <div className="flex items-center gap-2">
             {[
@@ -188,7 +185,6 @@ const NextPrayerHero = memo(function NextPrayerHero({
           </div>
         )}
 
-        {/* Quick actions */}
         <div className="flex items-center gap-2">
           <button
             onClick={onQiblaOpen}
