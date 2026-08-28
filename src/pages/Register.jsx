@@ -16,7 +16,6 @@ import { supabase } from "@/lib/supabase";
 // ─────────────────────────────────────────────────────────────
 
 const getAtmosphere = (hour) => {
-  // Softened button shadows for a calmer, less "SaaS" look
   if (hour >= 4 && hour < 7) {
     return {
       bg: "bg-gradient-to-br from-[#ecfdf5] via-[#f0fdf4] to-[#ffffff]",
@@ -198,6 +197,7 @@ export default function Register() {
 
   const [shake, setShake] = useState(false);
   const [morphing, setMorphing] = useState(false);
+  const [registerSuccess, setRegisterSuccess] = useState(false);
 
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -353,11 +353,16 @@ export default function Register() {
 
       triggerHaptic("success");
       setLoading(false);
+      
+      // Trigger the success gap/overlay
+      setRegisterSuccess(true);
       setMorphing(true);
 
+      // Give the user 2 seconds to see the success message before redirecting
       setTimeout(() => {
         navigate("/login");
-      }, 800);
+      }, 2000);
+      
     } catch (err) {
       console.error("Registration error:", err);
       triggerHaptic("error");
@@ -737,8 +742,14 @@ export default function Register() {
             <div className="flex flex-col items-center gap-2.5">
               <h2 className={`text-2xl font-arabic tracking-widest ${atmosphere.text}`}>بِسْمِ اللَّهِ</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                <span className={`text-[10px] uppercase tracking-[0.3em] font-bold ${atmosphere.muted}`}>Creating your account</span>
+                {registerSuccess ? (
+                  <Check size={14} className="text-emerald-500" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                )}
+                <span className={`text-[10px] uppercase tracking-[0.3em] font-bold ${atmosphere.muted}`}>
+                  {registerSuccess ? "Account successfully created" : "Creating your account"}
+                </span>
               </div>
             </div>
           </div>
