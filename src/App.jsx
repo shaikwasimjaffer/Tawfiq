@@ -1,233 +1,128 @@
-import { Toaster } from "@/components/ui/toaster";
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
+import { AuthProvider } from "@/lib/AuthContext";
+import ScrollToTop from "@/components/ScrollToTop";
+import { Toaster } from "@/components/ui/sonner";
 
-import {
-  Route,
-  Routes,
-  Navigate,
-  BrowserRouter,
-} from "react-router-dom";
+import AppLayout from "@/components/AppLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import PrayerDashboard from "@/pages/PrayerDashboard";
+import QuranApp from "@/pages/QuranApp";
+import QazaApp from "@/pages/QazaApp";
+import LearnApp from "@/pages/LearnApp";
+import MentorApp from "@/pages/MentorApp";
+import QiblaApp from "@/pages/QiblaApp";
 
-import { useEffect } from "react";
+import Home from "@/pages/Home";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import OAuthCallback from "@/pages/OAuthCallback";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
+import PageNotFound from "@/lib/PageNotFound";
 
-// Pages
-import Dhikr from "./pages/Dhikr";
-import Today from "./pages/Today";
-import Qaza from "./pages/Qaza";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import LoadingScreen from "./pages/LoadingScreen";
-import TawfiqTV from "./pages/TawfiqTV";
-import Onboarding from "./pages/Onboarding";
-import Quran from "./pages/Quran";
-import Sawm from "./pages/Sawm";
-import Learn from "./pages/Learn";
-import Login from "./pages/Login";
-import Settings from "./pages/Settings";
-
-import PageNotFound from "./lib/PageNotFound";
-
-// Notifications
-import {
-  requestNotificationPermission,
-  startPrayerReminder,
-} from "@/utils/notificationScheduler";
-
-// Auth
-import { AuthProvider, useAuth } from "@/lib/AuthContext";
-
-import UserNotRegisteredError from "@/components/UserNotRegisteredError";
-
-// ─────────────────────────────────────────────────────────────
-// Authenticated App
-// ─────────────────────────────────────────────────────────────
-
-const AuthenticatedApp = () => {
-  const {
-    isLoadingAuth,
-    isLoadingPublicSettings,
-    authError,
-    navigateToLogin,
-  } = useAuth();
-
-  // ───────────────────────────────────────────────────────────
-  // Authentication Loading
-  // ───────────────────────────────────────────────────────────
-
-  if (
-    isLoadingPublicSettings ||
-    isLoadingAuth
-  ) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // ───────────────────────────────────────────────────────────
-  // Authentication Errors
-  // ───────────────────────────────────────────────────────────
-
-  if (authError) {
-    if (
-      authError.type === "user_not_registered"
-    ) {
-      return <UserNotRegisteredError />;
-    }
-
-    if (
-      authError.type === "auth_required"
-    ) {
-      navigateToLogin();
-      return null;
-    }
-  }
-
-  // ───────────────────────────────────────────────────────────
-  // Routes
-  // ───────────────────────────────────────────────────────────
-
+export default function App() {
   return (
-    <Routes>
-
-      {/* Root */}
-      <Route
-        path="/"
-        element={
-          <Navigate
-            to="/today"
-            replace
-          />
-        }
-      />
-
-      {/* ─────────────────────────────────────────────── */}
-      {/* Authentication */}
-      {/* ─────────────────────────────────────────────── */}
-
-      <Route
-        path="/register"
-        element={<Register />}
-      />
-
-      <Route
-        path="/login"
-        element={<Login />}
-      />
-
-      <Route
-        path="/forgot-password"
-        element={<ForgotPassword />}
-      />
-
-      {/* Password recovery */}
-      <Route
-        path="/reset-password"
-        element={<ResetPassword />}
-      />
-
-      {/* ─────────────────────────────────────────────── */}
-      {/* Onboarding */}
-      {/* ─────────────────────────────────────────────── */}
-
-      <Route
-        path="/onboarding"
-        element={<Onboarding />}
-      />
-
-      {/* ─────────────────────────────────────────────── */}
-      {/* Loading */}
-      {/* ─────────────────────────────────────────────── */}
-
-      <Route
-        path="/loading"
-        element={<LoadingScreen />}
-      />
-
-      {/* ─────────────────────────────────────────────── */}
-      {/* Main App */}
-      {/* ─────────────────────────────────────────────── */}
-
-      <Route
-        path="/today"
-        element={<Today />}
-      />
-
-      <Route
-        path="/quran"
-        element={<Quran />}
-      />
-
-      <Route
-        path="/learn"
-        element={<Learn />}
-      />
-
-      <Route
-        path="/tv"
-        element={<TawfiqTV />}
-      />
-
-      <Route
-        path="/qaza"
-        element={<Qaza />}
-      />
-
-      <Route
-        path="/sawm"
-        element={<Sawm />}
-      />
-
-      <Route
-        path="/dhikr"
-        element={<Dhikr />}
-      />
-
-      {/* ─────────────────────────────────────────────── */}
-      {/* Settings */}
-      {/* ─────────────────────────────────────────────── */}
-
-      <Route
-        path="/settings"
-        element={<Settings />}
-      />
-
-      {/* ─────────────────────────────────────────────── */}
-      {/* 404 */}
-      {/* ─────────────────────────────────────────────── */}
-
-      <Route
-        path="*"
-        element={<PageNotFound />}
-      />
-
-    </Routes>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────
-// App
-// ─────────────────────────────────────────────────────────────
-
-function App() {
-  useEffect(() => {
-    requestNotificationPermission();
-    startPrayerReminder();
-  }, []);
-
-  return (
-    <BrowserRouter>
+    <QueryClientProvider client={queryClientInstance}>
       <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <AuthenticatedApp />
-          <Toaster />
-        </QueryClientProvider>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <ScrollToTop />
+          <Routes>
+            {/* Authenticated Application Vault (Guarded: Must sign in to access) */}
+            <Route
+              element={
+                <ProtectedRoute
+                  unauthenticatedElement={<Navigate to="/login" replace />}
+                />
+              }
+            >
+              <Route element={<AppLayout />}>
+                <Route
+                  path="/"
+                  element={
+                    <div className="section-content-fade">
+                      <PrayerDashboard />
+                    </div>
+                  }
+                />
+                <Route
+                  path="/prayers"
+                  element={
+                    <div className="section-content-fade">
+                      <PrayerDashboard />
+                    </div>
+                  }
+                />
+                <Route
+                  path="/quran"
+                  element={
+                    <div className="section-content-fade">
+                      <QuranApp />
+                    </div>
+                  }
+                />
+                <Route
+                  path="/qaza"
+                  element={
+                    <div className="section-content-fade">
+                      <QazaApp />
+                    </div>
+                  }
+                />
+                <Route
+                  path="/learn"
+                  element={
+                    <div className="section-content-fade">
+                      <LearnApp />
+                    </div>
+                  }
+                />
+                <Route
+                  path="/mentor"
+                  element={
+                    <div className="mentor-screen-enter">
+                      <MentorApp />
+                    </div>
+                  }
+                />
+                <Route
+                  path="/qibla"
+                  element={
+                    <div className="section-content-fade">
+                      <QiblaApp />
+                    </div>
+                  }
+                />
+              </Route>
+            </Route>
+
+            {/* Public Marketing & Informational Website */}
+            <Route path="/website" element={<Home />} />
+
+            {/* Public Authentication Flows */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/callback" element={<OAuthCallback />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+
+            {/* Fallback */}
+            <Route path="*" element={<PageNotFound />} />
+          </Routes>
+          <Toaster position="bottom-right" />
+        </BrowserRouter>
       </AuthProvider>
-    </BrowserRouter>
+    </QueryClientProvider>
   );
 }
-
-export default App;

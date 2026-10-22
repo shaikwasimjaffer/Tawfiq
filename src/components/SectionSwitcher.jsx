@@ -1,70 +1,26 @@
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import React from "react";
 
-export default function SectionSwitcher({ tabs, active, onChange }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  const activeTab = tabs.find((t) => (t.id ?? t) === active);
-  const activeLabel = activeTab?.label ?? activeTab ?? active;
-
-  useEffect(() => {
-    if (!open) return;
-    function onClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("touchstart", onClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("touchstart", onClickOutside);
-    };
-  }, [open]);
-
-  function select(id) {
-    onChange(id);
-    setOpen(false);
-  }
-
+export default function SectionSwitcher({ tabs = [], active, onChange }) {
   return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 bg-secondary border border-border rounded-xl px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors active:scale-95"
-      >
-        <span>{activeLabel}</span>
-        <ChevronDown
-          size={14}
-          className={`text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
+    <div className="flex items-center p-1 bg-stone-200/60 dark:bg-stone-800/60 rounded-xl">
+      {tabs.map((tab) => {
+        const id = typeof tab === "string" ? tab : tab.id;
+        const label = typeof tab === "string" ? tab : tab.label;
+        const isActive = active === id;
 
-      <div
-        className={`absolute top-full left-0 mt-1.5 z-50 bg-card border border-border rounded-2xl shadow-lg overflow-hidden min-w-[160px] origin-top-left transition-all duration-200 transform ${
-          open
-            ? "opacity-100 scale-100 translate-y-0 visible"
-            : "opacity-0 scale-95 -translate-y-2 invisible pointer-events-none"
-        }`}
-      >
-        {tabs.map((tab) => {
-          const id = tab.id ?? tab;
-          const label = tab.label ?? tab;
-          const isActive = id === active;
-          return (
-            <button
-              key={id}
-              onClick={() => select(id)}
-              className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-foreground hover:bg-secondary"
+        return (
+          <button
+            key={id}
+            onClick={() => onChange(id)}
+            className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-lg transition-all duration-200 ${isActive
+                ? "bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 shadow-sm"
+                : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
               }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

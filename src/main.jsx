@@ -1,14 +1,17 @@
-  import React from "react";
-  import ReactDOM from "react-dom/client";
-  import App from "./App.jsx";
-  import "./index.css";
+import "./disableBase44Analytics";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
 
-  import { supabase } from "./lib/supabase";
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
 
-  console.log("Supabase Client:", supabase);
-
-  ReactDOM.createRoot(document.getElementById("root")).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-  );
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

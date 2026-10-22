@@ -1,760 +1,496 @@
-import React, { useState, useEffect, useMemo, memo } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import {
+  User,
+  Mail,
+  Lock,
   Eye,
   EyeOff,
-  Sparkles,
-  Clock,
+  Loader2,
+  ArrowRight,
+  CheckCircle2,
   Check,
-  Circle,
-  ArrowLeft,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-// ─────────────────────────────────────────────────────────────
-// Green Atmosphere
-// ─────────────────────────────────────────────────────────────
-
-const getAtmosphere = (hour) => {
-  if (hour >= 4 && hour < 7) {
-    return {
-      bg: "bg-gradient-to-br from-[#ecfdf5] via-[#f0fdf4] to-[#ffffff]",
-      text: "text-emerald-950",
-      muted: "text-emerald-700/60",
-      accent: "text-emerald-600",
-      peerFocusAccent: "peer-focus:text-emerald-600",
-      accentBg: "bg-emerald-600/10",
-      borderColor: "border-emerald-900/10",
-      button: "bg-emerald-600 hover:bg-emerald-500 shadow-sm",
-      inputBg: "bg-emerald-900/[0.02]",
-      focusRing: "focus:ring-emerald-500/20 focus:border-emerald-500/30",
-      isDark: false,
-    };
-  }
-
-  if (hour >= 7 && hour < 18) {
-    return {
-      bg: "bg-gradient-to-br from-[#f0fdf4] via-[#ffffff] to-[#ecfdf5]",
-      text: "text-emerald-950",
-      muted: "text-emerald-700/60",
-      accent: "text-emerald-600",
-      peerFocusAccent: "peer-focus:text-emerald-600",
-      accentBg: "bg-emerald-600/10",
-      borderColor: "border-emerald-900/10",
-      button: "bg-emerald-600 hover:bg-emerald-500 shadow-sm",
-      inputBg: "bg-emerald-900/[0.02]",
-      focusRing: "focus:ring-emerald-500/20 focus:border-emerald-500/30",
-      isDark: false,
-    };
-  }
-
-  if (hour >= 18 && hour < 20) {
-    return {
-      bg: "bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857]",
-      text: "text-emerald-50",
-      muted: "text-emerald-200/60",
-      accent: "text-emerald-400",
-      peerFocusAccent: "peer-focus:text-emerald-400",
-      accentBg: "bg-emerald-400/10",
-      borderColor: "border-emerald-100/10",
-      button: "bg-emerald-500 hover:bg-emerald-400 shadow-sm",
-      inputBg: "bg-white/[0.04]",
-      focusRing: "focus:ring-emerald-400/20 focus:border-emerald-400/30",
-      isDark: true,
-    };
-  }
-
-  return {
-    bg: "bg-gradient-to-br from-[#022c22] via-[#014737] to-[#020617]",
-    text: "text-emerald-50",
-    muted: "text-emerald-200/50",
-    accent: "text-emerald-400",
-    peerFocusAccent: "peer-focus:text-emerald-400",
-    accentBg: "bg-emerald-400/10",
-    borderColor: "border-emerald-100/10",
-    button: "bg-emerald-600 hover:bg-emerald-500 shadow-sm",
-    inputBg: "bg-white/[0.03]",
-    focusRing: "focus:ring-emerald-500/20 focus:border-emerald-500/30",
-    isDark: true,
-  };
-};
-
-// ─────────────────────────────────────────────────────────────
-// Haptics
-// ─────────────────────────────────────────────────────────────
-
-const triggerHaptic = (type = "light") => {
-  if (typeof navigator === "undefined" || !navigator.vibrate) return;
-
-  if (type === "light") navigator.vibrate(10);
-  if (type === "medium") navigator.vibrate(25);
-  if (type === "success") navigator.vibrate([20, 40, 20]);
-  if (type === "error") navigator.vibrate([30, 50, 30, 50, 30]);
-};
-
-// ─────────────────────────────────────────────────────────────
-// Living Moon
-// ─────────────────────────────────────────────────────────────
-
-const LivingMoon = memo(({ isDark, isFriday }) => {
-  return (
-    <div className="relative flex items-center justify-center w-16 h-16 animate-float">
-      <div
-        className={`absolute inset-0 rounded-full blur-[20px] opacity-70 animate-[pulse_4s_ease-in-out_infinite] ${
-          isDark ? "bg-emerald-400/20" : "bg-emerald-500/20"
-        }`}
-      />
-
-      <svg
-        className={`relative w-9 h-9 transition-transform duration-[1200ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] animate-in fade-in zoom-in rotate-[15deg] ${
-          isDark
-            ? "text-emerald-100 drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]"
-            : "text-emerald-600 drop-shadow-[0_0_12px_rgba(5,150,105,0.2)]"
-        }`}
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        stroke="none"
-      >
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-      </svg>
-
-      {isFriday && (
-        <Sparkles
-          className={`absolute top-1 right-2 w-3 h-3 animate-[pulse_3s_ease-in-out_infinite] ${
-            isDark ? "text-emerald-300" : "text-emerald-500"
-          }`}
-        />
-      )}
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────
-// Password Requirement
-// ─────────────────────────────────────────────────────────────
-
-const PasswordRequirement = ({ met, children, isDark }) => {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div
-        className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-          met
-            ? "bg-emerald-500 text-white scale-100"
-            : isDark
-            ? "border border-emerald-100/20 text-emerald-100/30"
-            : "border border-emerald-900/15 text-emerald-700/30"
-        }`}
-      >
-        {met ? (
-          <Check size={10} strokeWidth={3} />
-        ) : (
-          <Circle size={5} fill="currentColor" strokeWidth={0} />
-        )}
-      </div>
-
-      <span
-        className={`text-[11px] font-medium transition-colors duration-300 ${
-          met
-            ? isDark
-              ? "text-emerald-300"
-              : "text-emerald-600"
-            : isDark
-            ? "text-emerald-100/50"
-            : "text-emerald-700/50"
-        }`}
-      >
-        {children}
-      </span>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────
-// Register
-// ─────────────────────────────────────────────────────────────
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import AuthLayout from "@/components/AuthLayout";
+import GoogleIcon from "@/components/GoogleIcon";
+import { toast } from "sonner";
 
 export default function Register() {
   const navigate = useNavigate();
-
-  const [now, setNow] = useState(new Date());
-
-  const hour = now.getHours();
-  const isFriday = now.getDay() === 5;
-
-  const atmosphere = useMemo(() => getAtmosphere(hour), [hour]);
-
-  // Layout State
-  const [showEmailForm, setShowEmailForm] = useState(false);
+  const { checkUserAuth } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const [shake, setShake] = useState(false);
-  const [morphing, setMorphing] = useState(false);
-  const [registerSuccess, setRegisterSuccess] = useState(false);
+  // OTP Verification state if provider requires confirmation
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [resending, setResending] = useState(false);
 
-  const [nameError, setNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-
-  const ambientTime = now.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-  // ───────────────────────────────────────────────────────────
-  // Clock
-  // ───────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // ───────────────────────────────────────────────────────────
-  // Password Requirements
-  // ───────────────────────────────────────────────────────────
-
-  const passwordRequirements = useMemo(
-    () => ({
-      length: password.length >= 8,
-      number: /\d/.test(password),
-      special: /[^A-Za-z0-9]/.test(password),
-    }),
-    [password]
-  );
-
-  const isPasswordValid =
-    passwordRequirements.length &&
-    passwordRequirements.number &&
-    passwordRequirements.special;
-
-  // ───────────────────────────────────────────────────────────
-  // Validation
-  // ───────────────────────────────────────────────────────────
-
-  const validateEmail = (value) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(value);
-  };
-
-  const validatePassword = (value) => {
-    return (
-      value.length >= 8 && /\d/.test(value) && /[^A-Za-z0-9]/.test(value)
-    );
-  };
-
-  const validateName = (value) => {
-    return value.trim().length >= 2;
-  };
-
-  const isFormValid = validateName(name) && validateEmail(email) && isPasswordValid;
-
-  // ───────────────────────────────────────────────────────────
-  // Create User Settings
-  // ───────────────────────────────────────────────────────────
-
-  const createUserSettings = async (userId) => {
-    if (!userId) return;
-
-    const { data: existingSettings, error: fetchError } = await supabase
-      .from("user_settings")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error("Could not check user settings:", fetchError);
-      return;
+  const validateInputs = () => {
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setError("Please enter your email address.");
+      return false;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+    if (!password) {
+      setError("Please choose a password.");
+      return false;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return false;
+    }
+    return true;
+  };
 
-    if (existingSettings) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
 
-    const { error: insertError } = await supabase
-      .from("user_settings")
-      .insert({
-        user_id: userId,
-        onboarding_done: false,
-        primary_goals: [],
+    if (!validateInputs()) return;
+
+    setLoading(true);
+    try {
+      const cleanEmail = email.trim();
+      const cleanName =
+        name.trim() ||
+        cleanEmail
+          .split("@")[0]
+          .replace(/[._-]/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+
+      const res = await base44.auth.register({
+        email: cleanEmail,
+        password,
+        name: cleanName,
       });
 
-    if (insertError) {
-      console.error("Could not create user settings:", insertError);
+      // If backend provider requires email confirmation via OTP
+      if (res?.requiresOtp || res?.status === "verification_required") {
+        setShowOtp(true);
+        toast.info("Verification code sent to your email.");
+      } else {
+        // Successful registration and automatic session creation
+        await base44.auth.loginViaEmailPassword(cleanEmail, password);
+        await checkUserAuth();
+        toast.success("Account created successfully. Welcome to Tawfiq!");
+        navigate("/", { replace: true });
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Registration failed. Please check your details and try again.";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ───────────────────────────────────────────────────────────
-  // Email / Password Registration
-  // ───────────────────────────────────────────────────────────
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    setError("");
 
-  const handleRegister = async () => {
-    triggerHaptic("medium");
-
-    let isValid = true;
-
-    if (!validateName(name)) {
-      setNameError("Name must be at least 2 characters");
-      isValid = false;
-    } else {
-      setNameError("");
-    }
-
-    if (!validateEmail(email)) {
-      setEmailError("Please enter a valid email");
-      isValid = false;
-    } else {
-      setEmailError("");
-    }
-
-    if (!validatePassword(password)) {
-      setPasswordError("Password does not meet all requirements");
-      isValid = false;
-    } else {
-      setPasswordError("");
-    }
-
-    if (!isValid) {
-      triggerHaptic("error");
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
+    if (!otpCode || otpCode.length < 6) {
+      setError("Please enter the complete 6-digit verification code.");
       return;
     }
 
     setLoading(true);
-
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            name: name.trim(),
-          },
-        },
+      const result = await base44.auth.verifyOtp({
+        email: email.trim(),
+        otpCode,
       });
 
-      if (error) throw error;
-      if (!data.user) throw new Error("Account could not be created.");
-
-      localStorage.setItem("remember_email", email.trim().toLowerCase());
-
-      if (data.session) {
-        await createUserSettings(data.user.id);
+      if (result?.access_token) {
+        base44.auth.setToken(result.access_token);
       }
-
-      triggerHaptic("success");
-      setLoading(false);
-      
-      // Trigger the success gap/overlay
-      setRegisterSuccess(true);
-      setMorphing(true);
-
-      // Give the user 2 seconds to see the success message before redirecting
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
-      
+      await checkUserAuth();
+      toast.success("Email verified! Welcome to Tawfiq.");
+      navigate("/", { replace: true });
     } catch (err) {
-      console.error("Registration error:", err);
-      triggerHaptic("error");
+      setError(err?.message || "Invalid or expired verification code.");
+    } finally {
       setLoading(false);
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-
-      const message = err?.message?.toLowerCase() || "";
-
-      if (
-        message.includes("already registered") ||
-        message.includes("already been registered")
-      ) {
-        setEmailError("An account with this email already exists.");
-      } else if (message.includes("password")) {
-        setPasswordError(err.message);
-      } else {
-        setEmailError(err?.message || "Registration failed. Please try again.");
-      }
     }
   };
 
-  // ───────────────────────────────────────────────────────────
-  // GOOGLE SIGN IN
-  // ───────────────────────────────────────────────────────────
+  const handleResendOtp = async () => {
+    setError("");
+    setResending(true);
+    try {
+      await base44.auth.resendOtp(email.trim());
+      toast.success("A new 6-digit code has been sent to your email.");
+    } catch (err) {
+      setError(err?.message || "Could not resend verification code.");
+    } finally {
+      setResending(false);
+    }
+  };
 
-  const handleGoogleSignIn = async () => {
-    if (loading || googleLoading || morphing) return;
-
-    triggerHaptic("medium");
+  const handleGoogle = () => {
+    setError("");
     setGoogleLoading(true);
-    setEmailError("");
-    setPasswordError("");
-
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/onboarding`,
-        },
-      });
-
-      if (error) throw error;
+      base44.auth.loginWithProvider("google", "/");
     } catch (err) {
-      console.error("Google sign-in error:", err);
-      triggerHaptic("error");
       setGoogleLoading(false);
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-      setEmailError(err?.message || "Unable to continue with Google. Please try again.");
+      // Honest notification of OAuth setup status
+      setError(
+        err?.message ||
+          "Google Sign-In is not currently available for this deployment. Please register with your email."
+      );
     }
   };
 
-  // ───────────────────────────────────────────────────────────
-  // UI
-  // ───────────────────────────────────────────────────────────
+  // Password requirements calculation
+  const hasMinLength = password.length >= 8;
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
 
-  return (
-    <div
-      className={`relative min-h-screen flex flex-col items-center justify-center px-8 sm:px-12 transition-colors duration-[1500ms] ease-in-out ${
-        atmosphere.bg
-      } ${morphing ? "overflow-hidden" : ""}`}
-    >
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-        
-        .animate-float {
-          animation: float 4s ease-in-out infinite;
-        }
-
-        @keyframes subtle-shake {
-          0%, 100% { transform: translateX(0); }
-          20% { transform: translateX(-4px); }
-          40% { transform: translateX(4px); }
-          60% { transform: translateX(-2px); }
-          80% { transform: translateX(2px); }
-        }
-
-        .animate-shake {
-          animation: subtle-shake 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-
-        input {
-          caret-color: #10b981;
-        }
-
-        input:focus {
-          animation: focus-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes focus-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.95; }
-        }
-      `}</style>
-
-      {/* Grain & Ambient Light */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay z-0"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        }}
-      />
-      <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-emerald-500/10 blur-[140px] rounded-full animate-[spin_30s_linear_infinite_reverse] z-0 pointer-events-none" />
-
-      {/* Main Wrapper - Note the pb-[10vh] to visually lift the content slightly upward */}
-      <div
-        className={`w-full max-w-[320px] pb-[10vh] relative z-10 flex flex-col items-center transition-all duration-[700ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          morphing ? "opacity-0 scale-95 blur-[2px]" : "opacity-100 scale-100"
-        }`}
-      >
-        {/* Zone 1: Context (Time) */}
-        <div className="flex items-center gap-1.5 mb-10 opacity-70">
-          <Clock size={13} className={atmosphere.muted} />
-          <span className={`text-[12px] font-semibold tracking-wider ${atmosphere.muted}`}>
-            {ambientTime}
-          </span>
-        </div>
-
-        {/* Zone 2: Brand + Message */}
-        <div className="flex flex-col items-center text-center mb-[40px] animate-in fade-in duration-700">
-          <LivingMoon isDark={atmosphere.isDark} isFriday={isFriday} />
-
-          <h2
-            className={`text-[20px] font-arabic tracking-wide mt-5 mb-3 ${atmosphere.text}`}
-          >
-            بِسْمِ اللَّهِ
-          </h2>
-
-          <h1
-            className={`text-[28px] font-extrabold tracking-tight mb-2 ${atmosphere.text}`}
-          >
-            Begin your journey.
-          </h1>
-
-          <p className={`text-[14px] font-medium tracking-wide ${atmosphere.muted}`}>
-            {isFriday ? "A blessed Friday. Begin with intention." : "A new day. Begin with intention."}
+  // ── OTP Email Verification View ──────────────────────────────────────────
+  if (showOtp) {
+    return (
+      <AuthLayout
+        title="Verify your email"
+        subtitle={`We sent a 6-digit confirmation code to ${email}`}
+        footer={
+          <p className="text-[#5C5549] text-xs">
+            Entered the wrong email?{" "}
+            <button
+              onClick={() => setShowOtp(false)}
+              className="text-[#134D37] font-bold hover:underline ml-1"
+            >
+              Go back
+            </button>
           </p>
+        }
+      >
+        <div className="flex justify-center my-6">
+          <InputOTP
+            maxLength={6}
+            value={otpCode}
+            onChange={(val) => {
+              setOtpCode(val);
+              if (error) setError("");
+            }}
+          >
+            <InputOTPGroup className="gap-2 sm:gap-2.5">
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <InputOTPSlot
+                  key={index}
+                  index={index}
+                  className="w-10 sm:w-12 h-12 sm:h-14 text-base sm:text-lg font-bold rounded-xl sm:rounded-2xl border border-[#DDD7CC] bg-[#FAF8F5] focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15"
+                />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
         </div>
 
-        {/* Zone 3 & 4: Authentication Block */}
-        <div className="w-full">
-          {!showEmailForm ? (
-            <div className="flex flex-col items-center w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* Primary Action: Google */}
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={loading || googleLoading || morphing}
-                className={`w-full h-[56px] rounded-[16px] text-[14px] font-semibold tracking-wide transition-all duration-[180ms] flex items-center justify-center gap-2.5 active:scale-[0.98] ${
-                  googleLoading
-                    ? "bg-emerald-600 text-white opacity-80"
-                    : `text-white ${atmosphere.button} hover:brightness-110`
-                }`}
-              >
-                {googleLoading ? (
-                  <>
-                    <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                    <span>Connecting...</span>
-                  </>
-                ) : (
-                  <>
-                    {/* Official Multi-color Google Icon */}
-                    <div className="bg-white p-1 rounded-full">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path fill="#4285F4" d="M21.35 12.27c0-.79-.07-1.55-.2-2.27H12v4.3h5.23a4.47 4.47 0 0 1-1.94 2.93v2.43h3.14c1.84-1.69 2.92-4.18 2.92-7.39Z" />
-                        <path fill="#34A853" d="M12 21.7c2.63 0 4.84-.87 6.45-2.35l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.51A9.74 9.74 0 0 0 12 21.7Z" />
-                        <path fill="#FBBC05" d="M6.54 13.82A5.84 5.84 0 0 1 6.23 12c0-.63.11-1.24.31-1.82V7.67H3.3A9.73 9.73 0 0 0 2.27 12c0 1.57.38 3.06 1.03 4.33l3.24-2.51Z" />
-                        <path fill="#EA4335" d="M12 6.15c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.25 14.63 2.3 12 2.3a9.74 9.74 0 0 0-8.7 5.37l3.24 2.51C7.31 7.87 9.46 6.15 12 6.15Z" />
-                      </svg>
-                    </div>
-                    <span>Continue with Google</span>
-                  </>
-                )}
-              </button>
-
-              {/* Secondary Action: Email */}
-              <div className="flex flex-col items-center mt-6 gap-2">
-                <span className={`text-[12px] ${atmosphere.muted}`}>or</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic("light");
-                    setShowEmailForm(true);
-                  }}
-                  className={`text-[13px] font-medium transition-all hover:underline underline-offset-4 decoration-opacity-40 ${atmosphere.text}`}
-                >
-                  Continue with email
-                </button>
-              </div>
-
-              {/* Zone 4: Trust Indicator */}
-              <p className={`mt-8 text-[11px] font-medium opacity-50 ${atmosphere.muted}`}>
-                Your information stays private.
-              </p>
-              
-              {/* Login Link below Trust */}
-              <Link
-                to="/login"
-                onClick={() => triggerHaptic("light")}
-                className={`mt-6 text-[12px] font-medium ${atmosphere.muted} opacity-80 hover:opacity-100 transition-opacity`}
-              >
-                Already have an account?{" "}
-                <span className={`underline underline-offset-4 decoration-opacity-40 ${atmosphere.accent}`}>
-                  Log in
-                </span>
-              </Link>
-            </div>
+        <button
+          onClick={handleVerifyOtp}
+          disabled={loading || otpCode.length < 6}
+          className="w-full h-11 sm:h-12 bg-[#134D37] hover:bg-[#0E3B2A] text-white rounded-xl sm:rounded-2xl text-[14px] sm:text-[14.5px] font-bold flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(19,77,55,0.22)] transition-all disabled:opacity-50 active:scale-[0.99]"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+              <span>Verifying code...</span>
+            </>
           ) : (
-            /* Email Form View */
-            <div className={`w-full animate-in fade-in slide-in-from-bottom-4 duration-500 ${shake ? "animate-shake" : ""}`}>
-              <button
-                onClick={() => setShowEmailForm(false)}
-                className={`flex items-center gap-1.5 text-[13px] font-medium mb-6 ${atmosphere.muted} opacity-70 hover:opacity-100 transition-opacity`}
-              >
-                <ArrowLeft size={14} /> Back
-              </button>
-
-              <div className="space-y-[16px] text-left">
-                {/* Name */}
-                <div className="relative group">
-                  <input
-                    type="text"
-                    id="name"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      if (nameError) setNameError("");
-                    }}
-                    onFocus={() => triggerHaptic("light")}
-                    autoComplete="name"
-                    className={`peer w-full h-[56px] px-4 pt-4 rounded-[16px] border border-transparent ${atmosphere.inputBg} ${atmosphere.focusRing} focus:bg-transparent focus:scale-[1.01] focus:shadow-sm outline-none transition-all duration-[180ms] text-[15px] font-medium ${atmosphere.text} placeholder-transparent`}
-                    placeholder="Full Name"
-                  />
-                  <label
-                    htmlFor="name"
-                    className={`absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-medium transition-all duration-[180ms] pointer-events-none ${atmosphere.muted} peer-focus:top-3.5 peer-focus:text-[10px] ${atmosphere.peerFocusAccent} ${name ? "top-3.5 text-[10px]" : ""}`}
-                  >
-                    Full Name
-                  </label>
-                  {nameError && <p className="text-sm text-red-500 mt-1">{nameError}</p>}
-                </div>
-
-                {/* Email */}
-                <div className="relative group">
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (emailError) setEmailError("");
-                    }}
-                    onFocus={() => triggerHaptic("light")}
-                    autoComplete="email"
-                    className={`peer w-full h-[56px] px-4 pt-4 rounded-[16px] border border-transparent ${atmosphere.inputBg} ${atmosphere.focusRing} focus:bg-transparent focus:scale-[1.01] focus:shadow-sm outline-none transition-all duration-[180ms] text-[15px] font-medium ${atmosphere.text} placeholder-transparent`}
-                    placeholder="Email Address"
-                  />
-                  <label
-                    htmlFor="email"
-                    className={`absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-medium transition-all duration-[180ms] pointer-events-none ${atmosphere.muted} peer-focus:top-3.5 peer-focus:text-[10px] ${atmosphere.peerFocusAccent} ${email ? "top-3.5 text-[10px]" : ""}`}
-                  >
-                    Email Address
-                  </label>
-                  {emailError && <p className="text-sm text-red-500 mt-1">{emailError}</p>}
-                </div>
-
-                {/* Password */}
-                <div className="relative group">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (passwordError) setPasswordError("");
-                    }}
-                    onFocus={() => triggerHaptic("light")}
-                    autoComplete="new-password"
-                    className={`peer w-full h-[56px] pl-4 pr-12 pt-4 rounded-[16px] border border-transparent ${atmosphere.inputBg} ${atmosphere.focusRing} focus:bg-transparent focus:scale-[1.01] focus:shadow-sm outline-none transition-all duration-[180ms] text-[15px] font-medium tracking-widest ${atmosphere.text} placeholder-transparent`}
-                    placeholder="Password"
-                  />
-                  <label
-                    htmlFor="password"
-                    className={`absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-medium tracking-normal transition-all duration-[180ms] pointer-events-none ${atmosphere.muted} peer-focus:top-3.5 peer-focus:text-[10px] ${atmosphere.peerFocusAccent} ${password ? "top-3.5 text-[10px]" : ""}`}
-                  >
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic("light");
-                      setShowPassword((v) => !v);
-                    }}
-                    className={`absolute right-4 top-1/2 -translate-y-1/2 ${atmosphere.muted} transition-colors p-2 -mr-2`}
-                  >
-                    {showPassword ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}
-                  </button>
-                </div>
-
-                {/* Password Requirements */}
-                <div className="px-1 pt-0.5">
-                  <p className={`text-[10px] font-semibold uppercase tracking-wider mb-2.5 ${atmosphere.muted}`}>
-                    Password requirements
-                  </p>
-                  <div className="space-y-2">
-                    <PasswordRequirement met={passwordRequirements.length} isDark={atmosphere.isDark}>
-                      At least 8 characters
-                    </PasswordRequirement>
-                    <PasswordRequirement met={passwordRequirements.number} isDark={atmosphere.isDark}>
-                      At least 1 number
-                    </PasswordRequirement>
-                    <PasswordRequirement met={passwordRequirements.special} isDark={atmosphere.isDark}>
-                      At least 1 special character
-                    </PasswordRequirement>
-                  </div>
-                </div>
-                {passwordError && <p className="text-sm text-red-500 mt-1">{passwordError}</p>}
-              </div>
-
-              {/* Submit Button */}
-              <div className="mt-8">
-                <button
-                  onClick={handleRegister}
-                  disabled={loading || googleLoading || morphing || !isFormValid}
-                  className={`w-full h-[56px] rounded-[16px] text-[14px] font-semibold tracking-wide transition-all duration-[180ms] flex items-center justify-center gap-2 active:scale-[0.98] ${
-                    loading
-                      ? "bg-emerald-600 text-white opacity-80"
-                      : isFormValid
-                      ? `text-white ${atmosphere.button} hover:brightness-110`
-                      : "bg-emerald-600/25 text-emerald-900/40 cursor-not-allowed shadow-none"
-                  }`}
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: "300ms" }} />
-                    </div>
-                  ) : (
-                    "Create Account"
-                  )}
-                </button>
-              </div>
-            </div>
+            <>
+              <span>Complete registration</span>
+              <CheckCircle2 className="w-4 h-4" />
+            </>
           )}
+        </button>
+
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={handleResendOtp}
+            disabled={resending}
+            className="text-xs text-[#5C5549] hover:text-[#134D37] font-semibold transition-colors"
+          >
+            {resending ? "Sending new code..." : "Didn't receive it? Resend code"}
+          </button>
         </div>
+      </AuthLayout>
+    );
+  }
+
+  // ── Standard Account Creation Form ──────────────────────────────────────
+  return (
+    <AuthLayout
+      title="Create your account"
+      subtitle="Join Tawfiq to track Salah, manage Qaza, and discover authentic guidance."
+      footer={
+        <p className="text-[#5C5549] text-xs">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-[#134D37] font-bold hover:underline underline-offset-4 transition-colors ml-1 focus:outline-none focus:ring-2 focus:ring-[#134D37]/20 rounded"
+          >
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      {/* Google Action with consistent label */}
+      <button
+        type="button"
+        onClick={handleGoogle}
+        disabled={googleLoading || loading}
+        className="w-full h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-[#D5CDC0] bg-white hover:bg-[#FAF8F5] text-[#2A261F] text-[13.5px] sm:text-[14px] font-semibold flex items-center justify-center gap-3 transition-all shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-[#134D37]/30 group disabled:opacity-60"
+      >
+        {googleLoading ? (
+          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#134D37]" />
+        ) : (
+          <GoogleIcon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 group-hover:scale-105 transition-transform" />
+        )}
+        <span>Continue with Google</span>
+      </button>
+
+      {/* Divider */}
+      <div className="relative my-4 sm:my-5 flex items-center justify-center">
+        <div className="w-full border-t border-[#EAE4D9]" />
+        <span className="absolute px-3 bg-white text-[11px] uppercase tracking-widest text-[#787062] font-semibold">
+          or register with email
+        </span>
       </div>
 
-      {/* Tiny Footer */}
-      <div className={`absolute bottom-8 flex gap-4 text-[10px] font-medium opacity-40 hover:opacity-70 transition-opacity ${atmosphere.muted}`}>
-        <a href="#" className="hover:underline">Privacy</a>
-        <span>·</span>
-        <a href="#" className="hover:underline">Terms</a>
-      </div>
-
-      {/* Auth Morphing Transition */}
-      {morphing && (
-        <div className={`fixed inset-0 z-[100] flex items-center justify-center ${atmosphere.bg} animate-in fade-in duration-700`}>
-          <div className="absolute top-[10%] right-[10%] w-[60%] h-[60%] bg-emerald-500/10 blur-[120px] rounded-full animate-[spin_10s_linear_infinite] pointer-events-none" />
-          <div className="relative flex flex-col items-center gap-8 animate-in slide-in-from-bottom-4 fade-in duration-1000">
-            <div className="relative flex items-center justify-center w-28 h-28">
-              <div className="absolute inset-0 rounded-full border border-emerald-500/20" />
-              <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500/60 animate-[spin_3s_cubic-bezier(0.4,0,0.2,1)_infinite]" />
-              <div className="absolute inset-4 rounded-full border border-emerald-500/15" />
-              <div className="absolute inset-4 rounded-full border-l-2 border-emerald-400/60 animate-[spin_2.5s_cubic-bezier(0.4,0,0.2,1)_infinite_reverse]" />
-              <LivingMoon isDark={atmosphere.isDark} isFriday={isFriday} />
-            </div>
-            <div className="flex flex-col items-center gap-2.5">
-              <h2 className={`text-2xl font-arabic tracking-widest ${atmosphere.text}`}>بِسْمِ اللَّهِ</h2>
-              <div className="flex items-center gap-2 mt-1">
-                {registerSuccess ? (
-                  <Check size={14} className="text-emerald-500" />
-                ) : (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                )}
-                <span className={`text-[10px] uppercase tracking-[0.3em] font-bold ${atmosphere.muted}`}>
-                  {registerSuccess ? "Account successfully created" : "Creating your account"}
-                </span>
-              </div>
-            </div>
-          </div>
+      {/* Error Banner */}
+      {error && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="mb-4 p-3 rounded-xl bg-[#FDF2F2] border border-[#F8B4B4] text-[#9B1C1C] text-xs leading-relaxed flex items-start gap-2.5 shadow-2xs"
+        >
+          <div className="w-1.5 h-1.5 rounded-full bg-[#9B1C1C] mt-1.5 shrink-0" />
+          <p className="flex-1 font-medium">{error}</p>
         </div>
       )}
-    </div>
+
+      {/* Registration Form */}
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5" noValidate>
+        {/* Full Name (Optional) */}
+        <div className="space-y-1 text-left">
+          <label
+            htmlFor="register-name"
+            className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
+          >
+            Full name <span className="text-[#787062] font-normal lowercase">(optional)</span>
+          </label>
+          <div className="relative">
+            <User
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              id="register-name"
+              type="text"
+              autoComplete="name"
+              placeholder="e.g. Wasim Jaffer"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full h-10.5 sm:h-11.5 pl-10 pr-4 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[13.5px] sm:text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
+            />
+          </div>
+        </div>
+
+        {/* Email */}
+        <div className="space-y-1 text-left">
+          <label
+            htmlFor="register-email"
+            className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
+          >
+            Email address
+          </label>
+          <div className="relative">
+            <Mail
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              id="register-email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) setError("");
+              }}
+              className="w-full h-10.5 sm:h-11.5 pl-10 pr-4 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[13.5px] sm:text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
+            />
+          </div>
+        </div>
+
+        {/* Password */}
+        <div className="space-y-1 text-left">
+          <label
+            htmlFor="register-password"
+            className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
+          >
+            Password
+          </label>
+          <div className="relative">
+            <Lock
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              id="register-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              required
+              placeholder="At least 8 characters"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError("");
+              }}
+              className="w-full h-10.5 sm:h-11.5 pl-10 pr-11 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[13.5px] sm:text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#787062] hover:text-[#2A261F] hover:bg-[#EAE4D9]/50 transition-colors rounded-xl focus:outline-none focus:ring-1 focus:ring-[#134D37]/30"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Confirm Password */}
+        <div className="space-y-1 text-left">
+          <label
+            htmlFor="register-confirm-password"
+            className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
+          >
+            Confirm password
+          </label>
+          <div className="relative">
+            <Lock
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              id="register-confirm-password"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              required
+              placeholder="Re-enter your password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (error) setError("");
+              }}
+              className="w-full h-10.5 sm:h-11.5 pl-10 pr-11 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[13.5px] sm:text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#787062] hover:text-[#2A261F] hover:bg-[#EAE4D9]/50 transition-colors rounded-xl focus:outline-none focus:ring-1 focus:ring-[#134D37]/30"
+              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Password Requirements Guide */}
+        {password.length > 0 && (
+          <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EAE4D9] space-y-1 text-[11px] text-[#5C5549]">
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${
+                  hasMinLength
+                    ? "bg-[#134D37] text-white"
+                    : "bg-[#DDD7CC] text-stone-600"
+                }`}
+              >
+                <Check className="w-2.5 h-2.5" />
+              </span>
+              <span className={hasMinLength ? "text-[#134D37] font-semibold" : ""}>
+                At least 8 characters
+              </span>
+            </div>
+            {confirmPassword.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${
+                    passwordsMatch
+                      ? "bg-[#134D37] text-white"
+                      : "bg-[#DDD7CC] text-stone-600"
+                  }`}
+                >
+                  <Check className="w-2.5 h-2.5" />
+                </span>
+                <span
+                  className={passwordsMatch ? "text-[#134D37] font-semibold" : ""}
+                >
+                  Passwords match
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading || googleLoading}
+          className="w-full h-11 sm:h-12 mt-1 sm:mt-2 bg-[#134D37] hover:bg-[#0E3B2A] active:bg-[#0A2D20] text-white rounded-xl sm:rounded-2xl text-[14px] sm:text-[14.5px] font-bold flex items-center justify-center gap-2.5 shadow-[0_4px_16px_rgba(19,77,55,0.22)] hover:shadow-[0_6px_20px_rgba(19,77,55,0.28)] transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.99] outline-none focus-visible:ring-4 focus-visible:ring-[#134D37]/30"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+              <span>Creating your account...</span>
+            </>
+          ) : (
+            <>
+              <span>Create account</span>
+              <ArrowRight className="w-4 h-4 text-white/80" />
+            </>
+          )}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

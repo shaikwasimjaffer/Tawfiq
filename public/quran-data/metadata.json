@@ -1,0 +1,23 @@
+{
+  "name": "Quran-JSON Dataset",
+  "repository": "https://github.com/risan/quran-json",
+  "releaseTag": "v3.1.2",
+  "commitSha": "707ba0f37ddcb59fed06bcbf21c639004e610d26",
+  "license": "CC-BY-4.0",
+  "importDate": "2026-10-18T12:25:23.862Z",
+  "surahsCount": 114,
+  "totalVerses": 6236,
+  "sourceDetails": {
+    "arabicScript": "Uthmani text from The Noble Qur'an Encyclopedia (QuranEnc.com)",
+    "englishTransliteration": "Tanzil.net (en.transliteration)",
+    "englishTranslation": "Saheeh International via QuranEnc.com"
+  },
+  "validation": {
+    "surahsCountVerified": true,
+    "totalVersesVerified": true,
+    "duplicateAyahIds": 0,
+    "missingArabicRecords": 0,
+    "missingEnglishRecords": 0
+  },
+  "attribution": "Quranic Arabic text and English translation sourced from risan/quran-json (v3.1.2) under CC-BY-4.0. Text derived from QuranEnc.com and Tanzil.net."
+}

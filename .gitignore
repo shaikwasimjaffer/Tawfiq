@@ -29,5 +29,13 @@ dist-ssr
 
 .env
 .vite
+base44/.app.jsonc
 
+# Local duplicate folders and external raw archives
+tawfiq-plus/
+tawfiq-plus - Copy/
+hadith-json-1.2.0/
+llm-quran-hadith/
+data/
 public/*.mp4
+.claude/

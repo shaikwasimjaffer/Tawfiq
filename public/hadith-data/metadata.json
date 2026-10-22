@@ -1,0 +1,174 @@
+{
+  "name": "Hadith-json Database",
+  "repository": "https://github.com/AhmedBaset/hadith-json",
+  "releaseTag": "v1.2.0",
+  "releaseDate": "2024-04-06",
+  "importDate": "2026-10-18T12:04:28.688Z",
+  "totalCollections": 17,
+  "totalHadiths": 50884,
+  "totalChapters": 607,
+  "validation": {
+    "duplicateHadithIds": 0,
+    "missingArabicRecords": 125,
+    "missingEnglishRecords": 3442,
+    "missingNarratorRecords": 13534,
+    "missingChapterIdRecords": 85,
+    "verifiedRecordCount": true
+  },
+  "attribution": "Data sourced from AhmedBaset/hadith-json (v1.2.0), scraped from Sunnah.com. Preserved with original Arabic text, English translations, narrators, and references.",
+  "collections": [
+    {
+      "id": 1,
+      "key": "bukhari",
+      "canonicalTitle": "Sahih al-Bukhari",
+      "titleAr": "صحيح البخاري",
+      "authorEn": "Imam Muhammad ibn Ismail al-Bukhari",
+      "hadithsCount": 7277,
+      "chaptersCount": 97
+    },
+    {
+      "id": 2,
+      "key": "muslim",
+      "canonicalTitle": "Sahih Muslim",
+      "titleAr": "صحيح مسلم",
+      "authorEn": "Imam Muslim ibn al-Hajjaj al-Naysaburi",
+      "hadithsCount": 7459,
+      "chaptersCount": 57
+    },
+    {
+      "id": 4,
+      "key": "abudawud",
+      "canonicalTitle": "Sunan Abi Dawud",
+      "titleAr": "سنن أبي داود",
+      "authorEn": "Imam Sulayman ibn al-Ash'ath Abu Dawud al-Sijistani",
+      "hadithsCount": 5276,
+      "chaptersCount": 43
+    },
+    {
+      "id": 5,
+      "key": "tirmidhi",
+      "canonicalTitle": "Jami' at-Tirmidhi",
+      "titleAr": "جامع الترمذي",
+      "authorEn": "Imam Abu Isa Muhammad ibn Isa al-Tirmidhi",
+      "hadithsCount": 4053,
+      "chaptersCount": 49
+    },
+    {
+      "id": 3,
+      "key": "nasai",
+      "canonicalTitle": "Sunan an-Nasa'i",
+      "titleAr": "سنن النسائي",
+      "authorEn": "Imam Ahmad ibn Shu'ayb al-Nasa'i",
+      "hadithsCount": 5768,
+      "chaptersCount": 52
+    },
+    {
+      "id": 6,
+      "key": "ibnmajah",
+      "canonicalTitle": "Sunan Ibn Majah",
+      "titleAr": "سنن ابن ماجه",
+      "authorEn": "Imam Muhammad ibn Yazid Ibn Majah al-Qazwini",
+      "hadithsCount": 4345,
+      "chaptersCount": 38
+    },
+    {
+      "id": 7,
+      "key": "malik",
+      "canonicalTitle": "Muwatta Malik",
+      "titleAr": "موطأ مالك",
+      "authorEn": "Imam Malik ibn Anas",
+      "hadithsCount": 1985,
+      "chaptersCount": 61
+    },
+    {
+      "id": 8,
+      "key": "ahmed",
+      "canonicalTitle": "Musnad Ahmad",
+      "titleAr": "مسند الإمام أحمد بن حنبل",
+      "authorEn": "Imam Ahmad ibn Hanbal",
+      "hadithsCount": 1374,
+      "chaptersCount": 8
+    },
+    {
+      "id": 9,
+      "key": "darimi",
+      "canonicalTitle": "Sunan ad-Darimi",
+      "titleAr": "سنن الدارمي",
+      "authorEn": "Imam Abu Muhammad Abd al-Rahman ibn Abd Allah ibn al-Darimi",
+      "hadithsCount": 3406,
+      "chaptersCount": 24
+    },
+    {
+      "id": 13,
+      "key": "riyad_assalihin",
+      "canonicalTitle": "Riyad as-Salihin",
+      "titleAr": "رياض الصالحين",
+      "authorEn": "Imam Yahya ibn Sharaf al-Nawawi",
+      "hadithsCount": 1896,
+      "chaptersCount": 20
+    },
+    {
+      "id": 16,
+      "key": "shamail_muhammadiyah",
+      "canonicalTitle": "Shamail al-Muhammadiyah",
+      "titleAr": "الشمائل المحمدية",
+      "authorEn": "Imam Tirmidhi",
+      "hadithsCount": 402,
+      "chaptersCount": 57
+    },
+    {
+      "id": 17,
+      "key": "bulugh_almaram",
+      "canonicalTitle": "Bulugh al-Maram",
+      "titleAr": "بلوغ المرام",
+      "authorEn": "Ibn Hajar al-Asqalani",
+      "hadithsCount": 1767,
+      "chaptersCount": 16
+    },
+    {
+      "id": 15,
+      "key": "aladab_almufrad",
+      "canonicalTitle": "Al-Adab Al-Mufrad",
+      "titleAr": "الأدب المفرد",
+      "authorEn": "Imam Muhammad ibn Ismail al-Bukhari",
+      "hadithsCount": 1326,
+      "chaptersCount": 57
+    },
+    {
+      "id": 14,
+      "key": "mishkat_almasabih",
+      "canonicalTitle": "Mishkat al-Masabih",
+      "titleAr": "مشكاة المصابيح",
+      "authorEn": "Al-Khatib Al-Tabrizi",
+      "hadithsCount": 4428,
+      "chaptersCount": 25
+    },
+    {
+      "id": 10,
+      "key": "nawawi40",
+      "canonicalTitle": "The Forty Hadith of al-Nawawi",
+      "titleAr": "الأربعون النووية",
+      "authorEn": "Imam Yahya ibn Sharaf al-Nawawi",
+      "hadithsCount": 42,
+      "chaptersCount": 1
+    },
+    {
+      "id": 11,
+      "key": "qudsi40",
+      "canonicalTitle": "The Forty Hadith Qudsi",
+      "titleAr": "الأربعون القدسية",
+      "authorEn": "",
+      "hadithsCount": 40,
+      "chaptersCount": 1
+    },
+    {
+      "id": 12,
+      "key": "shahwaliullah40",
+      "canonicalTitle": "The Forty Hadith of Shah Waliullah",
+      "titleAr": "أربعون ولي الله الدهلوي",
+      "authorEn": "Shah Waliullah Dahlawi",
+      "hadithsCount": 40,
+      "chaptersCount": 1
+    }
+  ]
+}

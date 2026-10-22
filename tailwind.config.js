@@ -1,5 +1,7 @@
+import tailwindcssAnimate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
@@ -61,6 +63,15 @@ module.exports = {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      fontFamily: {
+        heading: ["var(--font-heading)"],
+        body: ["var(--font-body)"],
+        display: ["var(--font-display)"],
+        mono: ["var(--font-mono)"],
+        serif: ['"Playfair Display"', "Georgia", "serif"],
+        sans: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        arabic: ['"Amiri"', '"Playfair Display"', "serif"],
+      },
       keyframes: {
         "accordion-down": {
           from: {
@@ -85,5 +96,5 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 };

@@ -1,803 +1,279 @@
-import React, { useState, useEffect, useMemo, memo } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Eye,
-  EyeOff,
-  Sparkles,
-  ChevronDown,
-  Clock,
-} from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-// ─────────────────────────────────────────────────────────────
-// Greeting
-// ─────────────────────────────────────────────────────────────
-
-const getGreeting = (hour) => {
-  if (hour >= 4 && hour < 12) return "Good Morning.";
-  if (hour >= 12 && hour < 17) return "Good Afternoon.";
-  if (hour >= 17 && hour < 20) return "Good Evening.";
-  return "Welcome back.";
-};
-
-const getDynamicMessage = (hour) => {
-  const generic = [
-    "Every prayer counts.",
-    "The next prayer is an opportunity.",
-    "Consistency brings peace.",
-    "Allah loves consistency.",
-  ];
-
-  const rand =
-    generic[Math.floor(Math.random() * generic.length)];
-
-  if (hour >= 4 && hour < 7)
-    return "Fajr brings light to the soul.";
-
-  if (hour >= 7 && hour < 15)
-    return "May Allah bless your afternoon.";
-
-  if (hour >= 15 && hour < 18)
-    return rand;
-
-  if (hour >= 18 && hour < 20)
-    return "Maghrib approaches. Find peace.";
-
-  return "End your day with remembrance.";
-};
-
-// ─────────────────────────────────────────────────────────────
-// Atmosphere
-// ─────────────────────────────────────────────────────────────
-
-const getAtmosphere = (hour) => {
-  if (hour >= 4 && hour < 7) {
-    return {
-      bg: "bg-gradient-to-br from-[#ecfdf5] via-[#f0fdf4] to-[#ffffff]",
-      text: "text-emerald-950",
-      muted: "text-emerald-700/60",
-      accent: "text-emerald-600",
-      peerFocusAccent: "peer-focus:text-emerald-600",
-      accentBg: "bg-emerald-600/10",
-      borderColor: "border-emerald-900/10",
-      button:
-        "bg-emerald-600 hover:bg-emerald-500 shadow-[0_8px_20px_rgba(5,150,105,0.2)]",
-      inputBg: "bg-emerald-900/[0.02]",
-      focusRing:
-        "focus:ring-emerald-500/20 focus:border-emerald-500/50",
-      isDark: false,
-    };
-  }
-
-  if (hour >= 7 && hour < 18) {
-    return {
-      bg: "bg-gradient-to-br from-[#f0fdf4] via-[#ffffff] to-[#ecfdf5]",
-      text: "text-emerald-950",
-      muted: "text-emerald-700/60",
-      accent: "text-emerald-600",
-      peerFocusAccent: "peer-focus:text-emerald-600",
-      accentBg: "bg-emerald-600/10",
-      borderColor: "border-emerald-900/10",
-      button:
-        "bg-emerald-600 hover:bg-emerald-500 shadow-[0_8px_20px_rgba(5,150,105,0.2)]",
-      inputBg: "bg-emerald-900/[0.02]",
-      focusRing:
-        "focus:ring-emerald-500/20 focus:border-emerald-500/50",
-      isDark: false,
-    };
-  }
-
-  if (hour >= 18 && hour < 20) {
-    return {
-      bg: "bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857]",
-      text: "text-emerald-50",
-      muted: "text-emerald-200/60",
-      accent: "text-emerald-400",
-      peerFocusAccent: "peer-focus:text-emerald-400",
-      accentBg: "bg-emerald-400/10",
-      borderColor: "border-emerald-100/10",
-      button:
-        "bg-emerald-500 hover:bg-emerald-400 shadow-[0_8px_20px_rgba(16,185,129,0.2)]",
-      inputBg: "bg-white/[0.04]",
-      focusRing:
-        "focus:ring-emerald-400/20 focus:border-emerald-400/50",
-      isDark: true,
-    };
-  }
-
-  return {
-    bg: "bg-gradient-to-br from-[#022c22] via-[#014737] to-[#020617]",
-    text: "text-emerald-50",
-    muted: "text-emerald-200/50",
-    accent: "text-emerald-400",
-    peerFocusAccent: "peer-focus:text-emerald-400",
-    accentBg: "bg-emerald-400/10",
-    borderColor: "border-emerald-100/10",
-    button:
-      "bg-emerald-600 hover:bg-emerald-500 shadow-[0_8px_20px_rgba(5,150,105,0.3)]",
-    inputBg: "bg-white/[0.03]",
-    focusRing:
-      "focus:ring-emerald-500/20 focus:border-emerald-500/50",
-    isDark: true,
-  };
-};
-
-// ─────────────────────────────────────────────────────────────
-// Haptics
-// ─────────────────────────────────────────────────────────────
-
-const triggerHaptic = (type = "light") => {
-  if (typeof navigator === "undefined" || !navigator.vibrate)
-    return;
-
-  if (type === "light") navigator.vibrate(10);
-  if (type === "medium") navigator.vibrate(25);
-  if (type === "success") navigator.vibrate([20, 40, 20]);
-  if (type === "error") navigator.vibrate([30, 50, 30, 50, 30]);
-};
-
-// ─────────────────────────────────────────────────────────────
-// Moon
-// ─────────────────────────────────────────────────────────────
-
-const LivingMoon = memo(({ isDark, isFriday }) => {
-  return (
-    <div className="relative group flex items-center justify-center w-12 h-12">
-      <div
-        className={`absolute inset-0 rounded-full blur-xl animate-[pulse_3s_ease-in-out_infinite] ${
-          isDark
-            ? "bg-emerald-400/20"
-            : "bg-emerald-500/20"
-        }`}
-      />
-
-      <svg
-        className={`w-8 h-8 transition-transform duration-[1200ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] rotate-[15deg] group-hover:rotate-[25deg] ${
-          isDark
-            ? "text-emerald-100 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-            : "text-emerald-600 drop-shadow-[0_0_12px_rgba(5,150,105,0.3)]"
-        }`}
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        stroke="none"
-      >
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-      </svg>
-
-      {isFriday && (
-        <Sparkles
-          className={`absolute -top-1 -right-1 w-3.5 h-3.5 ${
-            isDark
-              ? "text-emerald-300"
-              : "text-emerald-500"
-          }`}
-        />
-      )}
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────
-// Prayer Chip
-// ─────────────────────────────────────────────────────────────
-
-const InteractivePrayerChip = ({
-  atmosphere,
-  isExiting,
-}) => {
-  const [expanded, setExpanded] = useState(false);
-  const [mins, setMins] = useState(48);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMins((m) => (m > 0 ? m - 1 : 59));
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  if (isExiting) return null;
-
-  return (
-    <div
-      onClick={() => {
-        triggerHaptic("light");
-        setExpanded((value) => !value);
-      }}
-      className={`relative mt-6 overflow-hidden transition-all duration-[500ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] cursor-pointer backdrop-blur-md border ${
-        atmosphere.borderColor
-      } ${
-        expanded
-          ? "w-[240px] rounded-[24px] p-4 bg-black/[0.03] dark:bg-white/[0.03]"
-          : "w-[180px] rounded-full p-2 bg-transparent"
-      }`}
-    >
-      {!expanded ? (
-        <div className="flex items-center justify-center gap-1.5">
-          <span
-            className={`text-[11px] font-semibold uppercase tracking-widest tabular-nums ${atmosphere.muted}`}
-          >
-            Maghrib in{" "}
-            <span className="font-bold">
-              {mins}
-            </span>
-            m
-          </span>
-
-          <ChevronDown
-            size={12}
-            className={`${atmosphere.muted} opacity-50`}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span
-              className={`text-lg font-bold ${atmosphere.text}`}
-            >
-              Maghrib
-            </span>
-
-            <span
-              className={`text-[10px] font-bold uppercase tracking-widest ${atmosphere.accent} ${atmosphere.accentBg} px-2 py-1 rounded-full`}
-            >
-              In {mins}m
-            </span>
-          </div>
-
-          <div
-            className={`flex justify-between items-center pt-2 border-t ${atmosphere.borderColor}`}
-          >
-            <div className="flex flex-col text-left">
-              <span
-                className={`text-[9px] uppercase tracking-widest font-semibold ${atmosphere.muted}`}
-              >
-                Starts
-              </span>
-
-              <span
-                className={`text-sm font-medium ${atmosphere.text}`}
-              >
-                6:53 PM
-              </span>
-            </div>
-
-            <div className="flex flex-col text-right">
-              <span
-                className={`text-[9px] uppercase tracking-widest font-semibold ${atmosphere.muted}`}
-              >
-                Ends
-              </span>
-
-              <span
-                className={`text-sm font-medium ${atmosphere.text}`}
-              >
-                7:58 PM
-              </span>
-            </div>
-          </div>
-
-          <div
-            className={`text-center text-[9px] uppercase tracking-widest font-medium ${atmosphere.muted} opacity-60 pt-1`}
-          >
-            ISNA Calculation
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────
-// Login
-// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import AuthLayout from "@/components/AuthLayout";
+import GoogleIcon from "@/components/GoogleIcon";
+import { toast } from "sonner";
+import { createUserVault, setActiveUserSession } from "@/lib/userStorage";
 
 export default function Login() {
   const navigate = useNavigate();
-
-  const [now, setNow] = useState(new Date());
-
-  const hour = now.getHours();
-  const isFriday = now.getDay() === 5;
-
-  const atmosphere = useMemo(
-    () => getAtmosphere(hour),
-    [hour]
-  );
-
-  const greeting = useMemo(
-    () => getGreeting(hour),
-    [hour]
-  );
-
-  const message = useMemo(
-    () => getDynamicMessage(hour),
-    [hour]
-  );
+  const location = useLocation();
+  const { checkUserAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
-
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [shake, setShake] = useState(false);
-  const [morphing, setMorphing] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  // Preserve intended destination after login
+  const from = location.state?.from?.pathname || "/";
 
-  const ambientTime = now.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
+  // Google Identity Services (GSI) prompt listener if official Client ID is configured in environment
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 60000);
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-    return () => clearInterval(interval);
-  }, []);
+    if (clientId && window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (res) => {
+            if (res?.credential) {
+              try {
+                const base64Url = res.credential.split(".")[1];
+                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+                const jsonPayload = decodeURIComponent(
+                  atob(base64)
+                    .split("")
+                    .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join("")
+                );
+                const payload = JSON.parse(jsonPayload);
+                if (payload?.email) {
+                  const user = createUserVault(
+                    payload.email,
+                    payload.name || payload.given_name,
+                    "google",
+                    payload.picture || ""
+                  );
+                  setActiveUserSession(user);
+                  await checkUserAuth();
+                  toast.success(`Welcome back, ${payload.name || payload.email}`);
+                  navigate(from, { replace: true });
+                }
+              } catch (err) {
+                console.error("GSI Token decode error:", err);
+              }
+            }
+          },
+          auto_select: false,
+        });
 
-  // Load remembered email
-  useEffect(() => {
-    const savedEmail =
-      localStorage.getItem("remember_email");
-
-    if (savedEmail) {
-      setEmail(savedEmail);
+        // Trigger Google One Tap if configured
+        window.google.accounts.id.prompt();
+      } catch (e) {
+        console.warn("[GSI] Initialization notice:", e);
+      }
     }
-  }, []);
+  }, [from, navigate, checkUserAuth]);
 
-  // ───────────────────────────────────────────────────────────
-  // Ensure user settings
-  // ───────────────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
 
-  const ensureUserSettings = async (userId) => {
-    if (!userId) return;
-
-    const { data: existingSettings, error: fetchError } =
-      await supabase
-        .from("user_settings")
-        .select("id, onboarding_done")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-    if (fetchError) {
-      console.error(
-        "Could not check user settings:",
-        fetchError
-      );
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setError("Please enter your email address.");
       return;
     }
 
-    if (existingSettings) {
-      return existingSettings;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError("Please enter a valid email address.");
+      return;
     }
 
-    const { data: newSettings, error: insertError } =
-      await supabase
-        .from("user_settings")
-        .insert({
-          user_id: userId,
-          onboarding_done: false,
-          primary_goals: [],
-        })
-        .select("id, onboarding_done")
-        .single();
-
-    if (insertError) {
-      console.error(
-        "Could not create user settings:",
-        insertError
-      );
-
-      return null;
-    }
-
-    return newSettings;
-  };
-
-  // ───────────────────────────────────────────────────────────
-  // Validation
-  // ───────────────────────────────────────────────────────────
-
-  const validateEmail = (value) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(value);
-  };
-
-  const validatePassword = (value) => {
-    return value.length >= 6;
-  };
-
-  // ───────────────────────────────────────────────────────────
-  // Login
-  // ───────────────────────────────────────────────────────────
-
-  const handleLogin = async () => {
-    triggerHaptic("medium");
-
-    let isValid = true;
-
-    if (!validateEmail(email)) {
-      setEmailError("Please enter a valid email");
-      isValid = false;
-    } else {
-      setEmailError("");
-    }
-
-    if (!validatePassword(password)) {
-      setPasswordError(
-        "Password must be at least 6 characters"
-      );
-      isValid = false;
-    } else {
-      setPasswordError("");
-    }
-
-    if (!isValid) {
-      triggerHaptic("error");
-
-      setShake(true);
-
-      setTimeout(() => {
-        setShake(false);
-      }, 500);
-
+    if (!password) {
+      setError("Please enter your password.");
       return;
     }
 
     setLoading(true);
-
     try {
-      // ───────────────────────────────────────────────────────
-      // Supabase Auth
-      // Supabase handles password verification.
-      // ───────────────────────────────────────────────────────
-
-      const { data, error } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password,
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data.user) {
-        throw new Error("Unable to authenticate user.");
-      }
-
-      // Make sure the user's settings row exists.
-      const settings = await ensureUserSettings(
-        data.user.id
-      );
-
-      // Remember email
-      localStorage.setItem(
-        "remember_email",
-        email.trim().toLowerCase()
-      );
-
-      // We no longer need this after successful Auth.
-      localStorage.removeItem("tawfiq_onboarding_done");
-
-      triggerHaptic("success");
-
-      setLoading(false);
-      setMorphing(true);
-
-      // Existing Tawfiq flow:
-      // Login → Onboarding
-      setTimeout(() => {
-        navigate("/onboarding");
-      }, 800);
-
+      await base44.auth.loginViaEmailPassword(cleanEmail, password);
+      await checkUserAuth();
+      toast.success("Welcome back to Tawfiq.");
+      navigate(from, { replace: true });
     } catch (err) {
-      console.error("Login error:", err);
-
-      triggerHaptic("error");
-
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid email or password. Please verify your credentials.";
+      setError(msg);
+    } finally {
       setLoading(false);
-
-      setShake(true);
-
-      setTimeout(() => {
-        setShake(false);
-      }, 500);
-
-      if (
-        err?.message?.toLowerCase().includes("invalid login")
-      ) {
-        setEmailError(
-          "Incorrect email or password."
-        );
-      } else if (
-        err?.message
-          ?.toLowerCase()
-          .includes("email not confirmed")
-      ) {
-        setEmailError(
-          "Please confirm your email before logging in."
-        );
-      } else {
-        setEmailError(
-          err?.message ||
-            "Authentication failed. Please try again."
-        );
-      }
     }
   };
 
-  // ───────────────────────────────────────────────────────────
-  // UI
-  // ───────────────────────────────────────────────────────────
+  const handleGoogle = () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      base44.auth.loginWithProvider("google", from);
+    } catch (err) {
+      setGoogleLoading(false);
+      // Honest reporting of configuration status
+      setError(
+        err?.message ||
+          "Google Sign-In is not currently available for this deployment. Please sign in with email and password."
+      );
+    }
+  };
 
   return (
-    <div
-      className={`relative min-h-screen flex flex-col justify-center px-8 sm:px-12 transition-colors duration-[1500ms] ease-in-out ${
-        atmosphere.bg
-      } ${morphing ? "overflow-hidden" : ""}`}
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to resume your daily prayers, Qaza tracking, and authentic guidance."
+      footer={
+        <p className="text-[#5C5549] text-xs">
+          New to Tawfiq?{" "}
+          <Link
+            to="/register"
+            className="text-[#134D37] font-bold hover:underline underline-offset-4 transition-colors ml-1 focus:outline-none focus:ring-2 focus:ring-[#134D37]/20 rounded"
+          >
+            Create an account
+          </Link>
+        </p>
+      }
     >
-      <style>{`
-        @keyframes subtle-shake {
-          0%, 100% { transform: translateX(0); }
-          20% { transform: translateX(-4px); }
-          40% { transform: translateX(4px); }
-          60% { transform: translateX(-2px); }
-          80% { transform: translateX(2px); }
-        }
-
-        .animate-shake {
-          animation: subtle-shake 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-
-        input {
-          caret-color: #10b981;
-        }
-
-        input:focus {
-          animation: focus-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes focus-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.95; }
-        }
-      `}</style>
-
-      {/* Grain */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay z-0"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Ambient light */}
-      <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-emerald-500/10 blur-[140px] rounded-full animate-[spin_30s_linear_infinite] z-0 pointer-events-none" />
-
-      {/* Time */}
-      <div
-        className={`absolute top-10 right-10 flex items-center gap-2 transition-opacity duration-700 z-10 ${
-          morphing ? "opacity-0" : "opacity-100"
-        }`}
+      {/* Google OAuth Action */}
+      <button
+        type="button"
+        onClick={handleGoogle}
+        disabled={googleLoading || loading}
+        className="w-full h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-[#D5CDC0] bg-white hover:bg-[#FAF8F5] text-[#2A261F] text-[13.5px] sm:text-[14px] font-semibold flex items-center justify-center gap-3 transition-all shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-[#134D37]/30 group disabled:opacity-60"
       >
-        <Clock
-          size={12}
-          className={`${atmosphere.muted} opacity-50`}
-        />
+        {googleLoading ? (
+          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#134D37]" />
+        ) : (
+          <GoogleIcon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 group-hover:scale-105 transition-transform" />
+        )}
+        <span>Continue with Google</span>
+      </button>
 
-        <span
-          className={`text-[11px] font-semibold tracking-widest ${atmosphere.muted} tabular-nums`}
-        >
-          {ambientTime}
+      {/* Divider */}
+      <div className="relative my-5 sm:my-6 flex items-center justify-center">
+        <div className="w-full border-t border-[#EAE4D9]" />
+        <span className="absolute px-3 bg-white text-[11px] uppercase tracking-widest text-[#787062] font-semibold">
+          or sign in with email
         </span>
       </div>
 
-      {/* Main */}
-      <div
-        className={`w-full max-w-[320px] mx-auto relative z-10 transition-all duration-[700ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          morphing
-            ? "opacity-0 scale-95 blur-[2px]"
-            : "opacity-100 scale-100"
-        }`}
-      >
-        {/* Header */}
-        <div className="flex flex-col items-center text-center mb-[48px]">
-          <LivingMoon
-            isDark={atmosphere.isDark}
-            isFriday={isFriday}
-          />
-
-          <h2
-            className={`text-2xl font-bold tracking-tight mt-6 mb-2 ${atmosphere.text}`}
-          >
-            {greeting}
-          </h2>
-
-          <p
-            className={`text-[13px] font-medium tracking-wide ${atmosphere.muted}`}
-          >
-            {message}
-          </p>
-
-          <InteractivePrayerChip
-            atmosphere={atmosphere}
-            isExiting={morphing}
-          />
-        </div>
-
-        {/* Inputs */}
+      {/* Error Banner */}
+      {error && (
         <div
-          className={`space-y-[16px] text-left ${
-            shake ? "animate-shake" : ""
-          }`}
+          role="alert"
+          aria-live="polite"
+          className="mb-4 sm:mb-5 p-3 sm:p-3.5 rounded-xl bg-[#FDF2F2] border border-[#F8B4B4] text-[#9B1C1C] text-xs leading-relaxed flex items-start gap-2.5 shadow-2xs"
         >
-          {/* Email */}
-          <div className="relative group">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#9B1C1C] mt-1.5 shrink-0" />
+          <p className="flex-1 font-medium">{error}</p>
+        </div>
+      )}
+
+      {/* Sign-in Form */}
+      <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4" noValidate>
+        {/* Email Field */}
+        <div className="space-y-1.5 text-left">
+          <label
+            htmlFor="login-email"
+            className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
+          >
+            Email address
+          </label>
+          <div className="relative">
+            <Mail
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
+              aria-hidden="true"
+            />
             <input
+              id="login-email"
               type="email"
-              id="email"
+              autoComplete="email"
+              required
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                if (emailError) setEmailError("");
+                if (error) setError("");
               }}
-              onFocus={() => triggerHaptic("light")}
-              autoComplete="email"
-              className={`peer w-full h-[56px] px-4 pt-4 rounded-2xl border border-transparent ${
-                atmosphere.inputBg
-              } ${atmosphere.focusRing} focus:bg-transparent focus:scale-[1.01] focus:shadow-sm outline-none transition-all duration-[180ms] text-[15px] font-medium ${
-                atmosphere.text
-              } placeholder-transparent`}
-              placeholder="Email Address"
+              className="w-full h-11 sm:h-12 pl-10 pr-4 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
             />
-
-            <label
-              htmlFor="email"
-              className={`absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-medium transition-all duration-[180ms] pointer-events-none ${
-                atmosphere.muted
-              } peer-focus:top-3.5 peer-focus:text-[10px] ${
-                atmosphere.peerFocusAccent
-              } ${email ? "top-3.5 text-[10px]" : ""}`}
-            >
-              Email Address
-            </label>
-
-            {emailError && (
-              <p className="text-sm text-red-500 mt-1">
-                {emailError}
-              </p>
-            )}
           </div>
+        </div>
 
-          {/* Password */}
-          <div className="relative group">
-            <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (passwordError) setPasswordError("");
-              }}
-              onFocus={() => triggerHaptic("light")}
-              autoComplete="current-password"
-              className={`peer w-full h-[56px] pl-4 pr-12 pt-4 rounded-2xl border border-transparent ${
-                atmosphere.inputBg
-              } ${atmosphere.focusRing} focus:bg-transparent focus:scale-[1.01] focus:shadow-sm outline-none transition-all duration-[180ms] text-[15px] font-medium tracking-widest ${
-                atmosphere.text
-              } placeholder-transparent`}
-              placeholder="Password"
-            />
-
+        {/* Password Field */}
+        <div className="space-y-1.5 text-left">
+          <div className="flex items-center justify-between">
             <label
-              htmlFor="password"
-              className={`absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-medium tracking-normal transition-all duration-[180ms] pointer-events-none ${
-                atmosphere.muted
-              } peer-focus:top-3.5 peer-focus:text-[10px] ${
-                atmosphere.peerFocusAccent
-              } ${password ? "top-3.5 text-[10px]" : ""}`}
+              htmlFor="login-password"
+              className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
             >
               Password
             </label>
-
+            <Link
+              to="/forgot-password"
+              className="text-[11.5px] font-semibold text-[#134D37] hover:underline underline-offset-2 transition-colors focus:outline-none focus:ring-1 focus:ring-[#134D37]/30 rounded"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative">
+            <Lock
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError("");
+              }}
+              className="w-full h-11 sm:h-12 pl-10 pr-11 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
+            />
             <button
               type="button"
-              onClick={() => {
-                triggerHaptic("light");
-                setShowPassword((value) => !value);
-              }}
-              className={`absolute right-4 top-1/2 -translate-y-1/2 ${atmosphere.muted} transition-colors p-2 -mr-2`}
-              aria-label={
-                showPassword
-                  ? "Hide password"
-                  : "Show password"
-              }
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#787062] hover:text-[#2A261F] hover:bg-[#EAE4D9]/50 transition-colors rounded-xl focus:outline-none focus:ring-1 focus:ring-[#134D37]/30"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
-                <EyeOff size={16} strokeWidth={2} />
+                <EyeOff className="w-4 h-4" />
               ) : (
-                <Eye size={16} strokeWidth={2} />
+                <Eye className="w-4 h-4" />
               )}
             </button>
-
-            {passwordError && (
-              <p className="text-sm text-red-500 mt-1">
-                {passwordError}
-              </p>
-            )}
           </div>
         </div>
 
-        {/* Login button */}
-        <div className="mt-[32px]">
-          <button
-            onClick={handleLogin}
-            disabled={loading || morphing}
-            className={`w-full rounded-2xl text-[14px] font-semibold tracking-wide transition-all duration-[120ms] flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-80 min-w-[140px] ${
-              loading
-                ? `h-[56px] bg-${atmosphere.text}/5 text-transparent shadow-none`
-                : `h-[56px] text-white ${atmosphere.button} hover:-translate-y-[1px]`
-            }`}
-          >
-            {loading ? (
-              <div className="flex items-center gap-1.5">
-                <div
-                  className={`w-1.5 h-1.5 rounded-full bg-current ${atmosphere.accent} animate-bounce`}
-                />
-                <div
-                  className={`w-1.5 h-1.5 rounded-full bg-current ${atmosphere.accent} animate-bounce`}
-                  style={{ animationDelay: "150ms" }}
-                />
-                <div
-                  className={`w-1.5 h-1.5 rounded-full bg-current ${atmosphere.accent} animate-bounce`}
-                  style={{ animationDelay: "300ms" }}
-                />
-              </div>
-            ) : (
-              "Log In"
-            )}
-          </button>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-[48px] flex flex-col items-center gap-[24px]">
-          <Link
-            to="/forgot-password"
-            onClick={() => triggerHaptic("light")}
-            className={`text-[12px] font-medium ${atmosphere.muted}`}
-          >
-            Forgot your password?
-          </Link>
-
-          <Link
-            to="/register"
-            onClick={() => triggerHaptic("light")}
-            className={`text-[12px] font-medium ${atmosphere.muted}`}
-          >
-            Don't have an account?{" "}
-            <span
-              className={`underline underline-offset-4 decoration-opacity-40 ${atmosphere.accent}`}
-            >
-              Sign up
-            </span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Loading overlay */}
-      {morphing && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center">
-          <div
-            className={`w-12 h-12 rounded-full border-4 ${atmosphere.borderColor} border-t-emerald-500 animate-spin`}
-          />
-        </div>
-      )}
-    </div>
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading || googleLoading}
+          className="w-full h-11 sm:h-12 mt-1 sm:mt-2 bg-[#134D37] hover:bg-[#0E3B2A] active:bg-[#0A2D20] text-white rounded-xl sm:rounded-2xl text-[14px] sm:text-[14.5px] font-bold flex items-center justify-center gap-2.5 shadow-[0_4px_16px_rgba(19,77,55,0.22)] hover:shadow-[0_6px_20px_rgba(19,77,55,0.28)] transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.99] outline-none focus-visible:ring-4 focus-visible:ring-[#134D37]/30"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+              <span>Signing in...</span>
+            </>
+          ) : (
+            <>
+              <span>Sign in to Tawfiq</span>
+              <ArrowRight className="w-4 h-4 text-white/80" />
+            </>
+          )}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
