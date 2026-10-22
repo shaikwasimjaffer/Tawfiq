@@ -39,3 +39,4 @@ llm-quran-hadith/
 data/
 public/*.mp4
 .claude/
+.vercel/
