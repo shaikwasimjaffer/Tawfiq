@@ -454,10 +454,34 @@ export default function PrayerDashboard() {
             }}
           />
 
-          {/* Main Card Content (Top Area) with refined typographic hierarchy & top-right day streak badge */}
-          <div className="relative z-10 p-5 sm:p-6 pb-2 flex items-start justify-between gap-3">
+          {/* Top-Right Day Streak Habit Indicator: Absolute corner-anchored at top-2 right-2 (8px offset) */}
+          <div
+            className="absolute top-2 right-2 z-20 flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-black/45 hover:bg-black/60 border border-white/20 text-white shadow-sm shrink-0 select-none backdrop-blur-xs transition-colors"
+            title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
+              longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
+            }`}
+            aria-label={`Current prayer streak: ${currentStreak} days`}
+          >
+            <Flame
+              size={12.5}
+              className={`shrink-0 transition-colors ${
+                currentStreak > 0
+                  ? "text-[#F59E0B] fill-[#F59E0B]/90 animate-pulse"
+                  : "text-stone-400 fill-none"
+              }`}
+            />
+            <span className="text-[12px] sm:text-[12.5px] font-bold font-sans text-white leading-none tabular-nums">
+              {currentStreak}
+            </span>
+            <span className="text-[8.5px] sm:text-[9px] uppercase tracking-wider font-bold text-stone-200 leading-none whitespace-nowrap">
+              DAY STREAK
+            </span>
+          </div>
+
+          {/* Main Card Content (Top Area) with refined typographic hierarchy & subtle text shadow */}
+          <div className="relative z-10 p-5 sm:p-6 pb-2 pr-28 sm:pr-32">
             {/* Left Column: Understated label, primary prayer name, readable prescribed time */}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
               <span
                 className="block text-[11.5px] uppercase tracking-[0.05em] font-semibold text-[#D1E6DC]"
                 style={{ textShadow: "0 1px 6px rgba(0, 0, 0, 0.45)" }}
@@ -476,30 +500,6 @@ export default function PrayerDashboard() {
               >
                 Begins at {prayerInfo.nextTime}
               </p>
-            </div>
-
-            {/* Top-Right Day Streak Habit Indicator */}
-            <div
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/55 border border-white/20 text-white shadow-xs shrink-0 select-none backdrop-blur-xs transition-colors mt-0.5"
-              title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
-                longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
-              }`}
-              aria-label={`Current prayer streak: ${currentStreak} days`}
-            >
-              <Flame
-                size={13}
-                className={`shrink-0 transition-colors ${
-                  currentStreak > 0
-                    ? "text-[#F59E0B] fill-[#F59E0B]/90 animate-pulse"
-                    : "text-stone-400 fill-none"
-                }`}
-              />
-              <span className="text-[12.5px] font-bold font-sans text-white leading-none tabular-nums">
-                {currentStreak}
-              </span>
-              <span className="text-[9px] uppercase tracking-wider font-bold text-stone-200 leading-none whitespace-nowrap">
-                DAY STREAK
-              </span>
             </div>
           </div>
 
