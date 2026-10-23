@@ -196,13 +196,13 @@ export default function BottomNav() {
                     onClick={() => handleItemClick(index, isActive)}
                     aria-label={item.ariaLabel}
                     aria-current={isActive ? "page" : undefined}
-                    className="flex-1 min-w-0 h-full flex items-center justify-center relative z-20 select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#244A3A] rounded-[30px] box-border p-0 active:scale-90 transition-transform duration-150 bg-transparent hover:bg-transparent"
+                    className="flex-1 min-w-0 h-full flex items-center justify-center relative z-20 select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#244A3A] rounded-[30px] box-border p-0 active:scale-95 transition-transform duration-150 bg-transparent hover:bg-transparent"
                     style={{ background: "transparent" }}
                   >
                     <Compass3DIcon
-                      size={32}
+                      size={38}
                       className={`transition-all duration-200 group-hover:scale-105 group-hover:brightness-105 ${
-                        isActive ? "scale-105 drop-shadow-[0_2px_8px_rgba(21,62,45,0.35)]" : "opacity-95"
+                        isActive ? "scale-105 drop-shadow-[0_3px_10px_rgba(21,62,45,0.45)]" : "opacity-95"
                       }`}
                     />
                   </Link>

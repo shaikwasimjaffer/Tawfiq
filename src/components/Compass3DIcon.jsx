@@ -8,7 +8,7 @@ import React from "react";
  * - Primary color: Deep forest green (#153E2D / #1B4D38) with emerald highlights (#4EBA87 / #7FE8B6)
  *   and gold/brass compass needle tip.
  */
-export default function Compass3DIcon({ size = 28, className = "" }) {
+export default function Compass3DIcon({ size = 38, className = "" }) {
   return (
     <svg
       width={size}
