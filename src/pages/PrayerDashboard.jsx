@@ -396,13 +396,10 @@ export default function PrayerDashboard() {
   return (
     <div className="w-full bg-[#F7F5EF] text-stone-900 pb-28 font-sans select-none">
       <main className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
-        {/* Redesigned Premium Mobile Tawfiq Header (Mentor Mode Banner, Location, Day Streak, Profile) */}
+        {/* Zomato-inspired Integrated Header (Location & Profile) */}
         <TawfiqHeader
-          now={now}
           location={location}
           onOpenSettings={() => setIsSettingsOpen(true)}
-          currentStreak={currentStreak}
-          longestStreak={longestStreak}
         />
 
         {/* Next Namaz Hero Card: Immersive Mecca Dawn Photography */}
@@ -456,14 +453,41 @@ export default function PrayerDashboard() {
             </div>
           </div>
 
-          {/* Bottom Section: Improved Prayer Progress Indicator (No divider line, data-driven) */}
+          {/* Bottom Section: Improved Prayer Progress Indicator with Integrated Day Streak */}
           <div className="relative z-10 mt-6 pt-1">
             <div className="bg-black/25 backdrop-blur-[4px] rounded-2xl p-3 border border-white/10">
-              <div className="flex items-center justify-between text-[12.5px] text-[#D4E3DB] leading-none mb-2">
-                <span className="font-medium tracking-tight">Today's Prayers</span>
-                <span className="tabular-nums text-white font-medium">
-                  <span className="font-semibold text-[#86D2AD]">{completedCount}</span> / 5 completed
-                </span>
+              <div className="flex items-center justify-between gap-2 text-[12.5px] text-[#D4E3DB] leading-none mb-2.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-medium tracking-tight">Today's Prayers</span>
+                  <span className="text-white/30">•</span>
+                  <span className="tabular-nums text-white font-medium">
+                    <span className="font-semibold text-[#86D2AD]">{completedCount}</span> / 5
+                  </span>
+                </div>
+
+                {/* Day Streak Habit Indicator */}
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 border border-white/15 text-white shadow-xs shrink-0 select-none"
+                  title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
+                    longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
+                  }`}
+                  aria-label={`Current prayer streak: ${currentStreak} days`}
+                >
+                  <Flame
+                    size={12.5}
+                    className={`shrink-0 transition-colors ${
+                      currentStreak > 0
+                        ? "text-[#F59E0B] fill-[#F59E0B]/90 animate-pulse"
+                        : "text-stone-400 fill-none"
+                    }`}
+                  />
+                  <span className="text-[12.5px] font-bold font-sans text-white leading-none tabular-nums">
+                    {currentStreak}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-stone-300 leading-none whitespace-nowrap">
+                    DAY STREAK
+                  </span>
+                </div>
               </div>
               <div
                 className="grid grid-cols-5 gap-1.5 w-full"
