@@ -454,9 +454,9 @@ export default function PrayerDashboard() {
             }}
           />
 
-          {/* Top-Right Day Streak Habit Indicator: Absolute corner-anchored at top-2 right-2 (8px offset) */}
+          {/* Top-Right Day Streak Habit Tab: Attached flush to top-0 right-0 with integrated rounded corner tab */}
           <div
-            className="absolute top-2 right-2 z-20 flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-black/45 hover:bg-black/60 border border-white/20 text-white shadow-sm shrink-0 select-none backdrop-blur-xs transition-colors"
+            className="absolute top-0 right-0 z-20 flex items-center gap-1.5 pl-3 pr-4 pt-2 pb-2 rounded-bl-[18px] bg-black/50 hover:bg-black/65 border-b border-l border-white/20 text-white shadow-sm shrink-0 select-none backdrop-blur-xs transition-colors"
             title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
               longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
             }`}
