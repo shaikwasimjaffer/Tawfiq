@@ -607,12 +607,12 @@ export default function PrayerDashboard() {
             </div>
           </div>
 
-          {/* Seamless Translucent Glass-Fade Mentor Mode Footer: Integrated directly with the Kaaba photograph */}
+          {/* Seamless Translucent Glass-Fade Tawfiq AI Footer: Integrated directly with the Kaaba photograph */}
           <Link
             to="/mentor"
             state={{ animatedEntry: true }}
             className="group relative z-10 mt-auto w-full px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between text-white select-none transition-all duration-200 hover:brightness-110 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-inset"
-            aria-label="Open Mentor Mode AI Guide"
+            aria-label="Open Tawfiq AI"
           >
             {/* Seamless Translucent Glass-Fade Background Layer: Zero hard border, photograph visible throughout */}
             <div
@@ -620,7 +620,7 @@ export default function PrayerDashboard() {
               aria-hidden="true"
             />
 
-            {/* Left: Icon, Primary 'Mentor Mode' label, and subtle 'AI GUIDE' badge */}
+            {/* Left: Sparkle Icon and primary 'Tawfiq AI' label */}
             <div className="relative z-10 flex items-center gap-2.5 sm:gap-3 min-w-0">
               <div
                 className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-white/15 transition-colors"
@@ -629,14 +629,12 @@ export default function PrayerDashboard() {
                 <Sparkles size={14} className="text-emerald-300 transition-transform duration-300 group-hover:scale-110" />
               </div>
 
-              <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                <span className="font-semibold text-[14.5px] sm:text-[15.5px] text-[#FFFDF8] tracking-tight whitespace-nowrap leading-tight" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}>
-                  Mentor Mode
-                </span>
-                <span className="px-1.5 py-0.5 rounded-[5px] bg-white/15 border border-white/20 text-[9.5px] sm:text-[10px] font-bold text-emerald-200 tracking-wider uppercase leading-none select-none">
-                  AI GUIDE
-                </span>
-              </div>
+              <span
+                className="font-semibold text-[15px] sm:text-[16px] text-[#FFFDF8] tracking-tight whitespace-nowrap leading-tight"
+                style={{ textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}
+              >
+                Tawfiq AI
+              </span>
             </div>
 
             {/* Right: Refined right-facing arrow with smooth hover glide */}
