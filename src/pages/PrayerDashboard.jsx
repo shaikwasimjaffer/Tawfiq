@@ -439,9 +439,9 @@ export default function PrayerDashboard() {
           />
 
           {/* Main Card Content (Top Area) */}
-          <div className="relative z-10 flex items-start justify-between gap-4 p-5 sm:p-6 pb-2">
+          <div className="relative z-10 p-5 sm:p-6 pb-2">
             {/* Left Column: Understated label, primary prayer name, readable prescribed time */}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
               <span className="block text-[11.5px] uppercase tracking-[0.05em] font-medium text-[#BFD5CB]">
                 NEXT PRAYER
               </span>
@@ -452,83 +452,23 @@ export default function PrayerDashboard() {
                 Begins at {prayerInfo.nextTime}
               </p>
             </div>
-
-            {/* Right Column: Qibla compass shortcut */}
-            <div className="text-right shrink-0 flex flex-col items-end pt-1">
-              <button
-                type="button"
-                onClick={() => navigate("/qibla")}
-                className="flex items-center justify-end gap-1.5 text-[12px] text-[#DCEAE2] hover:text-white leading-none bg-black/30 hover:bg-black/50 px-3 py-1.5 rounded-full border border-white/15 hover:border-white/30 backdrop-blur-sm transition-all cursor-pointer group active:scale-95 shadow-sm"
-                title="Open 2D Precision Compass & Live AR Finder"
-                aria-label={`Qibla direction is ${prayerInfo.qiblaBearing} degrees. Click to open compass.`}
-              >
-                <Compass size={13.5} className="shrink-0 text-[#86D2AD] group-hover:rotate-45 transition-transform" />
-                <span className="leading-none font-medium">Qibla {prayerInfo.qiblaBearing}°</span>
-                <ChevronRight size={11} className="opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-              </button>
-            </div>
           </div>
 
-          {/* Prayer Information: Embedded directly over the photograph's bottom fade without any box container or horizontal seam */}
-          <div className="relative z-10 w-full mt-auto px-5 sm:px-6 pb-4 sm:pb-5 pt-2">
-            <div className="flex items-center justify-between gap-2 text-[12.5px] text-[#D4E3DB] leading-none mb-2.5">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-medium tracking-tight">Today's Prayers</span>
-                <span className="text-white/30">•</span>
-                <span className="tabular-nums text-white font-medium">
-                  <span className="font-semibold text-[#86D2AD]">{completedCount}</span> / 5
-                </span>
-              </div>
-
-              {/* Day Streak Habit Indicator */}
-              <div
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/35 hover:bg-black/45 border border-white/15 text-white shadow-xs shrink-0 select-none transition-colors"
-                title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
-                  longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
-                }`}
-                aria-label={`Current prayer streak: ${currentStreak} days`}
-              >
-                <Flame
-                  size={12.5}
-                  className={`shrink-0 transition-colors ${
-                    currentStreak > 0
-                      ? "text-[#F59E0B] fill-[#F59E0B]/90 animate-pulse"
-                      : "text-stone-400 fill-none"
-                  }`}
-                />
-                <span className="text-[12.5px] font-bold font-sans text-white leading-none tabular-nums">
-                  {currentStreak}
-                </span>
-                <span className="text-[9px] uppercase tracking-wider font-bold text-stone-200 leading-none whitespace-nowrap">
-                  DAY STREAK
-                </span>
-              </div>
+          {/* Full-Width Bottom-Anchored Qibla Finder CTA */}
+          <button
+            type="button"
+            onClick={() => navigate("/qibla")}
+            className="relative z-10 w-full mt-auto py-3.5 px-5 sm:px-6 flex items-center justify-between gap-3 text-left transition-colors duration-200 cursor-pointer group active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#86D2AD] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            aria-label="Try Qibla Finder Now. Open 2D Precision Compass and Live AR Finder."
+          >
+            <span className="text-[14px] sm:text-[14.5px] font-medium text-[#F4FBF7] tracking-tight group-hover:text-white transition-colors">
+              Try Qibla Finder Now
+            </span>
+            <div className="flex items-center gap-1 text-[#86D2AD] group-hover:text-white transition-colors shrink-0">
+              <Compass size={16} className="transition-transform group-hover:rotate-45" />
+              <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" />
             </div>
-
-            {/* Seamless Full-Width 5-Segment Progress Bar */}
-            <div
-              className="grid grid-cols-5 gap-1.5 w-full"
-              role="progressbar"
-              aria-valuenow={completedCount}
-              aria-valuemin={0}
-              aria-valuemax={5}
-              aria-label={`Prayer progress: ${completedCount} of 5 completed`}
-            >
-              {[0, 1, 2, 3, 4].map((idx) => {
-                const isDone = idx < completedCount;
-                return (
-                  <div
-                    key={idx}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      isDone
-                        ? "bg-gradient-to-r from-[#4EBA87] to-[#6EE7B7] shadow-[0_0_8px_rgba(78,186,135,0.5)]"
-                        : "bg-white/20"
-                    }`}
-                  />
-                );
-              })}
-            </div>
-          </div>
+          </button>
         </section>
 
         {/* 5 Obligatory Prayers Section: Predictable layout with refined typography & prominent Mark Salah action */}
