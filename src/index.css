@@ -138,11 +138,58 @@
   will-change: opacity, transform;
 }
 
+/* Premium Animated Mentor Mode Footer */
+@keyframes mentorGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes mentorGlowPulse {
+  0%, 100% {
+    transform: translate(-10%, -10%) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(15%, 10%) scale(1.15);
+    opacity: 0.65;
+  }
+}
+
+.mentor-hero-footer-bg {
+  background: linear-gradient(
+    115deg,
+    #0B2B20 0%,
+    #0E382A 25%,
+    #134D39 50%,
+    #196048 72%,
+    #0D3527 100%
+  );
+  background-size: 240% 240%;
+  animation: mentorGradientShift 10s ease-in-out infinite;
+  will-change: background-position;
+}
+
+.mentor-glow-orb {
+  animation: mentorGlowPulse 8s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .section-content-fade,
   .mentor-screen-enter {
     animation: none !important;
     transform: none !important;
+  }
+  .mentor-hero-footer-bg,
+  .mentor-glow-orb {
+    animation: none !important;
   }
   .bottom-nav-indicator,
   .top-segmented-indicator {
