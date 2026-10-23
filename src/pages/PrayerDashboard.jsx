@@ -412,19 +412,35 @@ export default function PrayerDashboard() {
             loading="eager"
           />
 
-          {/* Top/Side subtle vignette to preserve high-contrast white text at the top without obscuring the photograph */}
+          {/* Directional Upper-Left Forest-Green Gradient: Calibrated to provide crisp text contrast behind white typography without dimming the Kaaba or sky */}
           <div
             aria-hidden="true"
             className="absolute inset-0 pointer-events-none z-[1]"
             style={{
-              background: "linear-gradient(to bottom, rgba(5, 24, 17, 0.45) 0%, rgba(5, 24, 17, 0.15) 35%, transparent 55%)"
+              background: `linear-gradient(
+                110deg,
+                rgba(3, 22, 15, 0.62) 0%,
+                rgba(3, 22, 15, 0.44) 28%,
+                rgba(3, 22, 15, 0.22) 52%,
+                rgba(3, 22, 15, 0.06) 72%,
+                transparent 100%
+              )`
+            }}
+          />
+
+          {/* Top subtle vertical vignette for consistent top edge contrast */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none z-[2]"
+            style={{
+              background: "linear-gradient(to bottom, rgba(3, 20, 14, 0.35) 0%, rgba(3, 20, 14, 0.10) 30%, transparent 50%)"
             }}
           />
 
           {/* Continuous Image-Integrated Bottom Fade: Smooth photographic gradient allowing the photo to show through while establishing comfortable contrast for the prayer indicators */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 pointer-events-none z-[2]"
+            className="absolute inset-0 pointer-events-none z-[3]"
             style={{
               background: `linear-gradient(
                 to bottom,
@@ -438,17 +454,26 @@ export default function PrayerDashboard() {
             }}
           />
 
-          {/* Main Card Content (Top Area) */}
+          {/* Main Card Content (Top Area) with refined typographic hierarchy & subtle text shadow */}
           <div className="relative z-10 p-5 sm:p-6 pb-2">
             {/* Left Column: Understated label, primary prayer name, readable prescribed time */}
             <div className="min-w-0">
-              <span className="block text-[11.5px] uppercase tracking-[0.05em] font-medium text-[#BFD5CB]">
+              <span
+                className="block text-[11.5px] uppercase tracking-[0.05em] font-semibold text-[#D1E6DC]"
+                style={{ textShadow: "0 1px 6px rgba(0, 0, 0, 0.45)" }}
+              >
                 NEXT PRAYER
               </span>
-              <h1 className="text-[34px] sm:text-[36px] font-serif font-normal mt-1 tracking-tight text-[#FFFDF8] leading-none">
+              <h1
+                className="text-[34px] sm:text-[36px] font-serif font-normal mt-1 tracking-tight text-[#FFFDF8] leading-none"
+                style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.40)" }}
+              >
                 {prayerInfo.nextPrayer}
               </h1>
-              <p className="text-[#E8F0EA] text-[13.5px] sm:text-[14px] mt-1.5 font-normal tracking-normal leading-normal">
+              <p
+                className="text-[#EBF3ED] text-[13.5px] sm:text-[14px] mt-1.5 font-medium tracking-normal leading-normal"
+                style={{ textShadow: "0 1px 8px rgba(0, 0, 0, 0.38)" }}
+              >
                 Begins at {prayerInfo.nextTime}
               </p>
             </div>
