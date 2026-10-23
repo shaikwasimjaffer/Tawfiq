@@ -520,15 +520,15 @@ export default function PrayerDashboard() {
             <button
               type="button"
               onClick={() => navigate("/qibla")}
-              className="w-full py-3 px-5 sm:px-6 flex items-center justify-between gap-3 text-left border-t border-white/10 bg-black/20 hover:bg-black/35 transition-colors duration-200 cursor-pointer group active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#86D2AD] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              className="w-full pt-2.5 pb-4 px-5 sm:px-6 flex items-center justify-between gap-3 text-left border-t border-white/10 bg-black/20 hover:bg-black/35 transition-colors duration-200 cursor-pointer group active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#86D2AD] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               aria-label="Try Qibla Finder Now. Open 2D Precision Compass and Live AR Finder."
             >
-              <span className="text-[13.5px] sm:text-[14px] font-medium text-[#F4FBF7] tracking-tight group-hover:text-white transition-colors">
+              <span className="text-[17.5px] sm:text-[18px] font-medium text-[#F4FBF7] tracking-tight group-hover:text-white transition-colors leading-tight">
                 Try Qibla Finder Now
               </span>
-              <div className="flex items-center gap-1 text-[#86D2AD] group-hover:text-white transition-colors shrink-0">
-                <Compass size={15} className="transition-transform group-hover:rotate-45" />
-                <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+              <div className="flex items-center gap-1.5 text-[#86D2AD] group-hover:text-white transition-colors shrink-0">
+                <Compass size={18} className="transition-transform group-hover:rotate-45" />
+                <ChevronRight size={17} className="transition-transform group-hover:translate-x-0.5" />
               </div>
             </button>
           </div>
