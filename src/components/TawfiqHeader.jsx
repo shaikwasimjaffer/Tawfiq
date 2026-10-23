@@ -56,28 +56,28 @@ export default function TawfiqHeader({
   return (
     <header className={`w-full select-none pt-1 pb-1 ${className}`}>
       <div className="flex items-center justify-between gap-3">
-        {/* Top-Left: Zomato-inspired Integrated Location Header */}
+        {/* Top-Left: Location Header with icon aligned with title & subtitle */}
         <button
           type="button"
           onClick={handleOpenLocation}
-          className="flex items-start gap-2.5 text-left group cursor-pointer focus:outline-none min-w-0 flex-1 active:opacity-80 transition-opacity"
+          className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none min-w-0 flex-1 active:opacity-80 transition-opacity"
           aria-label={`Location: ${locationTitle}, ${locationSubtitle}. Tap to change prayer calculation location.`}
           title="Tap to change prayer calculation location"
         >
-          {/* Location Pin Icon */}
-          <div className="mt-0.5 w-8 h-8 rounded-full bg-[#134D37]/10 flex items-center justify-center shrink-0 text-[#134D37] group-hover:bg-[#134D37]/15 transition-colors">
-            <MapPin size={17} className="text-[#134D37] stroke-[2.4]" />
+          {/* Location Pin Icon in rounded circular badge, vertically centered across the 2-line title & subtitle */}
+          <div className="w-[34px] h-[34px] rounded-full bg-[#134D37]/10 dark:bg-[#134D37]/20 flex items-center justify-center shrink-0 text-[#134D37] group-hover:bg-[#134D37]/15 transition-colors">
+            <MapPin size={18} className="text-[#134D37] stroke-[2.2]" />
           </div>
 
           {/* Title and Address Column */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              <span className="text-[16px] sm:text-[17.5px] font-bold text-[#143E2C] tracking-tight leading-snug truncate">
+          <div className="min-w-0 flex-1 flex flex-col justify-center">
+            <div className="flex items-center gap-1 leading-tight">
+              <span className="text-[16px] sm:text-[17px] font-bold text-[#143E2C] tracking-tight leading-tight truncate">
                 {locationTitle}
               </span>
               <ChevronDown
                 size={15}
-                className="text-[#143E2C] stroke-[2.4] shrink-0 transition-transform group-hover:translate-y-0.5"
+                className="text-[#143E2C] stroke-[2.4] shrink-0 transition-transform group-hover:translate-y-0.5 ml-0.5"
               />
             </div>
             <p className="text-[11.5px] sm:text-[12px] text-[#7A7265] truncate font-medium leading-tight mt-0.5 max-w-[210px] sm:max-w-[270px]">
