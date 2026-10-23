@@ -569,8 +569,8 @@ export default function PrayerDashboard() {
             </span>
           </div>
 
-          {/* Main Card Content (Top Area) with refined typographic hierarchy & cohesive grouping */}
-          <div className="relative z-10 p-5 sm:p-6 pb-6 pr-28 sm:pr-32">
+          {/* Main Card Content (Middle-Lower Hero Area): Beautifully balanced vertical placement, reducing excessive space below */}
+          <div className="relative z-10 pt-11 pb-4 px-5 sm:pt-12 sm:pb-5 sm:px-6 pr-28 sm:pr-32">
             {/* Left Column: Primary prayer name, refined numeric countdown, readable start time */}
             <div className="min-w-0">
               <h1
