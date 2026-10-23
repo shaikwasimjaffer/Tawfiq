@@ -403,7 +403,7 @@ export default function PrayerDashboard() {
         />
 
         {/* Next Namaz Hero Card: Immersive Mecca Dawn Photography */}
-        <section className="relative overflow-hidden rounded-[26px] text-white p-5 sm:p-6 shadow-[0_8px_20px_-6px_rgba(15,35,26,0.14),0_2px_6px_-1px_rgba(0,0,0,0.04)] border border-[#3A5D4D]/25 isolate">
+        <section className="relative overflow-hidden rounded-[26px] text-white shadow-[0_8px_20px_-6px_rgba(15,35,26,0.14),0_2px_6px_-1px_rgba(0,0,0,0.04)] border border-[#3A5D4D]/25 isolate flex flex-col justify-between min-h-[220px]">
           {/* Dawn Kaaba Photograph Background - Positioned to showcase Kaaba, minarets, and dawn light */}
           <img
             src="/kaaba-dawn.jpg"
@@ -415,15 +415,15 @@ export default function PrayerDashboard() {
           {/* Layered Forest-Green Gradient: Calibrated to preserve Kaaba gold band, sky & architecture while maintaining text contrast */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-b from-[#081811]/45 via-[#081811]/25 via-50% to-[#04110A]/92 pointer-events-none z-[1]"
+            className="absolute inset-0 bg-gradient-to-b from-[#081811]/45 via-[#081811]/20 via-50% to-[#04110A]/85 pointer-events-none z-[1]"
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-[#071911]/75 via-transparent via-55% to-[#071911]/55 pointer-events-none z-[2]"
+            className="absolute inset-0 bg-gradient-to-r from-[#071911]/70 via-transparent via-55% to-[#071911]/50 pointer-events-none z-[2]"
           />
 
-          {/* Main Card Content */}
-          <div className="relative z-10 flex items-start justify-between gap-4">
+          {/* Main Card Content (Top Area) */}
+          <div className="relative z-10 flex items-start justify-between gap-4 p-5 sm:p-6 pb-2">
             {/* Left Column: Understated label, primary prayer name, readable prescribed time */}
             <div className="min-w-0 flex-1">
               <span className="block text-[11.5px] uppercase tracking-[0.05em] font-medium text-[#BFD5CB]">
@@ -453,9 +453,10 @@ export default function PrayerDashboard() {
             </div>
           </div>
 
-          {/* Bottom Section: Improved Prayer Progress Indicator with Integrated Day Streak */}
-          <div className="relative z-10 mt-6 pt-1">
-            <div className="bg-black/25 backdrop-blur-[4px] rounded-2xl p-3 border border-white/10">
+          {/* Seamless Bottom-Anchored Glass Overlay: Natural extension of the photo */}
+          <div className="relative z-10 w-full mt-auto">
+            {/* Continuous bottom-up photographic glass gradient with subtle blur */}
+            <div className="w-full px-5 sm:px-6 pt-6 pb-4 sm:pb-5 bg-gradient-to-t from-[#030F08]/95 via-[#04120A]/75 via-50% to-transparent backdrop-blur-[5px]">
               <div className="flex items-center justify-between gap-2 text-[12.5px] text-[#D4E3DB] leading-none mb-2.5">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="font-medium tracking-tight">Today's Prayers</span>
@@ -467,7 +468,7 @@ export default function PrayerDashboard() {
 
                 {/* Day Streak Habit Indicator */}
                 <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 border border-white/15 text-white shadow-xs shrink-0 select-none"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white shadow-xs shrink-0 select-none backdrop-blur-xs transition-colors"
                   title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
                     longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
                   }`}
@@ -484,11 +485,13 @@ export default function PrayerDashboard() {
                   <span className="text-[12.5px] font-bold font-sans text-white leading-none tabular-nums">
                     {currentStreak}
                   </span>
-                  <span className="text-[9px] uppercase tracking-wider font-bold text-stone-300 leading-none whitespace-nowrap">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-stone-200 leading-none whitespace-nowrap">
                     DAY STREAK
                   </span>
                 </div>
               </div>
+
+              {/* Seamless Full-Width 5-Segment Progress Bar */}
               <div
                 className="grid grid-cols-5 gap-1.5 w-full"
                 role="progressbar"
