@@ -35,6 +35,72 @@ export const VOLUNTARY_PRAYER_DESCRIPTIONS = {
   witr: "Night Witr Prayer • Concluding odd-numbered prayer",
 };
 
+/**
+ * 12 Daily Sunnah Prayers (Sunan al-Rawatib)
+ * Consistently praying them builds a home in Jannah (Paradise). Total 12 rak'ahs per day:
+ * - Fajr: 2 rak'ahs before Fard (2 rak'ahs)
+ * - Dhuhr: 4 rak'ahs before Fard and 2 rak'ahs after (6 rak'ahs)
+ * - Maghrib: 2 rak'ahs after Fard (2 rak'ahs)
+ * - Isha: 2 rak'ahs after Fard (2 rak'ahs)
+ */
+export const SUNNAH_RAWATIB = [
+  {
+    prayerKey: "fajr",
+    name: "Fajr",
+    subtitle: "2 Rak'ahs Before Fard",
+    totalRakahs: 2,
+    sets: [
+      { id: "before", label: "Before Fard", rakahs: 2, desc: "2 Rak'ahs Sunnah before Fard" },
+    ],
+  },
+  {
+    prayerKey: "dhuhr",
+    name: "Dhuhr",
+    subtitle: "4 Before · 2 After",
+    totalRakahs: 6,
+    sets: [
+      { id: "before", label: "Before Fard", rakahs: 4, desc: "4 Rak'ahs Sunnah before Fard" },
+      { id: "after", label: "After Fard", rakahs: 2, desc: "2 Rak'ahs Sunnah after Fard" },
+    ],
+  },
+  {
+    prayerKey: "maghrib",
+    name: "Maghrib",
+    subtitle: "2 Rak'ahs After Fard",
+    totalRakahs: 2,
+    sets: [
+      { id: "after", label: "After Fard", rakahs: 2, desc: "2 Rak'ahs Sunnah after Fard" },
+    ],
+  },
+  {
+    prayerKey: "isha",
+    name: "Isha",
+    subtitle: "2 Rak'ahs After Fard",
+    totalRakahs: 2,
+    sets: [
+      { id: "after", label: "After Fard", rakahs: 2, desc: "2 Rak'ahs Sunnah after Fard" },
+    ],
+  },
+];
+
+export const TOTAL_SUNNAH_RAKAHS = 12;
+
+export function calculateCompletedSunnahRakahs(sunnahStatuses = {}) {
+  let count = 0;
+  if (!sunnahStatuses || typeof sunnahStatuses !== "object") return 0;
+  for (const prayer of SUNNAH_RAWATIB) {
+    const prayerRecord = sunnahStatuses[prayer.prayerKey];
+    if (prayerRecord && typeof prayerRecord === "object") {
+      for (const set of prayer.sets) {
+        if (prayerRecord[set.id]) {
+          count += set.rakahs;
+        }
+      }
+    }
+  }
+  return count;
+}
+
 import { Coordinates, PrayerTimes } from "adhan";
 import {
   getSavedLocation,

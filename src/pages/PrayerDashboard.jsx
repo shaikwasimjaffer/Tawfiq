@@ -31,6 +31,9 @@ import {
   VOLUNTARY_PRAYERS,
   VOLUNTARY_PRAYER_NAMES,
   getVoluntaryPrayerInfo,
+  SUNNAH_RAWATIB,
+  TOTAL_SUNNAH_RAKAHS,
+  calculateCompletedSunnahRakahs,
 } from "@/lib/prayerUtils";
 import { azanScheduler } from "@/lib/azanScheduler";
 import { getSavedLocation, getCalculationPreferences } from "@/lib/locationService";
@@ -224,7 +227,72 @@ export default function PrayerDashboard() {
   );
   const { currentStreak, longestStreak, recordDayStatuses, userScope } = usePrayerStreak(now);
 
-  // Today's voluntary prayer statuses stored in localStorage
+  // Today's 12 Daily Sunnah Prayers (Sunan al-Rawatib) state stored in localStorage:
+  // Key format: tawfiq_sunnah_rawatib_${userScope}${todayDateStr}
+  // Shape: { fajr: { before: true }, dhuhr: { before: true, after: false }, maghrib: { after: true }, isha: { after: false } }
+  const sunnahTodayKey = `tawfiq_sunnah_rawatib_${userScope}${todayDateStr}`;
+  const [sunnahStatuses, setSunnahStatuses] = useState(() => {
+    try {
+      const stored = localStorage.getItem(sunnahTodayKey);
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return {};
+  });
+
+  // Re-sync 12 Sunnah prayers whenever calendar date or user account changes (automatic midnight rollover / app resume)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(sunnahTodayKey);
+      setSunnahStatuses(stored ? JSON.parse(stored) : {});
+    } catch {
+      setSunnahStatuses({});
+    }
+  }, [sunnahTodayKey]);
+
+  // Selected Sunnah prayer for bottom sheet logging modal
+  const [selectedSunnahForLog, setSelectedSunnahForLog] = useState(null);
+
+  /**
+   * Toggles completion status of a specific Sunnah set (e.g. prayerKey: "dhuhr", setId: "before")
+   */
+  const handleToggleSunnahSet = (prayerKey, setId) => {
+    if (!prayerKey || !setId) return;
+    setSunnahStatuses((prev) => {
+      const prevPrayerObj = prev[prayerKey] || {};
+      const isCurrentlyCompleted = !!prevPrayerObj[setId];
+      const updated = {
+        ...prev,
+        [prayerKey]: {
+          ...prevPrayerObj,
+          [setId]: !isCurrentlyCompleted,
+        },
+      };
+
+      try {
+        localStorage.setItem(sunnahTodayKey, JSON.stringify(updated));
+      } catch {}
+
+      const prayerConfig = SUNNAH_RAWATIB.find((p) => p.prayerKey === prayerKey);
+      const setConfig = prayerConfig?.sets.find((s) => s.id === setId);
+
+      if (!isCurrentlyCompleted) {
+        toast.success(`Marked ${prayerConfig?.name || prayerKey} ${setConfig?.label || ""} (${setConfig?.rakahs || 2} Rak'ahs) as completed.`, {
+          description: "May Allah build for you a home in Jannah.",
+        });
+      } else {
+        toast.info(`Unmarked ${prayerConfig?.name || prayerKey} ${setConfig?.label || ""}.`);
+      }
+
+      return updated;
+    });
+  };
+
+  const completedSunnahRakahs = useMemo(
+    () => calculateCompletedSunnahRakahs(sunnahStatuses),
+    [sunnahStatuses]
+  );
+
+  // Today's voluntary prayer statuses stored in localStorage (preserved for compatibility)
   const voluntaryTodayKey = `tawfiq_voluntary_prayers_${userScope}${todayDateStr}`;
   const [voluntaryPrayerStatuses, setVoluntaryPrayerStatuses] = useState(() => {
     try {
@@ -749,84 +817,136 @@ export default function PrayerDashboard() {
           </div>
         </section>
 
-        {/* Voluntary Prayers Section: 5 authentic voluntary prayers matching Screenshot 2 */}
+        {/* 12 Daily Sunnah Prayers (Sunan al-Rawatib) Section */}
         <section className="bg-white rounded-[22px] p-4 sm:p-5 border border-[#E7E2D9] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)]">
-          {/* Section Header: Voluntary Prayers */}
+          {/* Section Header: Title + Accurate Rak'ahs Progress */}
           <div className="mb-3.5 sm:mb-4 px-0.5">
-            <h2 className="text-[20px] sm:text-[22px] font-bold text-stone-900 tracking-tight leading-tight">
-              Voluntary Prayers
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-[20px] sm:text-[22px] font-bold text-stone-900 tracking-tight leading-tight">
+                  12 Daily Sunnah Prayers
+                </h2>
+                <p className="text-[12px] sm:text-[12.5px] text-[#6E685F] mt-0.5">
+                  Sunan al-Rawatib attached to obligatory prayers
+                </p>
+              </div>
+
+              {/* Progress Count Badge */}
+              <div className="text-right shrink-0">
+                <span className="text-[13.5px] sm:text-[14.5px] font-bold text-[#134D37] tabular-nums">
+                  {completedSunnahRakahs} / {TOTAL_SUNNAH_RAKAHS}
+                </span>
+                <span className="text-[11px] text-[#6E685F] block leading-none mt-0.5">
+                  Rak'ahs
+                </span>
+              </div>
+            </div>
+
+            {/* Restrained Progress Bar */}
+            <div className="mt-3 h-2 w-full bg-[#EAE5DD] rounded-full overflow-hidden p-0.5 border border-[#DFD9CD]">
+              <div
+                className="h-full bg-[#134D37] rounded-full transition-all duration-300 ease-out motion-reduce:transition-none"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(0, Math.round((completedSunnahRakahs / TOTAL_SUNNAH_RAKAHS) * 100))
+                  )}%`,
+                }}
+              />
+            </div>
           </div>
 
-          {/* Consistent 5-Row List matching the exact visual structure */}
+          {/* 4 Obligatory Prayer Rows for Sunnah Tracking: Fajr, Dhuhr, Maghrib, Isha */}
           <div className="divide-y divide-[#F0ECE4]">
-            {VOLUNTARY_PRAYERS.map((key) => {
-              const name = VOLUNTARY_PRAYER_NAMES[key];
-              const time = voluntaryInfo.times[key];
-              const isNext = voluntaryInfo.nextVoluntaryKey === key;
-              const isCompleted = !!voluntaryPrayerStatuses[key];
+            {SUNNAH_RAWATIB.map((item) => {
+              const prayerKey = item.prayerKey;
+              const prayerSunnahState = sunnahStatuses[prayerKey] || {};
+              const completedSetsCount = item.sets.filter((s) => !!prayerSunnahState[s.id]).length;
+              const isFullyCompleted = completedSetsCount === item.sets.length;
+              const isPartiallyCompleted = completedSetsCount > 0 && !isFullyCompleted;
+
+              // Calculate rakahs completed for this prayer
+              const prayerCompletedRakahs = item.sets.reduce(
+                (sum, s) => sum + (prayerSunnahState[s.id] ? s.rakahs : 0),
+                0
+              );
 
               return (
                 <div
-                  key={key}
-                  className={`py-3.5 px-2.5 sm:px-3 rounded-xl flex items-center justify-between gap-2.5 sm:gap-3 transition-colors ${
-                    isNext ? "bg-[#EDF4F0]" : "hover:bg-[#FAF9F6]"
-                  }`}
+                  key={prayerKey}
+                  className="py-3.5 px-2.5 sm:px-3 rounded-xl flex items-center justify-between gap-2.5 sm:gap-3 transition-colors hover:bg-[#FAF9F6]"
                 >
-                  {/* Left Column: Prayer Name + NEXT badge */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-semibold text-[17px] sm:text-[18px] text-stone-900 leading-tight">
-                      {name}
-                    </span>
-                    {isNext && (
-                      <span
-                        className="text-[9.5px] sm:text-[10px] font-semibold bg-[#1C4533] text-white px-1.5 py-0.5 rounded-[4px] leading-none uppercase tracking-wider shrink-0"
-                        aria-label="Next upcoming voluntary prayer"
-                      >
-                        NEXT
+                  {/* Left Column: Prayer Name + Sunnah Information & Indicators */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-[17px] sm:text-[18px] text-stone-900 leading-tight">
+                        {item.name}
                       </span>
-                    )}
-                  </div>
+                      {isFullyCompleted ? (
+                        <span className="text-[10px] font-semibold bg-[#E6F0EA] text-[#14422F] border border-[#BFD9C7] px-1.5 py-0.5 rounded-full leading-none shrink-0 inline-flex items-center gap-1">
+                          <CheckCircle2 size={10} className="shrink-0" />
+                          <span>All Done</span>
+                        </span>
+                      ) : isPartiallyCompleted ? (
+                        <span className="text-[10px] font-semibold bg-[#F5EEDF] text-[#745517] border border-[#E3D6BC] px-1.5 py-0.5 rounded-full leading-none shrink-0">
+                          {prayerCompletedRakahs} / {item.totalRakahs}
+                        </span>
+                      ) : null}
+                    </div>
 
-                  {/* Right Column: Appointed Prayer Time + Action */}
-                  <div className="shrink-0 flex items-center gap-2.5 sm:gap-3.5">
-                    <span
-                      className="text-[14.5px] sm:text-[15.5px] font-sans font-medium text-stone-700 tabular-nums whitespace-nowrap leading-none inline-block text-right"
-                      style={{ whiteSpace: "nowrap" }}
-                    >
-                      {time}
-                    </span>
+                    {/* Sunnah Information & Dhuhr Independent Indicators */}
+                    <div className="mt-1 flex items-center gap-2 flex-wrap">
+                      <span className="text-[12.5px] sm:text-[13px] text-[#6E685F] font-medium leading-none">
+                        {item.subtitle}
+                      </span>
 
-                    <div className="w-[102px] sm:w-[110px] text-right flex items-center justify-end">
-                      {isCompleted ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleVoluntaryPrayer(key);
-                          }}
-                          className="w-full h-[35px] px-2 rounded-full text-[12.5px] sm:text-[13px] font-medium inline-flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 bg-[#E6F0EA] hover:bg-[#DCECE1] text-[#14422F] border border-[#BFD9C7] shadow-2xs cursor-pointer group"
-                          title="Completed • Tap to undo"
-                          aria-label={`${name} marked completed. Tap to undo.`}
-                        >
-                          <CheckCircle2 size={14} className="text-[#14422F] stroke-[2.2] shrink-0" />
-                          <span className="truncate">Completed</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleVoluntaryPrayer(key);
-                          }}
-                          className="w-full h-[35px] px-2 rounded-full text-[12.5px] sm:text-[13px] font-medium inline-flex items-center justify-center transition-all duration-150 active:scale-95 bg-[#1B4332] hover:bg-[#143527] text-white shadow-2xs cursor-pointer hover:shadow-sm"
-                          title={`Mark ${name} as completed`}
-                          aria-label={`Mark ${name} as completed`}
-                        >
-                          Mark Salah
-                        </button>
+                      {/* Explicit visual set indicators for multi-set prayers like Dhuhr */}
+                      {item.sets.length > 1 && (
+                        <div className="flex items-center gap-1 text-[11px] select-none">
+                          {item.sets.map((set) => {
+                            const isDone = !!prayerSunnahState[set.id];
+                            return (
+                              <span
+                                key={set.id}
+                                className={`px-1.5 py-0.5 rounded-[4px] font-medium text-[10.5px] border transition-colors ${
+                                  isDone
+                                    ? "bg-[#E6F0EA] text-[#14422F] border-[#BFD9C7]"
+                                    : "bg-[#F7F5EF] text-stone-600 border-[#E5DFD5]"
+                                }`}
+                              >
+                                {set.id === "before" ? "4 Pre" : "2 Post"}
+                              </span>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Right Column: Log Sunnah Action Button (Reuses Tawfiq Action Language) */}
+                  <div className="shrink-0 w-[102px] sm:w-[110px] text-right flex items-center justify-end">
+                    {isFullyCompleted ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSunnahForLog(item)}
+                        className="w-full h-[35px] px-2 rounded-full text-[12.5px] sm:text-[13px] font-medium inline-flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 bg-[#E6F0EA] hover:bg-[#DCECE1] text-[#14422F] border border-[#BFD9C7] shadow-2xs cursor-pointer group"
+                        title="Completed • Tap to edit or view"
+                        aria-label={`${item.name} Sunnah completed. Tap to edit.`}
+                      >
+                        <CheckCircle2 size={14} className="text-[#14422F] stroke-[2.2] shrink-0" />
+                        <span className="truncate">Done</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSunnahForLog(item)}
+                        className="w-full h-[35px] px-2 rounded-full text-[12.5px] sm:text-[13px] font-medium inline-flex items-center justify-center transition-all duration-150 active:scale-95 bg-[#1B4332] hover:bg-[#143527] text-white shadow-2xs cursor-pointer hover:shadow-sm"
+                        title={`Log ${item.name} Sunnah prayers`}
+                        aria-label={`Log ${item.name} Sunnah prayers`}
+                      >
+                        Log Sunnah
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -1088,6 +1208,127 @@ export default function PrayerDashboard() {
                   </button>
                 </div>
               )}
+          </div>
+        </div>
+      )}
+
+      {/* Slide-up Bottom Sheet for 12 Daily Sunnah Prayers (Sunan al-Rawatib) */}
+      {selectedSunnahForLog && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Log ${selectedSunnahForLog.name} Sunnah prayers`}
+          className="fixed inset-0 z-50 flex flex-col justify-end"
+        >
+          {/* Backdrop with soft blur */}
+          <div
+            onClick={() => setSelectedSunnahForLog(null)}
+            className="fixed inset-0 bg-stone-900/40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
+          />
+
+          {/* Bottom Sheet Drawer content - Constrained to ~32% max height */}
+          <div className="relative w-full max-w-md mx-auto bg-[#FAF8F5] rounded-t-[26px] shadow-[0_-8px_30px_rgba(0,0,0,0.18)] border-t border-[#E5DFD5] p-4 pb-6 z-10 animate-in slide-in-from-bottom duration-300">
+            {/* Grab handle indicator */}
+            <div className="w-10 h-1 bg-[#D3CDC4] rounded-full mx-auto mb-3" />
+
+            {/* Header: Prayer name, appointed time, and close button */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAE4D9]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[17px] font-semibold text-stone-900 leading-none">
+                    Log {selectedSunnahForLog.name} Sunnah
+                  </h3>
+                  <span className="text-xs font-medium text-[#134D37] bg-[#E3EEE6] px-2 py-0.5 rounded-full">
+                    {selectedSunnahForLog.totalRakahs} Rak'ahs Total
+                  </span>
+                </div>
+                <p className="text-[12px] text-[#6E685F] mt-0.5">
+                  Select Sunnah Rawatib set to toggle completion
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedSunnahForLog(null)}
+                className="w-7 h-7 rounded-full bg-[#EFE9DF] text-[#6E685F] hover:bg-[#E4DDCF] flex items-center justify-center transition-colors focus:outline-none"
+                aria-label="Close sheet"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Sunnah Sets Grid: Before Fard / After Fard cards matching obligatory options visual language */}
+            <div className={`mt-3 grid gap-2 sm:gap-2.5 ${selectedSunnahForLog.sets.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+              {selectedSunnahForLog.sets.map((set) => {
+                const prayerSunnahState = sunnahStatuses[selectedSunnahForLog.prayerKey] || {};
+                const isCompleted = !!prayerSunnahState[set.id];
+
+                return (
+                  <button
+                    key={set.id}
+                    type="button"
+                    onClick={() => handleToggleSunnahSet(selectedSunnahForLog.prayerKey, set.id)}
+                    className={`text-left p-3.5 rounded-2xl border transition-all duration-200 active:scale-[0.98] flex flex-col justify-between ${
+                      isCompleted
+                        ? "bg-[#173F2E] text-white border-[#173F2E] shadow-sm"
+                        : "bg-white hover:bg-[#F5F2EB] border-[#E8E2D7] text-stone-900"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full mb-1.5">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          isCompleted
+                            ? "bg-white/20 text-white"
+                            : "bg-[#DFEDE4] text-[#163B2C]"
+                        }`}
+                      >
+                        <CheckCircle2 size={15} />
+                      </div>
+                      {isCompleted ? (
+                        <span className="text-[10px] font-semibold bg-white/25 text-white px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                          Completed
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold bg-[#FAF8F5] text-stone-600 border border-[#DDD7CD] px-1.5 py-0.5 rounded-full">
+                          Pending
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4
+                        className={`text-[14px] font-semibold leading-tight ${
+                          isCompleted ? "text-white" : "text-stone-900"
+                        }`}
+                      >
+                        {set.label} · {set.rakahs} Rak'ahs
+                      </h4>
+                      <p
+                        className={`text-[11.5px] mt-0.5 leading-tight ${
+                          isCompleted ? "text-white/80" : "text-[#6E685F]"
+                        }`}
+                      >
+                        {set.desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Modal Done/Dismiss Action */}
+            <div className="mt-3.5 pt-3 border-t border-[#EAE4D9] flex items-center justify-between">
+              <span className="text-[12px] text-stone-500">
+                Tip: Praying all 12 rak'ahs earns a house in Jannah
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedSunnahForLog(null)}
+                className="text-[12.5px] font-semibold text-[#14422F] hover:bg-[#DCECE1] bg-[#E6F0EA] border border-[#BFD9C7] rounded-lg transition-colors py-1.5 px-3.5 cursor-pointer shadow-2xs"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
