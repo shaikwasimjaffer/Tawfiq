@@ -128,37 +128,42 @@ export function calculateDistanceToKaabaKm(latitude, longitude) {
  * @param {number} thresholdDegrees Alignment tolerance in degrees (default 3°)
  * @returns {object} { isAligned, diff, text, direction }
  */
-export function getQiblaAlignmentInfo(qiblaBearing, deviceHeading, thresholdDegrees = 3) {
-  if (typeof deviceHeading !== "number" || Number.isNaN(deviceHeading)) {
+export function getQiblaAlignmentInfo(qiblaBearing, deviceHeading, thresholdDegrees = 4) {
+  if (typeof deviceHeading !== "number" || !Number.isFinite(deviceHeading)) {
     return {
       isAligned: false,
       diff: 0,
+      absDiff: 0,
+      degrees: 0,
       text: "Waiting for sensor readings...",
+      subtext: "Calibrating device compass",
       direction: "none",
     };
   }
 
   const diff = getAngularDifference(qiblaBearing, deviceHeading);
   const absDiff = Math.abs(diff);
+  const rounded = Math.round(absDiff);
 
-  if (absDiff <= thresholdDegrees) {
+  if (rounded <= thresholdDegrees) {
     return {
       isAligned: true,
       diff,
       absDiff,
+      degrees: rounded,
       text: "Facing the Kaaba",
       subtext: "You are directly aligned with the Qibla",
       direction: "aligned",
     };
   }
 
-  const rounded = Math.round(absDiff);
   if (diff > 0) {
     return {
       isAligned: false,
       diff,
       absDiff,
-      text: `Turn ${rounded}° Right`,
+      degrees: rounded,
+      text: `Turn Right ${rounded}°`,
       subtext: "Rotate clockwise towards Qibla",
       direction: "right",
     };
@@ -167,7 +172,8 @@ export function getQiblaAlignmentInfo(qiblaBearing, deviceHeading, thresholdDegr
       isAligned: false,
       diff,
       absDiff,
-      text: `Turn ${rounded}° Left`,
+      degrees: rounded,
+      text: `Turn Left ${rounded}°`,
       subtext: "Rotate counter-clockwise towards Qibla",
       direction: "left",
     };

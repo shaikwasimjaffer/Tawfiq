@@ -1,27 +1,27 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
-import { CheckCircle2, RotateCw, RotateCcw, Sliders, ChevronDown, ChevronUp, Sparkles, Navigation } from "lucide-react";
+import { Sliders, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 
 /**
  * QiblaAR3DView
  *
- * Implements a rock-solid, professional 3D WebGL Augmented Reality view for Qibla direction finder.
+ * Professional 3D WebGL Augmented Reality component for Qibla direction finder.
  * Renders a sleek 3D metallic emerald green arrow that accurately and smoothly tracks
  * the true geodesic direction of the Holy Kaaba in real-time 3D space.
  *
- * Fixes:
- * - Uses Quaternion-based slerp rotation for 100% stable, gimbal-lock-free orientation.
- * - Perfectly scaled to float in the center viewport without clipping or blocking the camera view.
+ * Features:
+ * - Quaternion-based slerp rotation for 100% stable, gimbal-lock-free orientation.
+ * - Perfectly scaled and positioned at (0, -0.15, 0) to float in the viewport without clipping or text collision.
  * - Compensates accurately for upright air posture (pitch ~ 90°), casual reading tilt (pitch ~ 65°),
  *   and roll without barrel-rolling or twitching.
- * - Stateful alignment hysteresis (enter at 4°, exit at 6°) to eliminate boundary flickering.
+ * - Alignment hysteresis (enter at 4°, exit at 6°) to eliminate boundary flickering.
+ * - Responsive bottom sensor controls card with clean wrapping and verified gyro status.
  */
 export default function QiblaAR3DView({
   qiblaBearing,
   heading,
   pitch = 90,
   roll = 0,
-  distanceKm,
   sensorAvailable = false,
   onSimulateHeading,
   onSimulatePitch,
@@ -142,7 +142,7 @@ export default function QiblaAR3DView({
     camera.position.set(0, 0, 3.2);
     camera.lookAt(0, 0, 0);
 
-    // 3. Renderer with transparent background to overlay on camera feed
+    // 3. Renderer with transparent background to overlay on live camera feed
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -176,6 +176,7 @@ export default function QiblaAR3DView({
     // BUILD 3D SLEEK EMERALD GREEN NAVIGATIONAL ARROW
     // ============================================================
     const arrowGroup = new THREE.Group();
+    // Positioned comfortably in center-lower viewport
     arrowGroup.position.set(0, -0.15, 0);
     scene.add(arrowGroup);
     arrowGroupRef.current = arrowGroup;
@@ -235,7 +236,7 @@ export default function QiblaAR3DView({
     const collarMesh = new THREE.Mesh(collarGeom, goldAccentMaterial);
     arrowGroup.add(collarMesh);
 
-    // Sub-part D: Aerodynamic Tail Stabilizer Fins (at Z = 0.35)
+    // Sub-part D: Aerodynamic Tail Stabilizer Fins (at Z = 0.32)
     const finGeom1 = new THREE.BoxGeometry(0.025, 0.36, 0.28);
     finGeom1.translate(0, 0, 0.32);
     const fin1 = new THREE.Mesh(finGeom1, goldAccentMaterial);
@@ -381,124 +382,69 @@ export default function QiblaAR3DView({
   }, []);
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none select-none z-10">
+    <div className="absolute inset-0 w-full h-full pointer-events-none select-none z-10 flex flex-col justify-between">
       {/* Three.js 3D WebGL Canvas Mount */}
-      <div ref={mountRef} className="absolute inset-0 w-full h-full" />
+      <div ref={mountRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
-      {/* Dynamic 3D Alignment Reticle in Center */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {isAlignedState ? (
-          /* PERFECT ALIGNMENT: Radiant Emerald Targeting Lock */
-          <div className="relative flex flex-col items-center animate-in zoom-in-95 duration-200">
-            <div className="w-40 h-40 rounded-full border-2 border-emerald-400/80 shadow-[0_0_40px_rgba(52,211,153,0.7)] animate-pulse flex items-center justify-center">
-              <div className="w-28 h-28 rounded-full border border-emerald-300/60 flex items-center justify-center">
-                <div className="absolute w-full h-[1px] bg-emerald-400/50" />
-                <div className="absolute h-full w-[1px] bg-emerald-400/50" />
-              </div>
-            </div>
-
-            <div className="mt-5 px-3.5 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-400/80 text-emerald-200 shadow-xl backdrop-blur-md flex items-center gap-1.5">
-              <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-              <span className="text-xs font-bold tracking-wide">
-                ALIGNED WITH KAABA (±{Math.round(absDiff * 10) / 10}°)
-              </span>
-            </div>
-          </div>
-        ) : (
-          /* GUIDANCE STATE: Dynamic Directional Hints */
-          <div className="relative flex flex-col items-center">
-            {/* Subtle center crosshair for alignment reference */}
-            <div className="w-14 h-14 rounded-full border border-white/25 flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
-            </div>
-
-            {/* Turn instruction banner if off-angle */}
-            <div className="mt-6 px-3.5 py-1.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/20 text-white shadow-xl flex items-center gap-2">
-              {shortestDiff > 0 ? (
-                <>
-                  <div className="w-6 h-6 rounded-lg bg-emerald-500/25 border border-emerald-400/70 flex items-center justify-center text-emerald-400">
-                    <RotateCw size={14} />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-[11.5px] font-bold flex items-center gap-1">
-                      <span>Turn Right</span>
-                      <span className="text-emerald-400 font-mono">+{Math.round(shortestDiff)}°</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-6 h-6 rounded-lg bg-emerald-500/25 border border-emerald-400/70 flex items-center justify-center text-emerald-400">
-                    <RotateCcw size={14} />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-[11.5px] font-bold flex items-center gap-1">
-                      <span>Turn Left</span>
-                      <span className="text-emerald-400 font-mono">-{Math.round(absDiff)}°</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Floating 3D HUD Diagnostics & Orientation Info */}
-      <div className="absolute top-14 left-3 right-3 flex items-center justify-between text-white text-[11px] font-mono pointer-events-none">
-        <div className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 flex items-center gap-1.5">
-          <Navigation size={11} className="text-emerald-400" />
-          <span>Kaaba: {qiblaBearing}°</span>
-          <span className="text-stone-400">•</span>
-          <span>Dev: {heading}°</span>
+      {/* Alignment Center Glow Ring (Subtle ambient effect, never blocks view) */}
+      {isAlignedState && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-36 h-36 rounded-full border border-emerald-400/40 shadow-[0_0_50px_rgba(52,211,153,0.35)] animate-pulse" />
         </div>
+      )}
 
-        <div className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 flex items-center gap-1.5">
-          <span>Pitch: {Math.round(pitch)}°</span>
-          {pitch >= 60 && pitch <= 120 && (
-            <span className="text-emerald-400 font-semibold">(Air/Upright)</span>
-          )}
-          {pitch < 30 && <span className="text-amber-400 font-semibold">(Flat)</span>}
-        </div>
-      </div>
+      {/* Spacer to push controls to bottom */}
+      <div className="flex-1 pointer-events-none" />
 
-      {/* Interactive Desktop / Calibration Controls Drawer */}
-      <div className="absolute bottom-2 left-3 right-3 pointer-events-auto z-30">
-        <div className="bg-black/85 backdrop-blur-lg border border-white/20 rounded-2xl p-2.5 shadow-2xl text-white">
-          <div className="flex items-center justify-between">
+      {/* Responsive Bottom Sensor Controls Drawer */}
+      <div className="relative z-30 px-3 pb-3 pointer-events-auto">
+        <div className="bg-black/85 backdrop-blur-lg border border-white/20 rounded-2xl p-2.5 sm:p-3 shadow-2xl text-white">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => setShowControls((prev) => !prev)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-emerald-200 cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-[13px] font-semibold text-emerald-300 hover:text-emerald-200 transition-colors cursor-pointer"
+              aria-expanded={showControls}
             >
-              <Sliders size={13} />
+              <Sliders size={14} className="shrink-0 text-emerald-400" />
               <span>3D Orientation & Sensor Controls</span>
-              {showControls ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+              {showControls ? (
+                <ChevronDown size={14} className="shrink-0 text-stone-300" />
+              ) : (
+                <ChevronUp size={14} className="shrink-0 text-stone-300" />
+              )}
             </button>
 
-            <span className="text-[10px] text-stone-400">
-              {sensorAvailable ? "🟢 Hardware Gyro Active" : "🟠 Manual / Simulation"}
-            </span>
+            {/* Sensor Verification Status Badge */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 shrink-0 text-[11px] font-medium">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  sensorAvailable ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                }`}
+              />
+              <span className="text-stone-200">
+                {sensorAvailable ? "Hardware Gyro Active" : "Manual / Simulation"}
+              </span>
+            </div>
           </div>
 
           {showControls && (
-            <div className="mt-3 pt-2.5 border-t border-white/15 space-y-2.5 animate-in fade-in duration-150">
-              {/* Quick Orientation Presets */}
-              <div className="flex items-center gap-1.5 text-[10.5px]">
-                <span className="text-stone-400 shrink-0">Presets:</span>
+            <div className="mt-2.5 pt-2.5 border-t border-white/15 space-y-2 text-xs animate-in fade-in duration-150">
+              {/* Preset Buttons Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10.5px]">
                 <button
                   type="button"
                   onClick={() => {
                     onSimulatePitch?.(90);
                     onSimulateRoll?.(0);
                   }}
-                  className={`px-2 py-0.5 rounded-md border text-[10.5px] cursor-pointer transition-all ${
+                  className={`px-2 py-1 rounded-lg border text-center font-medium cursor-pointer transition-all ${
                     Math.abs(pitch - 90) < 5
                       ? "bg-emerald-500/30 border-emerald-400 text-emerald-200"
-                      : "bg-white/10 border-white/20 hover:bg-white/15"
+                      : "bg-white/5 border-white/15 hover:bg-white/10"
                   }`}
                 >
-                  📱 Straight Up in Air (90°)
+                  📱 Upright (90°)
                 </button>
                 <button
                   type="button"
@@ -506,13 +452,13 @@ export default function QiblaAR3DView({
                     onSimulatePitch?.(65);
                     onSimulateRoll?.(0);
                   }}
-                  className={`px-2 py-0.5 rounded-md border text-[10.5px] cursor-pointer transition-all ${
+                  className={`px-2 py-1 rounded-lg border text-center font-medium cursor-pointer transition-all ${
                     Math.abs(pitch - 65) < 5
                       ? "bg-emerald-500/30 border-emerald-400 text-emerald-200"
-                      : "bg-white/10 border-white/20 hover:bg-white/15"
+                      : "bg-white/5 border-white/15 hover:bg-white/10"
                   }`}
                 >
-                  📐 Casual Tilt (65°)
+                  📐 Tilted (65°)
                 </button>
                 <button
                   type="button"
@@ -520,10 +466,10 @@ export default function QiblaAR3DView({
                     onSimulatePitch?.(0);
                     onSimulateRoll?.(0);
                   }}
-                  className={`px-2 py-0.5 rounded-md border text-[10.5px] cursor-pointer transition-all ${
+                  className={`px-2 py-1 rounded-lg border text-center font-medium cursor-pointer transition-all ${
                     Math.abs(pitch) < 5
                       ? "bg-emerald-500/30 border-emerald-400 text-emerald-200"
-                      : "bg-white/10 border-white/20 hover:bg-white/15"
+                      : "bg-white/5 border-white/15 hover:bg-white/10"
                   }`}
                 >
                   🛏️ Flat (0°)
@@ -533,57 +479,61 @@ export default function QiblaAR3DView({
                   onClick={() => {
                     onSimulateHeading?.(qiblaBearing);
                     onSimulatePitch?.(90);
+                    onSimulateRoll?.(0);
                   }}
-                  className="ml-auto px-2 py-0.5 rounded-md bg-[#134D37] border border-emerald-400/60 text-emerald-100 text-[10.5px] font-bold flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-1 rounded-lg bg-[#134D37] border border-emerald-400/60 text-emerald-100 font-bold flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Sparkles size={11} className="text-amber-300" />
-                  Align Kaaba
+                  <span>Align Kaaba</span>
                 </button>
               </div>
 
-              {/* Slider 1: Heading */}
-              <div className="flex items-center justify-between gap-2 text-[11px]">
-                <span className="text-stone-300 w-24 shrink-0">Compass Heading:</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="359"
-                  value={heading}
-                  onChange={(e) => onSimulateHeading?.(Number(e.target.value))}
-                  className="flex-1 accent-emerald-400 cursor-pointer"
-                  aria-label="Simulate compass heading"
-                />
-                <span className="font-mono text-emerald-300 w-10 text-right">{heading}°</span>
-              </div>
+              {/* Sliders */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="text-stone-300 shrink-0 w-24">Heading:</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="359"
+                    value={heading}
+                    onChange={(e) => onSimulateHeading?.(Number(e.target.value))}
+                    className="flex-1 accent-emerald-400 cursor-pointer h-1.5"
+                  />
+                  <span className="font-mono text-emerald-300 w-10 text-right tabular-nums">
+                    {Math.round(heading)}°
+                  </span>
+                </div>
 
-              {/* Slider 2: Pitch */}
-              <div className="flex items-center justify-between gap-2 text-[11px]">
-                <span className="text-stone-300 w-24 shrink-0">Phone Pitch / Tilt:</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="120"
-                  value={pitch}
-                  onChange={(e) => onSimulatePitch?.(Number(e.target.value))}
-                  className="flex-1 accent-emerald-400 cursor-pointer"
-                  aria-label="Simulate phone pitch tilt"
-                />
-                <span className="font-mono text-emerald-300 w-10 text-right">{Math.round(pitch)}°</span>
-              </div>
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="text-stone-300 shrink-0 w-24">Pitch / Tilt:</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="120"
+                    value={pitch}
+                    onChange={(e) => onSimulatePitch?.(Number(e.target.value))}
+                    className="flex-1 accent-emerald-400 cursor-pointer h-1.5"
+                  />
+                  <span className="font-mono text-emerald-300 w-10 text-right tabular-nums">
+                    {Math.round(pitch)}°
+                  </span>
+                </div>
 
-              {/* Slider 3: Roll */}
-              <div className="flex items-center justify-between gap-2 text-[11px]">
-                <span className="text-stone-300 w-24 shrink-0">Phone Roll:</span>
-                <input
-                  type="range"
-                  min="-45"
-                  max="45"
-                  value={roll}
-                  onChange={(e) => onSimulateRoll?.(Number(e.target.value))}
-                  className="flex-1 accent-emerald-400 cursor-pointer"
-                  aria-label="Simulate phone roll"
-                />
-                <span className="font-mono text-emerald-300 w-10 text-right">{Math.round(roll)}°</span>
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="text-stone-300 shrink-0 w-24">Roll:</span>
+                  <input
+                    type="range"
+                    min="-45"
+                    max="45"
+                    value={roll}
+                    onChange={(e) => onSimulateRoll?.(Number(e.target.value))}
+                    className="flex-1 accent-emerald-400 cursor-pointer h-1.5"
+                  />
+                  <span className="font-mono text-emerald-300 w-10 text-right tabular-nums">
+                    {Math.round(roll)}°
+                  </span>
+                </div>
               </div>
             </div>
           )}
