@@ -164,9 +164,9 @@ export default function PrayerDashboard() {
     });
   }, []);
 
-  // Update clock every 30 seconds
+  // Update clock every second for precise live countdown & automatic prayer transitions
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 30000);
+    const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -174,6 +174,18 @@ export default function PrayerDashboard() {
     () => getNextPrayerInfo(now, location, calcPrefs),
     [now, location, calcPrefs]
   );
+
+  // Compute live numeric countdown: HH : MM : SS
+  const countdownFormatted = useMemo(() => {
+    if (!prayerInfo?.nextDate) return null;
+    const diffMs = Math.max(0, prayerInfo.nextDate.getTime() - now.getTime());
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(hrs)} : ${pad(mins)} : ${pad(secs)}`;
+  }, [now, prayerInfo?.nextDate]);
 
   const voluntaryInfo = useMemo(
     () => getVoluntaryPrayerInfo(now, location, calcPrefs),
@@ -480,7 +492,7 @@ export default function PrayerDashboard() {
 
           {/* Main Card Content (Top Area) with refined typographic hierarchy & subtle text shadow */}
           <div className="relative z-10 p-5 sm:p-6 pb-2 pr-28 sm:pr-32">
-            {/* Left Column: Primary prayer name, readable prescribed time */}
+            {/* Left Column: Primary prayer name, live numeric countdown, readable prescribed time */}
             <div className="min-w-0">
               <h1
                 className="text-[34px] sm:text-[36px] font-serif font-normal tracking-tight text-[#FFFDF8] leading-none"
@@ -488,6 +500,18 @@ export default function PrayerDashboard() {
               >
                 {prayerInfo.nextPrayer}
               </h1>
+
+              {/* Live Numeric Countdown: HH : MM : SS (Numbers only, tabular numerals, warm-white) */}
+              {countdownFormatted && (
+                <div
+                  className="mt-2.5 font-mono text-[22px] sm:text-[24px] font-medium tracking-wider text-[#FFFDF8] tabular-nums select-none"
+                  style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.42)" }}
+                  aria-label={`Time remaining until ${prayerInfo.nextPrayer}: ${countdownFormatted}`}
+                >
+                  {countdownFormatted}
+                </div>
+              )}
+
               <p
                 className="text-[#EBF3ED] text-[13.5px] sm:text-[14px] mt-1.5 font-medium tracking-normal leading-normal"
                 style={{ textShadow: "0 1px 8px rgba(0, 0, 0, 0.38)" }}

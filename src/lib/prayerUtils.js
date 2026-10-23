@@ -126,12 +126,14 @@ export function getNextPrayerInfo(now = new Date(), customLocation = null, custo
   }
 
   // Calculate difference
+  let targetDate = next.time;
   let targetTime = next.time.getTime();
   if (targetTime < nowMs) {
     // Tomorrow's Fajr
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowTimes = getPrayerTimes(tomorrow, loc, customPrefs);
+    targetDate = tomorrowTimes.fajr;
     targetTime = tomorrowTimes.fajr.getTime();
   }
 
@@ -147,8 +149,8 @@ export function getNextPrayerInfo(now = new Date(), customLocation = null, custo
     currentPrayerKey: current.key,
     nextPrayer: next.name,
     nextPrayerKey: next.key,
-    nextTime: formatTime12(next.time),
-    nextDate: next.time,
+    nextTime: formatTime12(targetDate),
+    nextDate: targetDate,
     diffMinutes,
     countdownText,
     qiblaBearing,
