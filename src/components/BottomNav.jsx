@@ -1,15 +1,15 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Clock, BookOpen, Calculator, GraduationCap } from "lucide-react";
+import Compass3DIcon from "@/components/Compass3DIcon";
 
 /**
  * Premium Mobile Bottom Navigation
  * - Floating pill container with refined 38px radius and subtle warm border (#E7E2D9).
- * - Separators removed completely in favor of balanced, minimal whitespace.
- * - Four permanently fixed, equal-width navigation slots: Prayers, Quran, Qaza, Learn.
- * - (Mentor is accessible via the top segmented control).
- * - Independent sliding green active indicator (#244A3A) with 350ms ease-out animation.
- * - Standardized 12px typography with regular weight for inactive, medium weight for active.
+ * - Five navigation slots in exact order: Salah | Quran | 3D Compass | Qaza | Learn
+ * - Compass is a standalone 3D green icon with ZERO background, NO label, floating between Quran & Qaza.
+ * - Independent sliding green active indicator (#244A3A) for Salah, Quran, Qaza, Learn (hidden on Compass).
+ * - Standardized 12px typography for labeled items.
  */
 const NAV_ITEMS = [
   {
@@ -23,6 +23,13 @@ const NAV_ITEMS = [
     label: "Quran",
     path: "/quran",
     icon: BookOpen,
+  },
+  {
+    id: "qibla",
+    label: "",
+    path: "/qibla",
+    ariaLabel: "Open Qibla Finder",
+    isCompass: true,
   },
   {
     id: "qaza",
@@ -51,7 +58,7 @@ export default function BottomNav() {
     setOptimisticIndex(null);
   }, [currentPath]);
 
-  // Resolve active index (0 to 3) based on current route; -1 when on non-bottom-nav pages like /mentor
+  // Resolve active index (0 to 4) based on current route; -1 when on non-bottom-nav pages like /mentor
   const routeIndex = React.useMemo(() => {
     if (currentPath === "/" || currentPath.startsWith("/prayers")) {
       return 0;
@@ -59,11 +66,14 @@ export default function BottomNav() {
     if (currentPath.startsWith("/quran")) {
       return 1;
     }
-    if (currentPath.startsWith("/qaza")) {
+    if (currentPath.startsWith("/qibla")) {
       return 2;
     }
-    if (currentPath.startsWith("/learn")) {
+    if (currentPath.startsWith("/qaza")) {
       return 3;
+    }
+    if (currentPath.startsWith("/learn")) {
+      return 4;
     }
     return -1;
   }, [currentPath]);
@@ -80,7 +90,9 @@ export default function BottomNav() {
   // Measure active item position relative to container
   const updateIndicatorPosition = React.useCallback(() => {
     const container = containerRef.current;
-    if (!container || activeIndex === -1) {
+    // Hide indicator if inactive OR if active item is the compass (slot 2)
+    // The compass must NEVER have a background pill or color!
+    if (!container || activeIndex === -1 || activeIndex === 2) {
       setIndicatorStyle((prev) => ({
         ...prev,
         opacity: 0,
@@ -163,7 +175,7 @@ export default function BottomNav() {
               aria-hidden="true"
               className="bottom-nav-indicator absolute top-0 bottom-0 left-0 h-full rounded-[32px] bg-[#244A3A] dark:bg-[#1D3D30] pointer-events-none z-10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] will-change-transform motion-reduce:transition-none"
               style={{
-                width: indicatorStyle.width > 0 ? `${indicatorStyle.width}px` : "25%",
+                width: indicatorStyle.width > 0 ? `${indicatorStyle.width}px` : "20%",
                 transform: `translateX(${indicatorStyle.left}px)`,
                 opacity: indicatorStyle.opacity,
                 transition:
@@ -171,10 +183,33 @@ export default function BottomNav() {
               }}
             />
 
-            {/* Four Stationary Navigation Items */}
+            {/* Five Stationary Navigation Items: Salah | Quran | Compass | Qaza | Learn */}
             {NAV_ITEMS.map((item, index) => {
-              const Icon = item.icon;
               const isActive = activeIndex === index;
+
+              if (item.isCompass) {
+                return (
+                  <Link
+                    key={item.id}
+                    ref={(el) => (itemsRef.current[index] = el)}
+                    to={item.path}
+                    onClick={() => handleItemClick(index, isActive)}
+                    aria-label={item.ariaLabel}
+                    aria-current={isActive ? "page" : undefined}
+                    className="flex-1 min-w-0 h-full flex items-center justify-center relative z-20 select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#244A3A] rounded-[30px] box-border p-0 active:scale-90 transition-transform duration-150 bg-transparent hover:bg-transparent"
+                    style={{ background: "transparent" }}
+                  >
+                    <Compass3DIcon
+                      size={32}
+                      className={`transition-all duration-200 group-hover:scale-105 group-hover:brightness-105 ${
+                        isActive ? "scale-105 drop-shadow-[0_2px_8px_rgba(21,62,45,0.35)]" : "opacity-95"
+                      }`}
+                    />
+                  </Link>
+                );
+              }
+
+              const Icon = item.icon;
 
               return (
                 <Link
@@ -213,3 +248,4 @@ export default function BottomNav() {
     </div>
   );
 }
+

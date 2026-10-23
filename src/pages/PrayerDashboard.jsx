@@ -491,7 +491,7 @@ export default function PrayerDashboard() {
           </div>
 
           {/* Main Card Content (Top Area) with refined typographic hierarchy & subtle text shadow */}
-          <div className="relative z-10 p-5 sm:p-6 pb-2 pr-28 sm:pr-32">
+          <div className="relative z-10 p-5 sm:p-6 pb-6 pr-28 sm:pr-32">
             {/* Left Column: Primary prayer name, live numeric countdown, readable prescribed time */}
             <div className="min-w-0">
               <h1
@@ -520,22 +520,6 @@ export default function PrayerDashboard() {
               </p>
             </div>
           </div>
-
-          {/* Full-Width Bottom-Anchored Qibla Finder CTA Bar */}
-          <button
-            type="button"
-            onClick={() => navigate("/qibla")}
-            className="relative z-10 w-full mt-auto py-3.5 px-5 sm:px-6 flex items-center justify-between gap-3 text-left border-t border-white/10 bg-black/20 hover:bg-black/35 transition-colors duration-200 cursor-pointer group active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#86D2AD] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            aria-label="Find Qibla. Open 2D Precision Compass and Live AR Finder."
-          >
-            <span className="text-[17.5px] sm:text-[18px] font-medium text-[#F4FBF7] tracking-tight group-hover:text-white transition-colors leading-tight">
-              Find Qibla
-            </span>
-            <div className="flex items-center gap-1.5 text-[#86D2AD] group-hover:text-white transition-colors shrink-0">
-              <Compass size={18} className="transition-transform group-hover:rotate-45" />
-              <ChevronRight size={17} className="transition-transform group-hover:translate-x-0.5" />
-            </div>
-          </button>
         </section>
 
         {/* 5 Obligatory Prayers Section: Predictable layout with refined typography & prominent Mark Salah action */}
