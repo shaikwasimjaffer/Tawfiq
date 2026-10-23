@@ -9,12 +9,8 @@ import {
   Info,
   CheckCircle2,
   AlertTriangle,
-  ChevronRight,
-  ChevronLeft,
   Sliders,
   Loader2,
-  RotateCcw,
-  RotateCw,
 } from "lucide-react";
 import { getSavedLocation } from "@/lib/locationService";
 import {
@@ -24,6 +20,7 @@ import {
   getCardinalDirection,
 } from "@/lib/qiblaService";
 import { useCompassHeading } from "@/hooks/useCompassHeading";
+import QiblaAR3DView from "@/components/qibla/QiblaAR3DView";
 import { toast } from "sonner";
 
 export default function QiblaApp() {
@@ -40,9 +37,11 @@ export default function QiblaApp() {
   const distanceKm = calculateDistanceToKaabaKm(location.latitude, location.longitude);
   const cardinal = getCardinalDirection(qiblaBearing);
 
-  // Sensor Heading Hook
+  // Sensor Heading & Orientation Hook
   const {
     heading,
+    pitch,
+    roll,
     isFlat,
     accuracy,
     sensorAvailable,
@@ -50,6 +49,8 @@ export default function QiblaApp() {
     requestPermission,
     simulatedHeading,
     setSimulatedHeading,
+    setSimulatedPitch,
+    setSimulatedRoll,
   } = useCompassHeading();
 
   // Alignment info
@@ -555,200 +556,20 @@ export default function QiblaApp() {
                   </div>
                 </div>
 
-                {/* Viewport Center: Dynamic Real-Time Directional Guidance */}
-                <div className="relative z-20 flex-1 flex flex-col items-center justify-center pointer-events-none px-4 py-2">
-                  {(() => {
-                    const diff = alignment.diff;
-                    const absDiff = Math.abs(diff);
-                    const isAligned = alignment.isAligned;
-                    const inView = absDiff <= 30; // within ±30° camera field of view
-                    const isBehind = absDiff > 90; // Qibla is behind user (turn around)
-                    const xPercent = (diff / 30) * 42; // translate percentage within FOV
-
-                    // State 1: Perfect / Near Alignment (Within threshold)
-                    if (isAligned) {
-                      return (
-                        <div className="flex flex-col items-center transition-all duration-300 ease-out animate-in zoom-in-95">
-                          {/* Centered Golden / Emerald Kaaba Target */}
-                          <div className="relative flex items-center justify-center">
-                            {/* Outer pulsing beacon ring */}
-                            <div className="absolute w-36 h-36 rounded-full bg-emerald-500/20 animate-ping pointer-events-none" />
-                            <div className="absolute w-32 h-32 rounded-full border-2 border-emerald-400/60 animate-pulse pointer-events-none" />
-                            
-                            <div className="w-28 h-28 rounded-full bg-emerald-900/80 border-2 border-emerald-300 ring-4 ring-emerald-400/40 shadow-[0_0_50px_rgba(16,185,129,0.9)] backdrop-blur-md flex flex-col items-center justify-center p-2 text-center">
-                              <span className="text-3xl leading-none">🕋</span>
-                              <span className="text-emerald-100 text-[11px] font-extrabold uppercase tracking-widest mt-1">
-                                ALIGNED
-                              </span>
-                              <span className="text-[10px] text-emerald-200 font-mono">
-                                {qiblaBearing}°
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 px-4 py-1.5 rounded-full bg-emerald-950/85 border border-emerald-400/70 text-emerald-100 shadow-xl backdrop-blur-md flex items-center gap-1.5">
-                            <CheckCircle2 size={14} className="text-emerald-400" />
-                            <span className="text-xs font-bold">You are facing the Qibla</span>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    // State 2: Kaaba is inside camera Field of View (Within ±30°)
-                    if (inView) {
-                      return (
-                        <div
-                          className="flex flex-col items-center transition-transform duration-100 ease-out will-change-transform"
-                          style={{
-                            transform: `translateX(${xPercent}%)`,
-                          }}
-                        >
-                          {/* Kaaba Beacon Floating Ring */}
-                          <div className="w-24 h-24 rounded-full bg-black/70 border-2 border-amber-400/90 shadow-[0_0_30px_rgba(251,191,36,0.7)] backdrop-blur-md flex flex-col items-center justify-center p-2 text-center">
-                            <span className="text-2xl leading-none">🕋</span>
-                            <span className="text-white text-[10.5px] font-bold mt-1 uppercase tracking-wider">
-                              KAABA
-                            </span>
-                            <span className="text-[9.5px] text-amber-200 tabular-nums font-mono">
-                              {qiblaBearing}° • {distanceKm.toLocaleString()}km
-                            </span>
-                          </div>
-
-                          {/* Fine-tuning direction indicator pointer */}
-                          <div className="flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-black/75 border border-amber-400/50 text-amber-200 text-[11px] font-semibold backdrop-blur-md">
-                            {diff > 0 ? (
-                              <>
-                                <span>Turn {Math.round(diff)}°</span>
-                                <ChevronRight size={13} className="text-amber-400" />
-                              </>
-                            ) : (
-                              <>
-                                <ChevronLeft size={13} className="text-amber-400" />
-                                <span>Turn {Math.round(absDiff)}°</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="w-0.5 h-8 bg-gradient-to-b from-amber-400/80 to-transparent mt-1" />
-                        </div>
-                      );
-                    }
-
-                    // State 3: Kaaba is outside Camera FOV (> 30°)
-                    // Prominent directional guidance with dynamic turn arrows
-                    return (
-                      <div className="flex flex-col items-center justify-center w-full max-w-sm space-y-4 animate-in fade-in duration-150">
-                        {/* Prominent Turn Arrow & Action Banner */}
-                        <div
-                          className={`w-full mx-auto px-5 py-3.5 rounded-2xl backdrop-blur-md border shadow-2xl flex items-center justify-between gap-4 ${
-                            isBehind
-                              ? "bg-stone-900/85 border-amber-400/50 text-amber-100"
-                              : "bg-black/80 border-emerald-400/50 text-white"
-                          }`}
-                        >
-                          {/* Left Arrow side */}
-                          {diff < 0 ? (
-                            <div className="flex items-center gap-1.5 animate-pulse">
-                              <div className="w-11 h-11 rounded-xl bg-emerald-500/25 border border-emerald-400 flex items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.5)]">
-                                {isBehind ? <RotateCcw size={24} /> : <ChevronLeft size={28} strokeWidth={2.5} />}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="w-11 h-11" /> // Spacer for balanced layout
-                          )}
-
-                          {/* Center Text Instruction */}
-                          <div className="flex-1 text-center">
-                            <span className="text-[10px] uppercase tracking-widest font-bold text-stone-300 block mb-0.5">
-                              {isBehind ? "TURN AROUND" : "DIRECTION TO QIBLA"}
-                            </span>
-                            <div className="text-base sm:text-lg font-extrabold tracking-tight flex items-center justify-center gap-1.5">
-                              {diff > 0 ? (
-                                <>
-                                  <span>Turn Right</span>
-                                  <span className="text-emerald-400 font-mono">+{Math.round(diff)}°</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span>Turn Left</span>
-                                  <span className="text-emerald-400 font-mono">-{Math.round(absDiff)}°</span>
-                                </>
-                              )}
-                            </div>
-                            <span className="text-[11px] text-stone-300">
-                              Target: {qiblaBearing}° {cardinal}
-                            </span>
-                          </div>
-
-                          {/* Right Arrow side */}
-                          {diff > 0 ? (
-                            <div className="flex items-center gap-1.5 animate-pulse">
-                              <div className="w-11 h-11 rounded-xl bg-emerald-500/25 border border-emerald-400 flex items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.5)]">
-                                {isBehind ? <RotateCw size={24} /> : <ChevronRight size={28} strokeWidth={2.5} />}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="w-11 h-11" /> // Spacer for balanced layout
-                          )}
-                        </div>
-
-                        {/* Proximity / Angular Distance Bar */}
-                        <div className="w-48 bg-black/60 backdrop-blur-md rounded-full h-1.5 overflow-hidden border border-white/20">
-                          <div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all duration-150"
-                            style={{
-                              width: `${Math.max(10, Math.round(((180 - absDiff) / 180) * 100))}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Bottom HUD: Alignment Summary & Sensor Diagnostic */}
-                <div className="relative z-20 p-3 sm:p-4 bg-gradient-to-t from-black/85 via-black/45 to-transparent flex flex-col items-center text-center space-y-2">
-                  <div
-                    className={`px-4 py-2 rounded-2xl backdrop-blur-md border text-xs font-medium max-w-xs shadow-lg transition-colors duration-200 ${
-                      alignment.isAligned
-                        ? "bg-emerald-950/85 border-emerald-400 text-emerald-100"
-                        : "bg-black/70 border-white/25 text-white"
-                    }`}
-                  >
-                    <p className="font-bold text-sm text-white flex items-center justify-center gap-1.5">
-                      {alignment.isAligned ? (
-                        <>
-                          <CheckCircle2 size={14} className="text-emerald-400" />
-                          <span>Facing Kaaba</span>
-                        </>
-                      ) : (
-                        <span>{alignment.text}</span>
-                      )}
-                    </p>
-                    <p className="text-[11px] text-stone-300 mt-0.5">
-                      Qibla {qiblaBearing}° {cardinal} • Phone {heading}°
-                    </p>
-                  </div>
-
-                  {/* Manual Simulation slider when sensor is unavailable */}
-                  {!sensorAvailable && (
-                    <div className="w-full max-w-xs px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-between text-[11px] text-stone-300">
-                      <span className="flex items-center gap-1">
-                        <Sliders size={12} className="text-emerald-400" />
-                        Heading:
-                      </span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="359"
-                        value={heading}
-                        onChange={(e) => setSimulatedHeading(Number(e.target.value))}
-                        className="w-32 accent-emerald-400 cursor-pointer"
-                        aria-label="Simulate compass heading in AR"
-                      />
-                      <span className="font-mono text-emerald-300 font-bold">{heading}°</span>
-                    </div>
-                  )}
-                </div>
+                {/* True 3D WebGL Green Arrow AR Spatial Layer */}
+                <QiblaAR3DView
+                  qiblaBearing={qiblaBearing}
+                  heading={heading}
+                  pitch={pitch}
+                  roll={roll}
+                  distanceKm={distanceKm}
+                  sensorAvailable={sensorAvailable}
+                  isAligned={alignment.isAligned}
+                  diff={alignment.diff}
+                  onSimulateHeading={setSimulatedHeading}
+                  onSimulatePitch={setSimulatedPitch}
+                  onSimulateRoll={setSimulatedRoll}
+                />
               </>
             )}
           </div>

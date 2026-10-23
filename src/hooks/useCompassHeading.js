@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 /**
  * Computes shortest signed circular difference in degrees [-180, 180]
  */
-function getShortestAngleDiff(targetDeg, currentDeg) {
+export function getShortestAngleDiff(targetDeg, currentDeg) {
   return ((targetDeg - currentDeg + 540) % 360) - 180;
 }
 
@@ -11,56 +11,87 @@ function getShortestAngleDiff(targetDeg, currentDeg) {
  * Derives true horizontal compass heading from 3D Euler angles (alpha, beta, gamma)
  * using standard aerospace/W3C rotation matrix transformation.
  *
- * Handles both:
- * 1. Phone lying flat horizontally on a surface (beta, gamma ~ 0)
- * 2. Phone held upright at an angle or vertical (beta ~ 90)
+ * Robustly handles ALL device postures without gimbal lock or inversion:
+ * 1. Phone lying flat on a surface (beta, gamma ~ 0) -> top of device vector
+ * 2. Phone held upright in the air (beta ~ 90) -> camera line-of-sight vector
+ * 3. Intermediate tilt angles (smooth circular blend)
  */
-function computeHeadingFromEuler(alpha, beta, gamma) {
-  const _x = (beta * Math.PI) / 180;
-  const _y = (gamma * Math.PI) / 180;
-  const _z = (alpha * Math.PI) / 180;
+export function computeHeadingFromSensors(alpha, beta, gamma) {
+  const rad = Math.PI / 180;
+  const a = (alpha || 0) * rad;
+  const b = (beta || 0) * rad;
+  const g = (gamma || 0) * rad;
 
-  const cX = Math.cos(_x);
-  const cY = Math.cos(_y);
-  const cZ = Math.cos(_z);
-  const sX = Math.sin(_x);
-  const sY = Math.sin(_y);
-  const sZ = Math.sin(_z);
+  const cA = Math.cos(a), sA = Math.sin(a);
+  const cB = Math.cos(b), sB = Math.sin(b);
+  const cG = Math.cos(g), sG = Math.sin(g);
 
-  // Vector pointing along the top of the device [0, 1, 0] transformed by R = Rz * Rx * Ry
-  const Vx = -cZ * sY - sZ * sX * cY;
-  const Vy = -sZ * sY + cZ * sX * cY;
+  // Vector 1: Camera line-of-sight vector (0, 0, -1) projected onto Earth horizontal plane
+  // In Earth coordinates (East = +X, North = +Y, Up = +Z):
+  // CE = -(cA * sG + sA * sB * cG)
+  // CN = -sA * sG + cA * sB * cG
+  const CE = -(cA * sG + sA * sB * cG);
+  const CN = -sA * sG + cA * sB * cG;
+  let camHeading = Math.atan2(CE, CN) * (180 / Math.PI);
+  camHeading = (camHeading + 360) % 360;
 
-  // Azimuth of top vector in horizontal ground plane
-  let heading = Math.atan2(-Vx, Vy) * (180 / Math.PI);
-  if (heading < 0) heading += 360;
+  // Vector 2: Top of device vector (0, 1, 0) projected onto Earth horizontal plane
+  // TE = -cB * sA
+  // TN = cB * cA
+  const TE = -cB * sA;
+  const TN = cB * cA;
+  let topHeading = Math.atan2(TE, TN) * (180 / Math.PI);
+  topHeading = (topHeading + 360) % 360;
 
-  return heading;
+  const absBeta = Math.abs(beta || 0);
+
+  // Surface mode: When phone is nearly horizontal (beta <= 25°)
+  if (absBeta <= 25) {
+    return topHeading;
+  }
+
+  // Air / AR mode: When phone is held upright (beta >= 55°)
+  if (absBeta >= 55) {
+    return camHeading;
+  }
+
+  // Smooth circular interpolation for transitional angles (25° - 55°)
+  const t = (absBeta - 25) / 30; // 0 to 1
+  const diff = getShortestAngleDiff(camHeading, topHeading);
+  return (topHeading + diff * t + 360) % 360;
 }
 
 /**
  * useCompassHeading Hook
  *
  * Provides real-time, jitter-filtered device heading, pitch, roll,
- * surface flat-state detection, iOS permission management,
- * and desktop simulation fallback.
+ * posture detection (flat on table vs upright in air), iOS permission handling,
+ * and desktop orientation simulation.
  */
 export function useCompassHeading() {
   const [heading, setHeading] = useState(0);
   const [rawHeading, setRawHeading] = useState(0);
-  const [pitch, setPitch] = useState(0);
+  const [pitch, setPitch] = useState(90); // Default to 90° (upright in air)
   const [roll, setRoll] = useState(0);
   const [isFlat, setIsFlat] = useState(false);
-  const [isUpright, setIsUpright] = useState(false);
+  const [isUpright, setIsUpright] = useState(true);
   const [accuracy, setAccuracy] = useState(null); // degrees of accuracy
   const [sensorAvailable, setSensorAvailable] = useState(false);
   const [permissionState, setPermissionState] = useState(() => {
-    if (typeof window !== "undefined" && typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+    if (
+      typeof window !== "undefined" &&
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function"
+    ) {
       return "prompt";
     }
     return "granted";
   });
+
+  // Simulation states for desktop & manual testing
   const [simulatedHeading, setSimulatedHeading] = useState(null);
+  const [simulatedPitch, setSimulatedPitch] = useState(null);
+  const [simulatedRoll, setSimulatedRoll] = useState(null);
 
   const smoothedHeadingRef = useRef(0);
   const hasReceivedReadingRef = useRef(false);
@@ -73,6 +104,9 @@ export function useCompassHeading() {
     let measuredHeading = null;
     let measuredAccuracy = null;
 
+    const b = typeof event.beta === "number" ? event.beta : 0;
+    const g = typeof event.gamma === "number" ? event.gamma : 0;
+
     // 1. iOS Safari: webkitCompassHeading provides direct magnetic/true north heading
     if (typeof event.webkitCompassHeading === "number" && !Number.isNaN(event.webkitCompassHeading)) {
       measuredHeading = event.webkitCompassHeading;
@@ -82,17 +116,7 @@ export function useCompassHeading() {
     }
     // 2. Android / Standard Chrome: absolute orientation
     else if (typeof event.alpha === "number" && !Number.isNaN(event.alpha)) {
-      const alpha = event.alpha;
-      const beta = typeof event.beta === "number" ? event.beta : 0;
-      const gamma = typeof event.gamma === "number" ? event.gamma : 0;
-
-      // When device is completely horizontal, alpha is directly related to heading
-      if (Math.abs(beta) < 25 && Math.abs(gamma) < 25) {
-        measuredHeading = (360 - alpha) % 360;
-      } else {
-        measuredHeading = computeHeadingFromEuler(alpha, beta, gamma);
-      }
-
+      measuredHeading = computeHeadingFromSensors(event.alpha, b, g);
       measuredAccuracy = event.absolute ? 10 : 25;
     }
 
@@ -111,8 +135,6 @@ export function useCompassHeading() {
       setHeading(Math.round(smoothedHeadingRef.current * 10) / 10);
       if (measuredAccuracy !== null) setAccuracy(measuredAccuracy);
 
-      const b = typeof event.beta === "number" ? event.beta : 0;
-      const g = typeof event.gamma === "number" ? event.gamma : 0;
       setPitch(Math.round(b));
       setRoll(Math.round(g));
 
@@ -121,8 +143,8 @@ export function useCompassHeading() {
       const flat = Math.abs(b) < 25 && Math.abs(g) < 25;
       setIsFlat(flat);
 
-      // Phone held upright for camera AR view: pitch > 45
-      const upright = b > 45 && b < 135;
+      // Phone held upright for camera AR view in the air: pitch between 50° and 130°
+      const upright = b >= 50 && b <= 130;
       setIsUpright(upright);
     }
   }, []);
@@ -153,13 +175,11 @@ export function useCompassHeading() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Check if DeviceOrientationEvent exists
     if (!("DeviceOrientationEvent" in window)) {
       setSensorAvailable(false);
       return;
     }
 
-    // Try absolute event on Android Chrome
     const hasAbsoluteEvent = "ondeviceorientationabsolute" in window;
 
     if (hasAbsoluteEvent) {
@@ -168,7 +188,6 @@ export function useCompassHeading() {
       window.addEventListener("deviceorientation", handleOrientation, true);
     }
 
-    // Sensor availability timeout: If no sensor events fire in 1.8s, declare sensor unavailable
     const timer = setTimeout(() => {
       if (!hasReceivedReadingRef.current) {
         setSensorAvailable(false);
@@ -185,14 +204,16 @@ export function useCompassHeading() {
     };
   }, [handleOrientation]);
 
-  // When simulated heading is active (e.g. desktop testing)
+  // Active values (supports simulation on desktop / testing)
   const activeHeading = simulatedHeading !== null ? simulatedHeading : heading;
+  const activePitch = simulatedPitch !== null ? simulatedPitch : pitch;
+  const activeRoll = simulatedRoll !== null ? simulatedRoll : roll;
 
   return {
     heading: activeHeading,
     rawHeading,
-    pitch,
-    roll,
+    pitch: activePitch,
+    roll: activeRoll,
     isFlat,
     isUpright,
     accuracy,
@@ -201,5 +222,9 @@ export function useCompassHeading() {
     requestPermission,
     simulatedHeading,
     setSimulatedHeading,
+    simulatedPitch,
+    setSimulatedPitch,
+    simulatedRoll,
+    setSimulatedRoll,
   };
 }
