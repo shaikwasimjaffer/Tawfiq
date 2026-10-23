@@ -480,16 +480,10 @@ export default function PrayerDashboard() {
 
           {/* Main Card Content (Top Area) with refined typographic hierarchy & subtle text shadow */}
           <div className="relative z-10 p-5 sm:p-6 pb-2 pr-28 sm:pr-32">
-            {/* Left Column: Understated label, primary prayer name, readable prescribed time */}
+            {/* Left Column: Primary prayer name, readable prescribed time */}
             <div className="min-w-0">
-              <span
-                className="block text-[11.5px] uppercase tracking-[0.05em] font-semibold text-[#D1E6DC]"
-                style={{ textShadow: "0 1px 6px rgba(0, 0, 0, 0.45)" }}
-              >
-                NEXT PRAYER
-              </span>
               <h1
-                className="text-[34px] sm:text-[36px] font-serif font-normal mt-1 tracking-tight text-[#FFFDF8] leading-none"
+                className="text-[34px] sm:text-[36px] font-serif font-normal tracking-tight text-[#FFFDF8] leading-none"
                 style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.40)" }}
               >
                 {prayerInfo.nextPrayer}
