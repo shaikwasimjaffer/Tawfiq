@@ -607,28 +607,16 @@ export default function PrayerDashboard() {
             </div>
           </div>
 
-          {/* Premium Animated Mentor Mode Footer: Physically attached to the bottom edge of the hero card */}
+          {/* Seamless Translucent Glass-Fade Mentor Mode Footer: Integrated directly with the Kaaba photograph */}
           <Link
             to="/mentor"
             state={{ animatedEntry: true }}
-            className="group relative z-10 mt-auto w-full overflow-hidden border-t border-white/15 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between text-white select-none transition-all duration-200 hover:brightness-110 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-inset"
+            className="group relative z-10 mt-auto w-full px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between text-white select-none transition-all duration-200 hover:brightness-110 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-inset"
             aria-label="Open Mentor Mode AI Guide"
           >
-            {/* Animated Forest-Green Gradient Base */}
+            {/* Seamless Translucent Glass-Fade Background Layer: Zero hard border, photograph visible throughout */}
             <div
-              className="absolute inset-0 mentor-hero-footer-bg pointer-events-none transition-opacity duration-300 group-hover:opacity-95"
-              aria-hidden="true"
-            />
-
-            {/* Subtle Soft Diffused Sage / Emerald Glow Orb */}
-            <div
-              className="absolute -left-10 -top-10 w-44 h-44 rounded-full bg-emerald-400/20 blur-2xl mentor-glow-orb pointer-events-none"
-              aria-hidden="true"
-            />
-
-            {/* Subtle photographic vignette transition from Kaaba photo into deep green footer */}
-            <div
-              className="absolute inset-x-0 top-0 h-2 bg-gradient-to-b from-black/25 to-transparent pointer-events-none"
+              className="absolute inset-0 mentor-glass-fade-bg pointer-events-none transition-opacity duration-300 group-hover:opacity-95"
               aria-hidden="true"
             />
 
@@ -642,7 +630,7 @@ export default function PrayerDashboard() {
               </div>
 
               <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                <span className="font-semibold text-[14.5px] sm:text-[15.5px] text-[#FFFDF8] tracking-tight whitespace-nowrap leading-tight">
+                <span className="font-semibold text-[14.5px] sm:text-[15.5px] text-[#FFFDF8] tracking-tight whitespace-nowrap leading-tight" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}>
                   Mentor Mode
                 </span>
                 <span className="px-1.5 py-0.5 rounded-[5px] bg-white/15 border border-white/20 text-[9.5px] sm:text-[10px] font-bold text-emerald-200 tracking-wider uppercase leading-none select-none">
