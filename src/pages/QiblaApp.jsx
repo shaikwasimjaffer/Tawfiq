@@ -140,9 +140,14 @@ export default function QiblaApp() {
     };
   }, [mode, startCamera, stopCamera]);
 
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
   // Handle switching to AR mode
   const handleOpenAR = async () => {
-    if (permissionState === "prompt") {
+    if (isIOS && permissionState === "prompt") {
       await requestPermission();
     }
     setMode("ar");
@@ -408,7 +413,7 @@ export default function QiblaApp() {
             </div>
 
             {/* iOS Sensor Permission Recovery Card */}
-            {permissionState === "prompt" && (
+            {isIOS && permissionState === "prompt" && (
               <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle size={18} className="text-amber-700 shrink-0" />

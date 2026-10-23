@@ -40,3 +40,4 @@ data/
 public/*.mp4
 .claude/
 .vercel/
+context files/
