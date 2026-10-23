@@ -412,14 +412,30 @@ export default function PrayerDashboard() {
             loading="eager"
           />
 
-          {/* Layered Forest-Green Gradient: Calibrated to preserve Kaaba gold band, sky & architecture while maintaining text contrast */}
+          {/* Top/Side subtle vignette to preserve high-contrast white text at the top without obscuring the photograph */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-b from-[#081811]/45 via-[#081811]/20 via-50% to-[#04110A]/85 pointer-events-none z-[1]"
+            className="absolute inset-0 pointer-events-none z-[1]"
+            style={{
+              background: "linear-gradient(to bottom, rgba(5, 24, 17, 0.45) 0%, rgba(5, 24, 17, 0.15) 35%, transparent 55%)"
+            }}
           />
+
+          {/* Continuous Image-Integrated Bottom Fade: Smooth photographic gradient allowing the photo to show through while establishing comfortable contrast for the prayer indicators */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-[#071911]/70 via-transparent via-55% to-[#071911]/50 pointer-events-none z-[2]"
+            className="absolute inset-0 pointer-events-none z-[2]"
+            style={{
+              background: `linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(5, 24, 17, 0.02) 30%,
+                rgba(5, 24, 17, 0.12) 48%,
+                rgba(5, 24, 17, 0.35) 64%,
+                rgba(5, 24, 17, 0.65) 82%,
+                rgba(4, 18, 13, 0.88) 100%
+              )`
+            }}
           />
 
           {/* Main Card Content (Top Area) */}
@@ -453,67 +469,64 @@ export default function PrayerDashboard() {
             </div>
           </div>
 
-          {/* Seamless Bottom-Anchored Glass Overlay: Natural extension of the photo */}
-          <div className="relative z-10 w-full mt-auto">
-            {/* Continuous bottom-up photographic glass gradient with subtle blur */}
-            <div className="w-full px-5 sm:px-6 pt-6 pb-4 sm:pb-5 bg-gradient-to-t from-[#030F08]/95 via-[#04120A]/75 via-50% to-transparent backdrop-blur-[5px]">
-              <div className="flex items-center justify-between gap-2 text-[12.5px] text-[#D4E3DB] leading-none mb-2.5">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-medium tracking-tight">Today's Prayers</span>
-                  <span className="text-white/30">•</span>
-                  <span className="tabular-nums text-white font-medium">
-                    <span className="font-semibold text-[#86D2AD]">{completedCount}</span> / 5
-                  </span>
-                </div>
+          {/* Prayer Information: Embedded directly over the photograph's bottom fade without any box container or horizontal seam */}
+          <div className="relative z-10 w-full mt-auto px-5 sm:px-6 pb-4 sm:pb-5 pt-2">
+            <div className="flex items-center justify-between gap-2 text-[12.5px] text-[#D4E3DB] leading-none mb-2.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-medium tracking-tight">Today's Prayers</span>
+                <span className="text-white/30">•</span>
+                <span className="tabular-nums text-white font-medium">
+                  <span className="font-semibold text-[#86D2AD]">{completedCount}</span> / 5
+                </span>
+              </div>
 
-                {/* Day Streak Habit Indicator */}
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white shadow-xs shrink-0 select-none backdrop-blur-xs transition-colors"
-                  title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
-                    longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
+              {/* Day Streak Habit Indicator */}
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/35 hover:bg-black/45 border border-white/15 text-white shadow-xs shrink-0 select-none transition-colors"
+                title={`Current prayer streak: ${currentStreak} day${currentStreak === 1 ? "" : "s"}${
+                  longestStreak > currentStreak ? ` (Best: ${longestStreak})` : ""
+                }`}
+                aria-label={`Current prayer streak: ${currentStreak} days`}
+              >
+                <Flame
+                  size={12.5}
+                  className={`shrink-0 transition-colors ${
+                    currentStreak > 0
+                      ? "text-[#F59E0B] fill-[#F59E0B]/90 animate-pulse"
+                      : "text-stone-400 fill-none"
                   }`}
-                  aria-label={`Current prayer streak: ${currentStreak} days`}
-                >
-                  <Flame
-                    size={12.5}
-                    className={`shrink-0 transition-colors ${
-                      currentStreak > 0
-                        ? "text-[#F59E0B] fill-[#F59E0B]/90 animate-pulse"
-                        : "text-stone-400 fill-none"
+                />
+                <span className="text-[12.5px] font-bold font-sans text-white leading-none tabular-nums">
+                  {currentStreak}
+                </span>
+                <span className="text-[9px] uppercase tracking-wider font-bold text-stone-200 leading-none whitespace-nowrap">
+                  DAY STREAK
+                </span>
+              </div>
+            </div>
+
+            {/* Seamless Full-Width 5-Segment Progress Bar */}
+            <div
+              className="grid grid-cols-5 gap-1.5 w-full"
+              role="progressbar"
+              aria-valuenow={completedCount}
+              aria-valuemin={0}
+              aria-valuemax={5}
+              aria-label={`Prayer progress: ${completedCount} of 5 completed`}
+            >
+              {[0, 1, 2, 3, 4].map((idx) => {
+                const isDone = idx < completedCount;
+                return (
+                  <div
+                    key={idx}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      isDone
+                        ? "bg-gradient-to-r from-[#4EBA87] to-[#6EE7B7] shadow-[0_0_8px_rgba(78,186,135,0.5)]"
+                        : "bg-white/20"
                     }`}
                   />
-                  <span className="text-[12.5px] font-bold font-sans text-white leading-none tabular-nums">
-                    {currentStreak}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider font-bold text-stone-200 leading-none whitespace-nowrap">
-                    DAY STREAK
-                  </span>
-                </div>
-              </div>
-
-              {/* Seamless Full-Width 5-Segment Progress Bar */}
-              <div
-                className="grid grid-cols-5 gap-1.5 w-full"
-                role="progressbar"
-                aria-valuenow={completedCount}
-                aria-valuemin={0}
-                aria-valuemax={5}
-                aria-label={`Prayer progress: ${completedCount} of 5 completed`}
-              >
-                {[0, 1, 2, 3, 4].map((idx) => {
-                  const isDone = idx < completedCount;
-                  return (
-                    <div
-                      key={idx}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        isDone
-                          ? "bg-gradient-to-r from-[#4EBA87] to-[#6EE7B7] shadow-[0_0_8px_rgba(78,186,135,0.5)]"
-                          : "bg-white/20"
-                      }`}
-                    />
-                  );
-                })}
-              </div>
+                );
+              })}
             </div>
           </div>
         </section>
