@@ -233,10 +233,30 @@ export const QUALIFYING_STATUSES = ["on_time", "jamaah", "late"];
 
 /**
  * Returns user's local date string formatted as YYYY-MM-DD.
- * Strictly uses local calendar components (not UTC) to prevent timezone/midnight bugs.
+ * When a timezone is provided, computes the calendar date in that specific timezone.
+ * Otherwise uses the device's local calendar components (not UTC) to prevent midnight bugs.
  */
-export function getLocalDateString(d = new Date()) {
+export function getLocalDateString(d = new Date(), timezone = null) {
   const dateObj = d instanceof Date ? d : new Date(d);
+  if (timezone && typeof timezone === "string") {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(dateObj);
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      if (year && month && day) {
+        return `${year}-${month}-${day}`;
+      }
+    } catch {
+      // Fallback to local calendar components if timezone is invalid
+    }
+  }
+
   const year = dateObj.getFullYear();
   const month = String(dateObj.getMonth() + 1).padStart(2, "0");
   const day = String(dateObj.getDate()).padStart(2, "0");

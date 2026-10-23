@@ -164,10 +164,27 @@ export default function PrayerDashboard() {
     });
   }, []);
 
-  // Update clock every second for precise live countdown & automatic prayer transitions
+  // Update clock every second for precise live countdown & automatic prayer transitions.
+  // Also recalculate immediately when tab visibility changes or window gains focus (e.g. mobile/tab wake-up after midnight).
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
+    const syncTime = () => setNow(new Date());
+    const timer = setInterval(syncTime, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncTime();
+      }
+    };
+    const handleFocus = () => syncTime();
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const prayerInfo = useMemo(
@@ -192,7 +209,10 @@ export default function PrayerDashboard() {
     [now, location, calcPrefs]
   );
 
-  const todayDateStr = getLocalDateString(now);
+  const todayDateStr = useMemo(
+    () => getLocalDateString(now, location?.timezone),
+    [now, location?.timezone]
+  );
   const { currentStreak, longestStreak, recordDayStatuses, userScope } = usePrayerStreak(now);
 
   // Today's voluntary prayer statuses stored in localStorage
@@ -204,6 +224,16 @@ export default function PrayerDashboard() {
     } catch {}
     return {};
   });
+
+  // Re-sync voluntary prayers whenever calendar date or user account changes (e.g. midnight rollover)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(voluntaryTodayKey);
+      setVoluntaryPrayerStatuses(stored ? JSON.parse(stored) : {});
+    } catch {
+      setVoluntaryPrayerStatuses({});
+    }
+  }, [voluntaryTodayKey]);
 
   const handleToggleVoluntaryPrayer = (key) => {
     if (!key) return;
@@ -228,7 +258,7 @@ export default function PrayerDashboard() {
     try {
       const stored = localStorage.getItem(todayKey);
       if (stored) return JSON.parse(stored);
-      // Fallback for legacy key using UTC date format
+      // Safe fallback for legacy key using UTC date format
       const legacyKey = `tawfiq_prayers_${now.toISOString().split("T")[0]}`;
       if (legacyKey !== todayKey) {
         const legacyStored = localStorage.getItem(legacyKey);
@@ -238,12 +268,29 @@ export default function PrayerDashboard() {
     return {};
   });
 
-  // Ensure streak index is synchronized with today's status on mount or user change
+  // Re-sync daily prayers whenever calendar date or user changes (automatic midnight rollover / app resume)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(todayKey);
+      if (stored) {
+        setPrayerStatuses(JSON.parse(stored));
+      } else {
+        // Safe check for legacy key
+        const legacyKey = `tawfiq_prayers_${now.toISOString().split("T")[0]}`;
+        const legacyStored = legacyKey !== todayKey ? localStorage.getItem(legacyKey) : null;
+        setPrayerStatuses(legacyStored ? JSON.parse(legacyStored) : {});
+      }
+    } catch {
+      setPrayerStatuses({});
+    }
+  }, [todayKey]);
+
+  // Ensure streak index is synchronized with today's status on mount or date/user change
   useEffect(() => {
     if (hasQualifyingPrayer(prayerStatuses)) {
       recordDayStatuses(todayDateStr, prayerStatuses);
     }
-  }, [todayDateStr, userScope]);
+  }, [todayDateStr, userScope, prayerStatuses, recordDayStatuses]);
 
   // Selected prayer for bottom drawer sheet
   const [selectedPrayerForLog, setSelectedPrayerForLog] = useState(null);
@@ -309,8 +356,8 @@ export default function PrayerDashboard() {
     }).length;
   }, [prayerStatuses]);
 
-  // Daily Dhikr state stored in localStorage for today
-  const dhikrStorageKey = `tawfiq_daily_dhikr_${now.toISOString().split("T")[0]}`;
+  // Daily Dhikr state stored in localStorage for today (respects local prayer calendar date)
+  const dhikrStorageKey = `tawfiq_daily_dhikr_${todayDateStr}`;
   const [dhikrState, setDhikrState] = useState(() => {
     try {
       const stored = localStorage.getItem(dhikrStorageKey);
@@ -331,6 +378,29 @@ export default function PrayerDashboard() {
     }
     return { count: 0, index: 0 };
   });
+
+  // Re-sync dhikr state on day boundary
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(dhikrStorageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setDhikrState({
+          count: typeof parsed.count === "number" && parsed.count >= 0 ? parsed.count : 0,
+          index:
+            typeof parsed.index === "number" &&
+            parsed.index >= 0 &&
+            parsed.index < DHIKR_ITEMS.length
+              ? parsed.index
+              : 0,
+        });
+      } else {
+        setDhikrState({ count: 0, index: 0 });
+      }
+    } catch {
+      setDhikrState({ count: 0, index: 0 });
+    }
+  }, [dhikrStorageKey]);
 
   useEffect(() => {
     try {

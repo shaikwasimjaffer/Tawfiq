@@ -10,21 +10,21 @@ const LOCATION_STORAGE_KEY = "tawfiq_user_location";
 const CALC_PREFS_KEY = "tawfiq_calc_preferences";
 
 export const CITY_PRESETS = [
-  { city: "Makkah", country: "Saudi Arabia", latitude: 21.4225, longitude: 39.8262, method: "Makkah" },
-  { city: "Madinah", country: "Saudi Arabia", latitude: 24.4672, longitude: 39.6111, method: "Makkah" },
-  { city: "Jerusalem", country: "Palestine", latitude: 31.7767, longitude: 35.2345, method: "MWL" },
-  { city: "Cairo", country: "Egypt", latitude: 30.0444, longitude: 31.2357, method: "Egypt" },
-  { city: "Istanbul", country: "Turkey", latitude: 41.0082, longitude: 28.9784, method: "MWL" },
-  { city: "London", country: "United Kingdom", latitude: 51.5074, longitude: -0.1278, method: "MWL" },
-  { city: "New York", country: "United States", latitude: 40.7128, longitude: -74.006, method: "ISNA" },
-  { city: "Toronto", country: "Canada", latitude: 43.6532, longitude: -79.3832, method: "ISNA" },
-  { city: "Dubai", country: "United Arab Emirates", latitude: 25.2048, longitude: 55.2708, method: "Dubai" },
-  { city: "Karachi", country: "Pakistan", latitude: 24.8607, longitude: 67.0011, method: "Karachi" },
-  { city: "Mumbai", country: "India", latitude: 19.076, longitude: 72.8777, method: "Karachi" },
-  { city: "Hyderabad", country: "India", latitude: 17.385, longitude: 78.4867, method: "Karachi" },
-  { city: "Kuala Lumpur", country: "Malaysia", latitude: 3.139, longitude: 101.6869, method: "MWL" },
-  { city: "Jakarta", country: "Indonesia", latitude: -6.2088, longitude: 106.8456, method: "MWL" },
-  { city: "Sydney", country: "Australia", latitude: -33.8688, longitude: 151.2093, method: "MWL" },
+  { city: "Makkah", country: "Saudi Arabia", latitude: 21.4225, longitude: 39.8262, method: "Makkah", timezone: "Asia/Riyadh" },
+  { city: "Madinah", country: "Saudi Arabia", latitude: 24.4672, longitude: 39.6111, method: "Makkah", timezone: "Asia/Riyadh" },
+  { city: "Jerusalem", country: "Palestine", latitude: 31.7767, longitude: 35.2345, method: "MWL", timezone: "Asia/Jerusalem" },
+  { city: "Cairo", country: "Egypt", latitude: 30.0444, longitude: 31.2357, method: "Egypt", timezone: "Africa/Cairo" },
+  { city: "Istanbul", country: "Turkey", latitude: 41.0082, longitude: 28.9784, method: "MWL", timezone: "Europe/Istanbul" },
+  { city: "London", country: "United Kingdom", latitude: 51.5074, longitude: -0.1278, method: "MWL", timezone: "Europe/London" },
+  { city: "New York", country: "United States", latitude: 40.7128, longitude: -74.006, method: "ISNA", timezone: "America/New_York" },
+  { city: "Toronto", country: "Canada", latitude: 43.6532, longitude: -79.3832, method: "ISNA", timezone: "America/Toronto" },
+  { city: "Dubai", country: "United Arab Emirates", latitude: 25.2048, longitude: 55.2708, method: "Dubai", timezone: "Asia/Dubai" },
+  { city: "Karachi", country: "Pakistan", latitude: 24.8607, longitude: 67.0011, method: "Karachi", timezone: "Asia/Karachi" },
+  { city: "Mumbai", country: "India", latitude: 19.076, longitude: 72.8777, method: "Karachi", timezone: "Asia/Kolkata" },
+  { city: "Hyderabad", country: "India", latitude: 17.385, longitude: 78.4867, method: "Karachi", timezone: "Asia/Kolkata" },
+  { city: "Kuala Lumpur", country: "Malaysia", latitude: 3.139, longitude: 101.6869, method: "MWL", timezone: "Asia/Kuala_Lumpur" },
+  { city: "Jakarta", country: "Indonesia", latitude: -6.2088, longitude: 106.8456, method: "MWL", timezone: "Asia/Jakarta" },
+  { city: "Sydney", country: "Australia", latitude: -33.8688, longitude: 151.2093, method: "MWL", timezone: "Australia/Sydney" },
 ];
 
 export const CALCULATION_METHODS = [
