@@ -35,6 +35,8 @@ import { askTawfiqMentor, getStoredGeminiKey, setStoredGeminiKey, getActiveGemin
 import MentorAnswerCard from "@/components/mentor/MentorAnswerCard";
 import ScriptureDetailModal from "@/components/mentor/ScriptureDetailModal";
 import ZomatoAiTransition from "@/components/mentor/ZomatoAiTransition";
+import AiActivityIndicator from "@/components/mentor/AiActivityIndicator";
+import { classifyPrompt } from "@/lib/promptActivityClassifier";
 import { getAuthorizedUserPrayerContext } from "@/lib/salahCoachingService";
 import { useAuth } from "@/lib/AuthContext";
 import { usePrayerStreak } from "@/lib/usePrayerStreak";
@@ -151,12 +153,19 @@ export default function MentorApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Input & Generation state
+  // Input & Dynamic AI Response Generation state
   const [input, setInput] = useState("");
   const [selectedMode, setSelectedMode] = useState("all");
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState("");
-  const [streamingText, setStreamingText] = useState("");
+  const [generationState, setGenerationState] = useState({
+    status: "idle", // "idle" | "processing" | "streaming" | "completed" | "error"
+    category: "general",
+    categoryTitle: "",
+    phase: null,
+    streamingText: "",
+    error: null,
+    activePrompt: "",
+  });
 
   // Feedback & Coaching state
   const [feedbackMap, setFeedbackMap] = useState(() => {
@@ -247,13 +256,121 @@ export default function MentorApp() {
   const isGeneratingRef = useRef(false);
   const abortControllerRef = useRef(null);
 
-  // ── Scroll Prevention: Strictly pin to top on mount or new chat ────────
+  // ── Smart Chat Scroll Tracking ──────────────────────────────────────────
+  const isAtBottomRef = useRef(true);
+  const isProgrammaticScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef(null);
+
+  // Helper to reliably scroll the conversation container to the bottom
+  const scrollToBottom = useCallback((behavior = "instant") => {
+    const container = chatScrollRef.current;
+    if (!container) return;
+
+    if (behavior === "instant") {
+      container.scrollTop = container.scrollHeight;
+    } else {
+      isProgrammaticScrollingRef.current = true;
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        isProgrammaticScrollingRef.current = false;
+      }, 500);
+    }
+  }, []);
+
+  // Check if user is currently near the bottom (within 120px)
+  const checkIfAtBottom = useCallback(() => {
+    const el = chatScrollRef.current;
+    if (!el) return true;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    return distanceFromBottom <= 120;
+  }, []);
+
+  // Track manual scrolling: respect user reading position when scrolled up
+  const handleScroll = useCallback(() => {
+    const container = chatScrollRef.current;
+    if (!container) return;
+
+    if (isProgrammaticScrollingRef.current) {
+      return;
+    }
+
+    const atBottom = checkIfAtBottom();
+    isAtBottomRef.current = atBottom;
+  }, [checkIfAtBottom]);
+
+  // Cancel programmatic scroll flag if user manually interacts with wheel or touch
+  useEffect(() => {
+    const container = chatScrollRef.current;
+    if (!container) return;
+
+    const onUserInteraction = () => {
+      isProgrammaticScrollingRef.current = false;
+    };
+
+    container.addEventListener("wheel", onUserInteraction, { passive: true });
+    container.addEventListener("touchstart", onUserInteraction, { passive: true });
+    container.addEventListener("pointerdown", onUserInteraction, { passive: true });
+
+    return () => {
+      container.removeEventListener("wheel", onUserInteraction);
+      container.removeEventListener("touchstart", onUserInteraction);
+      container.removeEventListener("pointerdown", onUserInteraction);
+    };
+  }, []);
+
+  // ── Initial & Session Load: Position conversation at latest message ─────
   useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = 0;
+    if (messages.length > 0) {
+      isAtBottomRef.current = true;
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
+    } else {
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = 0;
+      }
     }
   }, [currentSessionId]);
+
+  // Settle layout after paint for initial load or session switch
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    // Run across animation frames to catch fonts, markdown & card reflows
+    const rAF = requestAnimationFrame(() => {
+      if (chatScrollRef.current && isAtBottomRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
+    });
+
+    return () => cancelAnimationFrame(rAF);
+  }, [currentSessionId, messages]);
+
+  // Keep pinned to bottom as content expands (streaming, cards, citations), unless user scrolled up
+  useEffect(() => {
+    const container = chatScrollRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (messages.length > 0 && isAtBottomRef.current && !isProgrammaticScrollingRef.current) {
+        container.scrollTop = container.scrollHeight;
+      }
+    });
+
+    const contentEl = container.firstElementChild;
+    if (contentEl) {
+      resizeObserver.observe(contentEl);
+    }
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [messages.length]);
 
   // Load user prayer context
   useEffect(() => {
@@ -282,12 +399,17 @@ export default function MentorApp() {
     } catch {}
   }, [coachingConsent]);
 
-  // Auto-scroll ONLY when user has submitted a prompt or when streaming
+  // Auto-scroll while generating or streaming if user is following conversation
   useEffect(() => {
-    if (messages.length > 0 && (loading || isGeneratingRef.current)) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (
+      messages.length > 0 &&
+      (loading || isGeneratingRef.current || generationState.streamingText || generationState.status !== "idle")
+    ) {
+      if (isAtBottomRef.current && chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
     }
-  }, [messages.length, loading, streamingText]);
+  }, [loading, generationState.streamingText, generationState.status, messages.length]);
 
   // Handle URL query parameter ?q=... (e.g. from landing page prompt launcher)
   useEffect(() => {
@@ -343,35 +465,59 @@ export default function MentorApp() {
   // Switch to a previous conversation from history drawer
   const handleSelectSession = (session) => {
     if (loading) handleStopGeneration();
+    setGenerationState({
+      status: "idle",
+      category: "general",
+      categoryTitle: "",
+      phase: null,
+      streamingText: "",
+      error: null,
+      activePrompt: "",
+    });
     setCurrentSessionId(session.id);
-    setMessages(session.messages || []);
+    const sessionMessages = session.messages || [];
+    setMessages(sessionMessages);
     setSidebarOpen(false);
+    isAtBottomRef.current = true;
     try {
       localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, session.id);
     } catch {}
 
-    // Reset scroll to top of chat
-    setTimeout(() => {
+    // Position newly selected conversation at its latest message
+    requestAnimationFrame(() => {
       if (chatScrollRef.current) {
-        chatScrollRef.current.scrollTop = 0;
+        if (sessionMessages.length > 0) {
+          chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+        } else {
+          chatScrollRef.current.scrollTop = 0;
+        }
       }
-    }, 50);
+    });
   };
 
   // Start a fresh, clean ChatGPT conversation session
   const handleNewChat = () => {
     if (loading) handleStopGeneration();
+    setGenerationState({
+      status: "idle",
+      category: "general",
+      categoryTitle: "",
+      phase: null,
+      streamingText: "",
+      error: null,
+      activePrompt: "",
+    });
     const newId = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     setCurrentSessionId(newId);
     setMessages([]);
     setInput("");
     setSidebarOpen(false);
+    isAtBottomRef.current = true;
     try {
       localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, newId);
     } catch {}
 
-    // Pin scroll to top
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    // Reset scroll to top for empty landing canvas
     if (chatScrollRef.current) {
       chatScrollRef.current.scrollTop = 0;
     }
@@ -403,39 +549,91 @@ export default function MentorApp() {
     }
   };
 
-  // Progressive streaming animation
-  const streamResponseAnimation = useCallback(async (fullAnswer, userMsgId) => {
-    const text =
-      fullAnswer.answer ||
-      fullAnswer.directAnswer ||
-      fullAnswer.scenarioApplication ||
-      fullAnswer.explanation ||
-      "Guidance generated from scripture.";
-    const words = text.split(" ");
-    let current = "";
+  // Finalize assistant message and transition cleanly from activity state
+  const finalizeAssistantMessage = useCallback(
+    (fullAnswer) => {
+      const text =
+        fullAnswer.answer ||
+        fullAnswer.directAnswer ||
+        fullAnswer.scenarioApplication ||
+        fullAnswer.explanation ||
+        "Guidance generated from scripture.";
 
-    for (let i = 0; i < words.length; i++) {
-      if (!isGeneratingRef.current) break;
-      current += (i === 0 ? "" : " ") + words[i];
-      setStreamingText(current);
-      await new Promise((resolve) => setTimeout(resolve, 18));
-    }
+      const assistantMsg = {
+        id: `msg-${Date.now()}`,
+        role: "assistant",
+        content: text,
+        answer: fullAnswer,
+        timestamp: new Date().toISOString(),
+      };
 
-    setStreamingText("");
-    const assistantMsg = {
-      id: `msg-${Date.now()}`,
-      role: "assistant",
-      content: current || text,
-      answer: fullAnswer,
-      timestamp: new Date().toISOString(),
-    };
+      setMessages((prev) => {
+        const next = [...prev, assistantMsg];
+        syncCurrentMessagesToSession(next);
+        return next;
+      });
 
-    setMessages((prev) => {
-      const next = [...prev, assistantMsg];
-      syncCurrentMessagesToSession(next);
-      return next;
-    });
-  }, [currentSessionId]);
+      setGenerationState({
+        status: "idle",
+        category: "general",
+        categoryTitle: "",
+        phase: null,
+        streamingText: "",
+        error: null,
+        activePrompt: "",
+      });
+
+      if (isAtBottomRef.current) {
+        requestAnimationFrame(() => {
+          scrollToBottom("smooth");
+        });
+      }
+    },
+    [currentSessionId, scrollToBottom]
+  );
+
+  // Progressive streaming animation (used when direct SSE stream is not available)
+  const streamResponseAnimation = useCallback(
+    async (fullAnswer, userMsgId, config) => {
+      const text =
+        fullAnswer.answer ||
+        fullAnswer.directAnswer ||
+        fullAnswer.scenarioApplication ||
+        fullAnswer.explanation ||
+        "Guidance generated from scripture.";
+      const words = text.split(" ");
+      let current = "";
+
+      const draftingPhase = config?.phases?.find((p) => p.id === "drafting") || {
+        id: "drafting",
+        label: "Drafting your response…",
+      };
+
+      setGenerationState((prev) => ({
+        ...prev,
+        status: "streaming",
+        phase: draftingPhase,
+      }));
+
+      for (let i = 0; i < words.length; i++) {
+        if (!isGeneratingRef.current) break;
+        current += (i === 0 ? "" : " ") + words[i];
+        setGenerationState((prev) => ({
+          ...prev,
+          streamingText: current,
+        }));
+        if (isAtBottomRef.current && chatScrollRef.current) {
+          chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 18));
+      }
+
+      if (!isGeneratingRef.current) return;
+
+      finalizeAssistantMessage(fullAnswer);
+    },
+    [currentSessionId, finalizeAssistantMessage, scrollToBottom]
+  );
 
   // Main Send Action
   async function handleSend(text) {
@@ -448,6 +646,8 @@ export default function MentorApp() {
       textareaRef.current.style.height = "auto";
     }
 
+    const config = classifyPrompt(q);
+
     const userMsg = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -459,49 +659,117 @@ export default function MentorApp() {
     setMessages(nextMessages);
     syncCurrentMessagesToSession(nextMessages);
 
+    // Re-engage auto-follow and smoothly scroll to the new message
+    isAtBottomRef.current = true;
+    requestAnimationFrame(() => {
+      scrollToBottom("smooth");
+    });
+
     setLoading(true);
     isGeneratingRef.current = true;
-    setLoadingStep("Retrieving verified Quran & Hadith citations...");
+
+    // Immediately display active assistant container with contextual phase & shimmering skeleton
+    setGenerationState({
+      status: "processing",
+      category: config.category,
+      categoryTitle: config.categoryTitle,
+      phase: config.phases[0] || { id: "analyzing", label: "Understanding your request…" },
+      streamingText: "",
+      error: null,
+      activePrompt: q,
+    });
 
     const abortCtrl = new AbortController();
     abortControllerRef.current = abortCtrl;
 
+    let currentPhaseStartTime = Date.now();
+    const minPhaseDuration = 450;
+
+    const advancePhase = async (nextPhase) => {
+      if (!isGeneratingRef.current || !nextPhase) return;
+      const elapsed = Date.now() - currentPhaseStartTime;
+      if (elapsed < minPhaseDuration && !config.isQuick) {
+        await new Promise((r) => setTimeout(r, minPhaseDuration - elapsed));
+      }
+      if (!isGeneratingRef.current) return;
+      currentPhaseStartTime = Date.now();
+      setGenerationState((prev) => ({
+        ...prev,
+        phase: nextPhase,
+      }));
+    };
+
     try {
       const historyContext = nextMessages.slice(-4);
       const activeCoachingContext = coachingConsent ? userPrayerContext : null;
+
+      // Phase 2: Retrieval / Processing
+      if (config.phases[1]) {
+        await advancePhase(config.phases[1]);
+      }
+
       const packet = await retrieveEvidencePacket(q, historyContext, activeCoachingContext);
 
       if (!isGeneratingRef.current) return;
-      setLoadingStep("Neural Islamic Reasoner synthesizing answer with authentic citations...");
 
-      const answer = await askTawfiqMentor(q, packet);
+      // Phase 3: Synthesizing / Reasoning
+      if (config.phases[2]) {
+        await advancePhase(config.phases[2]);
+      }
+
+      let hasReceivedRealtimeChunks = false;
+
+      const answer = await askTawfiqMentor(q, packet, {
+        signal: abortCtrl.signal,
+        onChunk: (chunkText) => {
+          if (!isGeneratingRef.current) return;
+          hasReceivedRealtimeChunks = true;
+          const draftingPhase = config.phases.find((p) => p.id === "drafting") || {
+            id: "drafting",
+            label: "Drafting your response…",
+          };
+          setGenerationState((prev) => ({
+            ...prev,
+            status: "streaming",
+            phase: draftingPhase,
+            streamingText: chunkText,
+          }));
+          if (isAtBottomRef.current && chatScrollRef.current) {
+            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+          }
+        },
+      });
 
       if (!isGeneratingRef.current) return;
-      setLoadingStep("Formulating responsible guidance...");
 
-      await streamResponseAnimation(answer, userMsg.id);
+      if (!hasReceivedRealtimeChunks && answer) {
+        await streamResponseAnimation(answer, userMsg.id, config);
+      } else if (answer) {
+        finalizeAssistantMessage(answer);
+      }
     } catch (err) {
-      if (!isGeneratingRef.current) {
+      if (!isGeneratingRef.current || abortCtrl.signal.aborted) {
         toast.info("Generation stopped by user.");
+        setGenerationState({
+          status: "idle",
+          category: "general",
+          categoryTitle: "",
+          phase: null,
+          streamingText: "",
+          error: null,
+          activePrompt: "",
+        });
       } else {
         console.error("Mentor query error:", err);
-        const errMsg = {
-          id: `msg-${Date.now()}`,
-          role: "assistant",
-          content:
-            "An error occurred while evaluating scriptural evidence. Please ensure a stable connection or try rephrasing your question.",
-        };
-        setMessages((prev) => {
-          const next = [...prev, errMsg];
-          syncCurrentMessagesToSession(next);
-          return next;
-        });
+        setGenerationState((prev) => ({
+          ...prev,
+          status: "error",
+          error: "An error occurred while formulating guidance. Please try again or check your connection.",
+        }));
         toast.error("Unable to complete request. Please try again.");
       }
     } finally {
       setLoading(false);
-      setLoadingStep("");
-      setStreamingText("");
       isGeneratingRef.current = false;
       abortControllerRef.current = null;
     }
@@ -513,8 +781,31 @@ export default function MentorApp() {
       abortControllerRef.current.abort();
     }
     setLoading(false);
-    setLoadingStep("");
-    setStreamingText("");
+
+    if (generationState.streamingText) {
+      const partialMsg = {
+        id: `msg-${Date.now()}`,
+        role: "assistant",
+        content: generationState.streamingText,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => {
+        const next = [...prev, partialMsg];
+        syncCurrentMessagesToSession(next);
+        return next;
+      });
+    }
+
+    setGenerationState({
+      status: "idle",
+      category: "general",
+      categoryTitle: "",
+      phase: null,
+      streamingText: "",
+      error: null,
+      activePrompt: "",
+    });
+    toast.info("Generation stopped.");
   }
 
   function handleRegenerate(lastUserPrompt) {
@@ -522,6 +813,7 @@ export default function MentorApp() {
     const promptToRetry =
       lastUserPrompt || messages.filter((m) => m.role === "user").pop()?.content;
     if (promptToRetry) {
+      isAtBottomRef.current = true;
       setMessages((prev) => {
         if (prev.length > 1 && prev[prev.length - 1].role === "assistant") {
           return prev.slice(0, -1);
@@ -578,9 +870,8 @@ export default function MentorApp() {
         isOpen={showZomatoTransition}
         onComplete={() => {
           setShowZomatoTransition(false);
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-          if (chatScrollRef.current) {
-            chatScrollRef.current.scrollTop = 0;
+          if (chatScrollRef.current && messages.length > 0 && isAtBottomRef.current) {
+            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
           }
         }}
       />
@@ -779,6 +1070,7 @@ export default function MentorApp() {
       {/* ── Main Chat Area (ChatGPT-Style Canvas) ────────────────────────── */}
       <main
         ref={chatScrollRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 flex flex-col items-center scrollbar-thin relative"
       >
         <div className="w-full max-w-2xl flex-1 flex flex-col justify-between">
@@ -926,37 +1218,45 @@ export default function MentorApp() {
                 );
               })}
 
-              {/* Loading State & Streaming Indicator */}
-              {loading && (
+              {/* ── Active Assistant Generating / Streaming Container ── */}
+              {generationState.status !== "idle" && (
                 <div className="flex items-start gap-2.5 sm:gap-3">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#134D37] text-[#F3E5AB] border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
+                  {/* Assistant Avatar */}
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#134D37] text-[#F3E5AB] border border-[#D4AF37]/40 shadow-xs flex items-center justify-center shrink-0">
                     <TawfiqBrandIcon className="w-4 h-4" color="#F3E5AB" />
                   </div>
 
-                  <div className="w-full max-w-full sm:max-w-[95%] rounded-2xl rounded-tl-xs p-4 sm:p-5 bg-white border border-[#DDD7CC] shadow-xs space-y-3">
-                    <div className="flex items-center justify-between gap-3 text-xs text-[#70685C]">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#134D37] animate-ping" />
-                        <span className="italic">{loadingStep || "Tawfiq Mentor is reflecting..."}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleStopGeneration}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#70685C] hover:text-[#1C3B2B] bg-[#FAF8F5] hover:bg-[#EBE5DB] px-2.5 py-1 rounded-full transition-colors border border-[#DDD7CD]"
-                      >
-                        <Square size={10} className="fill-current" />
-                        <span>Stop</span>
-                      </button>
-                    </div>
+                  {/* Content Box */}
+                  <div className="w-full max-w-full sm:max-w-[95%] p-4 sm:p-5 bg-white text-[#2A261F] rounded-2xl rounded-tl-xs border border-[#DDD7CC] shadow-xs space-y-3 transition-all">
+                    {/* Activity Indicator (Context-Aware State, Smooth Crossfades, Stop/Retry) */}
+                    <AiActivityIndicator
+                      phase={generationState.phase}
+                      category={generationState.category}
+                      categoryTitle={generationState.categoryTitle}
+                      isStreaming={Boolean(generationState.streamingText)}
+                      onStop={handleStopGeneration}
+                      error={generationState.error}
+                      onRetry={() => handleSend(generationState.activePrompt)}
+                    />
 
-                    {streamingText && (
-                      <div className="pt-2 border-t border-[#F0ECE1]">
-                        <h2 className="text-[#1C3B2B] font-semibold text-sm tracking-tight mb-1">
-                          Direct Guidance
-                        </h2>
-                        <div className="text-[14.5px] leading-relaxed text-[#2A261F] whitespace-pre-wrap">
-                          {streamingText}
-                          <span className="inline-block w-1.5 h-4 bg-[#134D37] ml-1 animate-pulse" />
+                    {/* Real-time Streaming Response Text with Markdown & Inline Pulse Cursor */}
+                    {generationState.streamingText && (
+                      <div className="pt-3 border-t border-[#F0ECE1]">
+                        <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-[#1C3B2B]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#134D37] animate-pulse" />
+                          <span className="tracking-wide">
+                            {generationState.category === "code"
+                              ? "Code & Solution"
+                              : generationState.category === "math"
+                              ? "Calculation & Solution"
+                              : generationState.category === "writing"
+                              ? "Drafting Response"
+                              : "Direct Guidance"}
+                          </span>
+                        </div>
+                        <div className="text-[14px] leading-relaxed text-[#2A261F] prose prose-stone max-w-none">
+                          <ReactMarkdown>{generationState.streamingText}</ReactMarkdown>
+                          <span className="inline-block w-1.5 h-4 bg-[#134D37] ml-1 align-middle animate-pulse" />
                         </div>
                       </div>
                     )}
@@ -964,7 +1264,7 @@ export default function MentorApp() {
                 </div>
               )}
 
-              <div ref={bottomRef} />
+              <div ref={bottomRef} className="h-px w-full pointer-events-none" aria-hidden="true" />
             </div>
           )}
         </div>

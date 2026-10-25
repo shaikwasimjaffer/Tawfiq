@@ -95,20 +95,148 @@ You must respond in a valid JSON object matching this exact schema:
   "limitations": "Scholarly nuance, differing opinions, conditions, or non-fatwa notice"
 }`;
 
-export async function askTawfiqMentor(userQuery, packet) {
+/**
+ * Extracts the user-facing answer and explanation in real time from partial or streaming JSON.
+ * Ensures the user sees clean, formatted text without raw JSON syntax.
+ */
+export function extractStreamingAnswer(raw) {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+
+  // If the model responded in plain markdown text rather than JSON
+  if (!trimmed.startsWith("{")) {
+    return trimmed.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+  }
+
+  // Extract "answer" or "directAnswer"
+  const matchAnswer = raw.match(/"(?:answer|directAnswer)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)/);
+  if (!matchAnswer) return "";
+
+  let result = matchAnswer[1]
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, "\t")
+    .replace(/\\\\/g, "\\");
+
+  // Also extract "scenarioApplication" or "explanation" if streaming has reached it
+  const matchApp = raw.match(/"(?:scenarioApplication|explanation)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)/);
+  if (matchApp) {
+    const app = matchApp[1]
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, "\n")
+      .replace(/\\t/g, "\t")
+      .replace(/\\\\/g, "\\");
+    if (app && app.trim()) {
+      result += "\n\n" + app;
+    }
+  }
+
+  return result;
+}
+
+export async function askTawfiqMentor(userQuery, packet, options = {}) {
+  const { onProgress, onChunk, signal } = options;
   const evidenceXml = formatEvidencePacketXML(packet);
   const promptText = `${SYSTEM_INSTRUCTION}\n\n${evidenceXml}\n\nUSER QUESTION & SCENARIO: "${userQuery}"\n\nAnalyze this scenario against the retrieved Quran and Hadith evidence. Generate your scenario-grounded answer as a valid JSON object matching the requested schema:`;
 
   const activeKey = getActiveGeminiKey();
   let lastError = null;
 
-  // 1. Direct High-Speed Gemini Cloud Reasoner (Trying Candidate Models)
+  // 1. Direct High-Speed Gemini Cloud Reasoner with Streaming Support
   if (activeKey) {
     for (const model of GEMINI_CANDIDATE_MODELS) {
+      if (signal?.aborted) return null;
+
+      // 1A. Try Real-Time Streaming Endpoint (SSE)
+      try {
+        const streamEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${activeKey}&alt=sse`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 22000);
+
+        if (signal) {
+          signal.addEventListener("abort", () => controller.abort(), { once: true });
+        }
+
+        const streamRes = await fetch(streamEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+              temperature: 0.3,
+              responseMimeType: "application/json",
+            },
+          }),
+        });
+
+        clearTimeout(timeout);
+
+        if (streamRes.ok && streamRes.body) {
+          const reader = streamRes.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+          let buffer = "";
+          let accumulatedRaw = "";
+          let lastExtracted = "";
+
+          while (true) {
+            if (signal?.aborted) {
+              try { reader.cancel(); } catch {}
+              break;
+            }
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith("data: ")) {
+                try {
+                  const chunkJson = JSON.parse(trimmed.slice(6));
+                  const textPart = chunkJson.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (textPart) {
+                    accumulatedRaw += textPart;
+                    const extracted = extractStreamingAnswer(accumulatedRaw);
+                    if (extracted && extracted !== lastExtracted) {
+                      lastExtracted = extracted;
+                      if (onChunk) onChunk(extracted);
+                    }
+                  }
+                } catch {}
+              }
+            }
+          }
+
+          if (accumulatedRaw) {
+            const parsed = parseModelResponse(accumulatedRaw, packet);
+            if (parsed) {
+              if (parsed.citations && parsed.citations.length > 0) {
+                parsed.citations = await validateCitations(parsed.citations);
+              }
+              return parsed;
+            }
+          }
+        } else if (streamRes.status === 429) {
+          lastError = "Gemini API free-tier request quota exceeded (HTTP 429).";
+          continue;
+        }
+      } catch (streamErr) {
+        if (signal?.aborted) throw streamErr;
+        // Fallback to standard generateContent if stream fails
+      }
+
+      // 1B. Standard generateContent fallback for model
+      if (signal?.aborted) return null;
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 16000);
+
+        if (signal) {
+          signal.addEventListener("abort", () => controller.abort(), { once: true });
+        }
 
         const directRes = await fetch(endpoint, {
           method: "POST",
@@ -145,44 +273,52 @@ export async function askTawfiqMentor(userQuery, packet) {
           lastError = errData?.error?.message || `Model ${model} returned HTTP ${directRes.status}`;
         }
       } catch (directErr) {
+        if (signal?.aborted) throw directErr;
         lastError = directErr.message;
       }
     }
   }
 
   // 2. Try Secure Server-Side Endpoint (/api/mentor/generate)
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+  if (!signal?.aborted) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
 
-    const res = await fetch("/api/mentor/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({
-        prompt: promptText,
-        query: userQuery || packet.analysis.cleanQuery,
-        customApiKey: getStoredGeminiKey() || undefined,
-        evidenceXml,
-      }),
-    });
+      if (signal) {
+        signal.addEventListener("abort", () => controller.abort(), { once: true });
+      }
 
-    clearTimeout(timeout);
+      const res = await fetch("/api/mentor/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          prompt: promptText,
+          query: userQuery || packet.analysis.cleanQuery,
+          customApiKey: getStoredGeminiKey() || undefined,
+          evidenceXml,
+        }),
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.status === "success" && data.rawContent) {
-        const parsed = parseModelResponse(data.rawContent, packet);
-        if (parsed) {
-          if (parsed.citations && parsed.citations.length > 0) {
-            parsed.citations = await validateCitations(parsed.citations);
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "success" && data.rawContent) {
+          const parsed = parseModelResponse(data.rawContent, packet);
+          if (parsed) {
+            if (parsed.citations && parsed.citations.length > 0) {
+              parsed.citations = await validateCitations(parsed.citations);
+            }
+            return parsed;
           }
-          return parsed;
         }
       }
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      console.debug("[geminiClient] Server-side fallback skipped:", err?.message);
     }
-  } catch (err) {
-    console.debug("[geminiClient] Server-side fallback skipped:", err?.message);
   }
 
   // 3. Dynamic Scripture-Grounded Fallback (Zero Hardcoding)

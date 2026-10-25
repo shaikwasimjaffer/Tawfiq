@@ -112,6 +112,11 @@ export const QAZA_KEYS = {
   ADJUSTMENTS: "tawfiq_qaza_adjustments_ledger",
   COMPLETIONS: "tawfiq_qaza_completions_ledger",
   SYNC_EVENT: "tawfiq_qaza_sync",
+  // Adaptive Guided Wizard & Management Extension Keys
+  TIMELINE_SEGMENTS: "tawfiq_qaza_timeline_segments",
+  EXCLUDED_PERIODS: "tawfiq_qaza_excluded_periods",
+  ESTIMATE_VERSIONS: "tawfiq_qaza_estimate_versions",
+  REPAYMENT_PLAN: "tawfiq_qaza_repayment_plan",
 };
 
 // Default opening baseline when no user data exists (134 standard prayers)
@@ -127,8 +132,17 @@ export const DEFAULT_OPENING_DEBT = {
 export const DEFAULT_PROFILE = {
   trackWitr: false,
   madhhab: "hanafi",
+  fiqhConfigurationId: "hanafi_v1",
   deliberateMissedRuling: "majority_qaza",
   dailyTarget: 5,
+  categoryTargets: { fajr: 1, dhuhr: 1, asr: 1, maghrib: 1, isha: 1, witr: 0 },
+  weeklyGoal: 35,
+  isPlanPaused: false,
+  roundingPolicy: "upward",
+  accountabilityStartDate: null,
+  accountabilityStartPrecision: "approximate_age",
+  historicalEndDate: null,
+  historicalEndPrecision: "exact_date",
   observationWindowDays: 30,
   userId: "default_user",
   tartibPreference: "flexible",
@@ -731,4 +745,105 @@ export function saveCanonicalQazaState({ openingDebt, adjustments, completions, 
   }
 
   return metrics;
+}
+
+// ─── EXTENDED ENTITY STORAGE HELPERS ──────────────────────────────────────────
+
+export function loadQazaTimelineSegments() {
+  const storage = getStorage();
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(QAZA_KEYS.TIMELINE_SEGMENTS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveQazaTimelineSegments(segments) {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(QAZA_KEYS.TIMELINE_SEGMENTS, JSON.stringify(segments || []));
+  } catch (err) {
+    console.error("[qazaEngine] Failed to save timeline segments:", err);
+  }
+}
+
+export function loadQazaExcludedPeriods() {
+  const storage = getStorage();
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(QAZA_KEYS.EXCLUDED_PERIODS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveQazaExcludedPeriods(periods) {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(QAZA_KEYS.EXCLUDED_PERIODS, JSON.stringify(periods || []));
+  } catch (err) {
+    console.error("[qazaEngine] Failed to save excluded periods:", err);
+  }
+}
+
+export function loadQazaEstimateVersions() {
+  const storage = getStorage();
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(QAZA_KEYS.ESTIMATE_VERSIONS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveQazaEstimateVersion(newVersion) {
+  const storage = getStorage();
+  if (!storage || !newVersion) return;
+  try {
+    const existing = loadQazaEstimateVersions();
+    const updated = [newVersion, ...existing];
+    storage.setItem(QAZA_KEYS.ESTIMATE_VERSIONS, JSON.stringify(updated));
+  } catch (err) {
+    console.error("[qazaEngine] Failed to save estimate version:", err);
+  }
+}
+
+export function loadQazaRepaymentPlan() {
+  const storage = getStorage();
+  if (!storage) {
+    return {
+      dailyTarget: 5,
+      categoryTargets: { fajr: 1, dhuhr: 1, asr: 1, maghrib: 1, isha: 1, witr: 0 },
+      weeklyGoal: 35,
+      isPaused: false,
+      startDate: new Date().toISOString().split("T")[0],
+    };
+  }
+  try {
+    const raw = storage.getItem(QAZA_KEYS.REPAYMENT_PLAN);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {
+    dailyTarget: 5,
+    categoryTargets: { fajr: 1, dhuhr: 1, asr: 1, maghrib: 1, isha: 1, witr: 0 },
+    weeklyGoal: 35,
+    isPaused: false,
+    startDate: new Date().toISOString().split("T")[0],
+  };
+}
+
+export function saveQazaRepaymentPlan(plan) {
+  const storage = getStorage();
+  if (!storage || !plan) return;
+  try {
+    storage.setItem(QAZA_KEYS.REPAYMENT_PLAN, JSON.stringify(plan));
+  } catch (err) {
+    console.error("[qazaEngine] Failed to save repayment plan:", err);
+  }
 }

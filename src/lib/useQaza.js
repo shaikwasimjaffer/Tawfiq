@@ -18,9 +18,48 @@ import {
   calculateWizardInitialDebt,
   loadCanonicalQazaState,
   saveCanonicalQazaState,
+  loadQazaTimelineSegments,
+  saveQazaTimelineSegments,
+  loadQazaExcludedPeriods,
+  saveQazaExcludedPeriods,
+  loadQazaEstimateVersions,
+  saveQazaEstimateVersion,
+  loadQazaRepaymentPlan,
+  saveQazaRepaymentPlan,
 } from "./qazaEngine.js";
 
-// Re-export constants for full backward compatibility
+import {
+  getFiqhConfiguration,
+  MADHHAB_OPTIONS,
+  FIQH_CONFIGURATIONS,
+  FIQH_REVIEW_STATUS,
+} from "./fiqhConfigurations.js";
+
+import {
+  calculateComprehensiveQaza,
+  calculateRepaymentProjections,
+  calculateInclusiveCalendarDays,
+  mergeDateIntervals,
+  calculateEligibleDays,
+  ROUNDING_POLICIES,
+  ESTIMATION_MODES,
+} from "./qazaCalculationEngine.js";
+
+// Re-export constants and calculations for full backward and cross-module compatibility
+export {
+  getFiqhConfiguration,
+  MADHHAB_OPTIONS,
+  FIQH_CONFIGURATIONS,
+  FIQH_REVIEW_STATUS,
+  calculateComprehensiveQaza,
+  calculateRepaymentProjections,
+  calculateInclusiveCalendarDays,
+  mergeDateIntervals,
+  calculateEligibleDays,
+  ROUNDING_POLICIES,
+  ESTIMATION_MODES,
+};
+
 export const QAZA_STORAGE_KEY = QAZA_KEYS.STATE;
 export const QAZA_HISTORY_KEY = QAZA_KEYS.HISTORY;
 export const QAZA_BASELINE_KEY = QAZA_KEYS.BASELINE;
@@ -524,6 +563,195 @@ export function useQaza() {
     [profile, openingDebt, adjustments, completions, commitCanonical]
   );
 
+  // Extended entities: timeline segments, exclusions, estimate versions, and repayment plan
+  const [timelineSegments, setTimelineSegments] = useState(() => loadQazaTimelineSegments());
+  const [excludedPeriods, setExcludedPeriods] = useState(() => loadQazaExcludedPeriods());
+  const [estimateVersions, setEstimateVersions] = useState(() => loadQazaEstimateVersions());
+  const [repaymentPlan, setRepaymentPlanState] = useState(() => loadQazaRepaymentPlan());
+
+  // Active Fiqh Configuration
+  const activeFiqhConfig = useMemo(() => {
+    return getFiqhConfiguration(profile.madhhab || "hanafi");
+  }, [profile.madhhab]);
+
+  // Dynamic Repayment Projections based on current remaining balances and active plan
+  const repaymentProjections = useMemo(() => {
+    return calculateRepaymentProjections({
+      remainingDebt: metrics.remainingDebt,
+      dailyTarget: repaymentPlan.dailyTarget || profile.dailyTarget || 5,
+      categoryTargets: repaymentPlan.categoryTargets || profile.categoryTargets,
+      weeklyTarget: repaymentPlan.weeklyGoal || profile.weeklyGoal,
+      startDate: repaymentPlan.startDate || new Date().toISOString().split("T")[0],
+      isPaused: Boolean(repaymentPlan.isPaused || profile.isPlanPaused),
+    });
+  }, [metrics.remainingDebt, repaymentPlan, profile]);
+
+  /**
+   * Records a batch of completed Qaza prayers atomically (e.g. multi-prayer or multi-day makeup session).
+   */
+  const logBatchCompletions = useCallback(
+    (batchItems = [], options = {}) => {
+      if (!checkRateLimit()) return;
+      if (!Array.isArray(batchItems) || batchItems.length === 0) return;
+
+      const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+      const timestamp = new Date().toISOString();
+      const localDate = options.localDate || getLocalCalendarDate();
+      const validPrayers = profile.trackWitr ? ALL_TRACKABLE_PRAYERS : CANONICAL_PRAYERS;
+
+      const newEntries = [];
+      batchItems.forEach((item) => {
+        if (!validPrayers.includes(item.prayer)) return;
+        const count = Math.max(1, parseInt(item.count, 10) || 1);
+        newEntries.push({
+          id: `comp_${Date.now()}_${item.prayer}_${Math.random().toString(36).substr(2, 5)}`,
+          timestamp,
+          localDate,
+          prayer: item.prayer,
+          count,
+          source: options.source || "batch_logging",
+          batchId,
+          isReversed: false,
+          notes: options.notes || `Batch entry (${batchId})`,
+          idempotencyKey: options.idempotencyKey || null,
+        });
+      });
+
+      if (newEntries.length === 0) return;
+
+      const nextCompletions = [...newEntries, ...completions];
+      commitCanonical(openingDebt, adjustments, nextCompletions, profile);
+      return { batchId, count: newEntries.length, entries: newEntries };
+    },
+    [checkRateLimit, profile, completions, openingDebt, adjustments, commitCanonical]
+  );
+
+  /**
+   * Commits output from the 5-Step Guided Adaptive Estimation Wizard.
+   * Saves an immutable estimate version snapshot, updates timeline segments & exclusions,
+   * establishes new prayer targets, and safely preserves existing completion history.
+   */
+  const commitComprehensiveEstimate = useCallback(
+    ({
+      periods = [],
+      excludedPeriods: newExcluded = [],
+      profileUpdates = {},
+      estimateResult = {},
+      customTargets = null,
+      notes = "",
+    }) => {
+      const activeTargets = customTargets || estimateResult.roundedTargets || {};
+      const trackWitr = Boolean(profileUpdates.trackWitr ?? activeFiqhConfig.rules.trackWitr);
+      const sanitizedTargets = sanitizePrayerMap(activeTargets, trackWitr);
+
+      const nextProfile = {
+        ...profile,
+        ...profileUpdates,
+        madhhab: profileUpdates.madhhab || profile.madhhab || "hanafi",
+        fiqhConfigurationId: profileUpdates.fiqhConfigurationId || activeFiqhConfig.id,
+        trackWitr,
+        roundingPolicy: profileUpdates.roundingPolicy || profile.roundingPolicy || "upward",
+        accountabilityStartDate: profileUpdates.accountabilityStartDate || profile.accountabilityStartDate,
+        accountabilityStartPrecision: profileUpdates.accountabilityStartPrecision || profile.accountabilityStartPrecision,
+        historicalEndDate: profileUpdates.historicalEndDate || profile.historicalEndDate,
+        historicalEndPrecision: profileUpdates.historicalEndPrecision || profile.historicalEndPrecision,
+      };
+
+      // Create immutable version snapshot
+      const newVersion = {
+        id: `ver_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        versionNumber: (estimateVersions[0]?.versionNumber || 0) + 1,
+        madhhab: nextProfile.madhhab,
+        fiqhConfigurationId: nextProfile.fiqhConfigurationId,
+        reviewStatus: activeFiqhConfig.reviewStatus,
+        roundingPolicy: nextProfile.roundingPolicy,
+        accountabilityStartDate: nextProfile.accountabilityStartDate,
+        historicalEndDate: nextProfile.historicalEndDate,
+        perPrayerTotals: sanitizedTargets,
+        lowerBounds: estimateResult.roundedLowBounds || {},
+        upperBounds: estimateResult.roundedHighBounds || {},
+        totalTarget: estimateResult.totalCalculatedTarget || Object.values(sanitizedTargets).reduce((a, b) => a + b, 0),
+        periodsSnapshot: periods,
+        excludedSnapshot: newExcluded,
+        notes,
+      };
+
+      // Persist modular collections
+      saveQazaTimelineSegments(periods);
+      saveQazaExcludedPeriods(newExcluded);
+      saveQazaEstimateVersion(newVersion);
+
+      setTimelineSegments(periods);
+      setExcludedPeriods(newExcluded);
+      setEstimateVersions((prev) => [newVersion, ...prev]);
+
+      // Set new opening debt (targets) while strictly preserving all logged completions!
+      commitCanonical(sanitizedTargets, adjustments, completions, nextProfile);
+      return newVersion;
+    },
+    [profile, activeFiqhConfig, estimateVersions, adjustments, completions, commitCanonical]
+  );
+
+  /**
+   * Updates Repayment Plan settings (daily pace, category daily targets, weekly goals, pause state).
+   */
+  const updateRepaymentPlan = useCallback(
+    (updates = {}) => {
+      const nextPlan = {
+        ...repaymentPlan,
+        ...updates,
+        dailyTarget: Math.max(1, parseInt(updates.dailyTarget ?? repaymentPlan.dailyTarget, 10) || 5),
+        weeklyGoal: Math.max(1, parseInt(updates.weeklyGoal ?? repaymentPlan.weeklyGoal, 10) || 35),
+      };
+
+      saveQazaRepaymentPlan(nextPlan);
+      setRepaymentPlanState(nextPlan);
+
+      const nextProfile = {
+        ...profile,
+        dailyTarget: nextPlan.dailyTarget,
+        categoryTargets: nextPlan.categoryTargets || profile.categoryTargets,
+        weeklyGoal: nextPlan.weeklyGoal,
+        isPlanPaused: Boolean(nextPlan.isPaused),
+      };
+      commitCanonical(openingDebt, adjustments, completions, nextProfile);
+    },
+    [repaymentPlan, profile, openingDebt, adjustments, completions, commitCanonical]
+  );
+
+  /**
+   * Pauses the repayment plan.
+   */
+  const pauseRepaymentPlan = useCallback(() => {
+    updateRepaymentPlan({ isPaused: true });
+  }, [updateRepaymentPlan]);
+
+  /**
+   * Resumes the repayment plan.
+   */
+  const resumeRepaymentPlan = useCallback(() => {
+    updateRepaymentPlan({ isPaused: false });
+  }, [updateRepaymentPlan]);
+
+  /**
+   * Changes the selected Madhhab.
+   * Crucially: Does NOT silently rewrite existing debt numbers or delete completed records.
+   */
+  const changeMadhhab = useCallback(
+    (newMadhhabKey) => {
+      const targetConfig = getFiqhConfiguration(newMadhhabKey);
+      const nextProfile = {
+        ...profile,
+        madhhab: targetConfig.madhhab,
+        fiqhConfigurationId: targetConfig.id,
+        trackWitr: targetConfig.rules.trackWitr,
+      };
+      commitCanonical(openingDebt, adjustments, completions, nextProfile);
+    },
+    [profile, openingDebt, adjustments, completions, commitCanonical]
+  );
+
   // Backward-compatible history object mirror
   const history = useMemo(() => {
     let prevStreak = 0;
@@ -544,6 +772,7 @@ export function useQaza() {
           prayer: c.prayer,
           count: c.count,
           timestamp: c.timestamp,
+          isReversed: Boolean(c.isReversed),
         })),
         ...adjustments.slice(0, 50).map((a) => ({
           id: a.id,
@@ -551,6 +780,7 @@ export function useQaza() {
           prayer: a.prayer,
           count: a.quantity,
           timestamp: a.timestamp,
+          reversedAdjustmentId: a.reversedAdjustmentId,
         })),
       ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
     };
@@ -577,6 +807,14 @@ export function useQaza() {
     history,
     loading,
 
+    // Extended entities & Jurisprudence metadata
+    timelineSegments,
+    excludedPeriods,
+    estimateVersions,
+    repaymentPlan,
+    repaymentProjections,
+    activeFiqhConfig,
+
     // Ledger records
     openingDebt,
     adjustments,
@@ -585,6 +823,7 @@ export function useQaza() {
 
     // Operations
     logCompletedQaza,
+    logBatchCompletions,
     recordDebtAdjustment,
     adjust,
     setAmount,
@@ -592,6 +831,11 @@ export function useQaza() {
     subtractFullDay,
     undoRecentAction,
     commitWizard,
+    commitComprehensiveEstimate,
+    updateRepaymentPlan,
+    pauseRepaymentPlan,
+    resumeRepaymentPlan,
+    changeMadhhab,
     resetAllDebt,
     setDailyPace,
     setTrackWitr,

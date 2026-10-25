@@ -18,6 +18,10 @@ import {
   ChevronRight,
   SlidersHorizontal,
   ExternalLink,
+  Layers,
+  History,
+  ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 import { useQaza } from "@/lib/useQaza";
 import {
@@ -25,17 +29,23 @@ import {
   ALL_TRACKABLE_PRAYERS,
   PRAYER_DISPLAY_NAMES,
   ISLAMIC_JURISPRUDENCE_SOURCES,
-  calculateWizardInitialDebt,
 } from "@/lib/qazaEngine";
+import { MADHHAB_OPTIONS } from "@/lib/fiqhConfigurations";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
+
+import QazaWizardModal from "@/components/qaza/QazaWizardModal";
+import RepaymentPlannerCard from "@/components/qaza/RepaymentPlannerCard";
+import BatchLogModal from "@/components/qaza/BatchLogModal";
+import HistoryAuditModal from "@/components/qaza/HistoryAuditModal";
+import EstimateDetailsModal from "@/components/qaza/EstimateDetailsModal";
 
 // ─── Native Zero-Dependency Confetti ──────────────────────────────────────────
 const LocalConfetti = () => {
   const colors = [
-    "#16a34a",
+    "#134D37",
+    "#10b981",
     "#d97706",
-    "#ef4444",
     "#3b82f6",
     "#8b5cf6",
     "#ec4899",
@@ -89,6 +99,7 @@ function PrayerCounterCard({
   remaining,
   completed,
   progressPct,
+  rangeInfo,
   onMakeUp,
   onAddDebt,
   onSubDebt,
@@ -113,7 +124,7 @@ function PrayerCounterCard({
   }
 
   return (
-    <div className="bg-card border border-border/80 rounded-2xl p-4 transition-all duration-300 hover:border-green-600/30 hover:shadow-sm">
+    <div className="bg-card border border-border/80 rounded-2xl p-4 transition-all duration-300 hover:border-[#134D37]/40 hover:shadow-sm">
       <div className="flex items-center justify-between">
         {/* Left: Prayer Name & Badges */}
         <div className="min-w-0">
@@ -129,7 +140,7 @@ function PrayerCounterCard({
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {remaining === 0 ? (
-              <span className="text-green-600 dark:text-green-400 font-semibold inline-flex items-center gap-1">
+              <span className="text-emerald-700 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
                 <CheckCircle2 size={12} /> All clear
               </span>
             ) : (
@@ -138,6 +149,11 @@ function PrayerCounterCard({
               </span>
             )}
           </p>
+          {rangeInfo && (
+            <p className="text-[10.5px] text-muted-foreground/80 mt-0.5">
+              Uncertainty Range: {rangeInfo.low} – {rangeInfo.high} prayers
+            </p>
+          )}
         </div>
 
         {/* Right: Primary Make Up Button */}
@@ -146,7 +162,7 @@ function PrayerCounterCard({
           disabled={remaining <= 0}
           title={`Mark 1 Qaza ${name} completed`}
           aria-label={`Mark 1 Qaza ${name} completed`}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-green-700 hover:bg-green-800 active:scale-95 text-white shadow-xs transition-all disabled:opacity-40 disabled:hover:bg-green-700 cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#134D37] hover:bg-[#0E3D2B] active:scale-95 text-white shadow-xs transition-all disabled:opacity-40 disabled:hover:bg-[#134D37] cursor-pointer"
         >
           <Check size={14} className="stroke-[2.5]" />
           <span>Prayed</span>
@@ -156,7 +172,7 @@ function PrayerCounterCard({
       {/* Progress Track for this Prayer */}
       <div className="mt-3 w-full bg-secondary rounded-full h-1.5 overflow-hidden">
         <div
-          className="h-1.5 rounded-full bg-green-600 transition-all duration-700"
+          className="h-1.5 rounded-full bg-[#134D37] transition-all duration-700"
           style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }}
         />
       </div>
@@ -176,12 +192,12 @@ function PrayerCounterCard({
                   if (e.key === "Enter") confirmEdit();
                   if (e.key === "Escape") cancelEdit();
                 }}
-                className="w-16 text-center text-xs font-bold bg-secondary border border-border rounded-lg px-1.5 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-green-600"
+                className="w-16 text-center text-xs font-bold bg-secondary border border-border rounded-lg px-1.5 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-[#134D37]"
                 autoFocus
               />
               <button
                 onClick={confirmEdit}
-                className="w-6 h-6 flex items-center justify-center rounded bg-green-600 text-white"
+                className="w-6 h-6 flex items-center justify-center rounded bg-[#134D37] text-white"
               >
                 <Check size={11} />
               </button>
@@ -199,14 +215,14 @@ function PrayerCounterCard({
                 disabled={remaining <= 0}
                 title="Correct estimate downward by 1"
                 aria-label="Correct estimate downward by 1"
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-secondary hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 text-muted-foreground disabled:opacity-30 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-secondary hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 text-muted-foreground disabled:opacity-30 transition-all cursor-pointer"
               >
                 <Minus size={13} />
               </button>
               <button
                 onClick={startEdit}
                 title="Tap to edit remaining count"
-                className="px-2 py-0.5 rounded text-xs font-bold tabular-nums text-foreground hover:bg-secondary transition-colors"
+                className="px-2 py-0.5 rounded text-xs font-bold tabular-nums text-foreground hover:bg-secondary transition-colors cursor-pointer"
               >
                 {remaining}
               </button>
@@ -214,7 +230,7 @@ function PrayerCounterCard({
                 onClick={onAddDebt}
                 title="Add 1 missed prayer to estimate"
                 aria-label="Add 1 missed prayer to estimate"
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-secondary hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950/40 text-muted-foreground transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-secondary hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950/40 text-muted-foreground transition-all cursor-pointer"
               >
                 <Plus size={13} />
               </button>
@@ -231,7 +247,7 @@ function JurisprudenceModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
       <div
         onClick={onClose}
         className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
@@ -239,7 +255,7 @@ function JurisprudenceModal({ isOpen, onClose }) {
       <div className="relative bg-card border border-border rounded-3xl p-6 md:p-8 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl z-10 text-left space-y-6">
         <div className="flex items-start justify-between pb-4 border-b border-border">
           <div>
-            <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+            <div className="flex items-center gap-2 text-[#134D37] dark:text-emerald-400">
               <BookOpen size={18} />
               <span className="text-xs font-bold uppercase tracking-wider">Islamic Jurisprudence</span>
             </div>
@@ -249,17 +265,17 @@ function JurisprudenceModal({ isOpen, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
+            className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="space-y-5 text-sm">
-          {/* Obligation to make up missed prayers */}
+        <div className="space-y-4 text-sm">
+          {/* Obligation */}
           <div className="bg-secondary/60 rounded-2xl p-4 border border-border/80">
             <h4 className="font-semibold text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-600" />
+              <span className="w-2 h-2 rounded-full bg-emerald-600" />
               {ISLAMIC_JURISPRUDENCE_SOURCES.obligation.title}
             </h4>
             <p className="text-xs text-muted-foreground mt-1">
@@ -268,7 +284,7 @@ function JurisprudenceModal({ isOpen, onClose }) {
             <p className="text-foreground/90 mt-2 leading-relaxed text-xs">
               {ISLAMIC_JURISPRUDENCE_SOURCES.obligation.summary}
             </p>
-            <blockquote className="mt-2 text-xs italic text-green-800 dark:text-green-300 border-l-2 border-green-600 pl-2.5">
+            <blockquote className="mt-2 text-xs italic text-emerald-800 dark:text-emerald-300 border-l-2 border-emerald-600 pl-2.5">
               "{ISLAMIC_JURISPRUDENCE_SOURCES.obligation.evidence}"
             </blockquote>
           </div>
@@ -290,7 +306,7 @@ function JurisprudenceModal({ isOpen, onClose }) {
             </blockquote>
           </div>
 
-          {/* Menstruation and Postpartum */}
+          {/* Menses Exemption */}
           <div className="bg-secondary/60 rounded-2xl p-4 border border-border/80">
             <h4 className="font-semibold text-foreground flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-600" />
@@ -362,13 +378,24 @@ export default function Qaza() {
     forecast,
     history,
     loading,
+    timelineSegments,
+    excludedPeriods,
+    estimateVersions,
+    repaymentPlan,
+    repaymentProjections,
+    activeFiqhConfig,
     logCompletedQaza,
+    logBatchCompletions,
     recordDebtAdjustment,
     setAmount,
     addFullDay,
     subtractFullDay,
     undoRecentAction,
-    commitWizard,
+    commitComprehensiveEstimate,
+    updateRepaymentPlan,
+    pauseRepaymentPlan,
+    resumeRepaymentPlan,
+    changeMadhhab,
     resetAllDebt,
     setDailyPace,
     setTrackWitr,
@@ -390,75 +417,15 @@ export default function Qaza() {
     prevTotalRef.current = total;
   }, [total, loading]);
 
-  // Modals & Drawers
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalStep, setModalStep] = useState(1);
-  const [isJurisprudenceOpen, setIsJurisprudenceOpen] = useState(false);
+  // Modal Dialog States
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isEstimateDetailsOpen, setIsEstimateDetailsOpen] = useState(false);
+  const [isJurisprudenceOpen, setIsJurisprudenceOpen] = useState(false);
 
-  // Wizard state
-  const [gender, setGender] = useState("male");
-  const [currentAge, setCurrentAge] = useState(25);
-  const [pubertyAge, setPubertyAge] = useState(14);
-  const [subtractMenses, setSubtractMenses] = useState(false);
-  const [mensesDaysPerMonth, setMensesDaysPerMonth] = useState(7);
-  const [prayerStatus, setPrayerStatus] = useState("consistent");
-  const [prayingAge, setPrayingAge] = useState(20);
-  const [wizardTrackWitr, setWizardTrackWitr] = useState(trackWitr);
-  const [wizardPace, setWizardPace] = useState(dailyTarget);
-
-  // Restore wizard inputs
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("tawfiq_qaza_wizard_inputs");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.gender) setGender(parsed.gender);
-        if (parsed.currentAge) setCurrentAge(Number(parsed.currentAge));
-        if (parsed.pubertyAge) setPubertyAge(Number(parsed.pubertyAge));
-        if (parsed.subtractMenses !== undefined) setSubtractMenses(Boolean(parsed.subtractMenses));
-        if (parsed.mensesDaysPerMonth) setMensesDaysPerMonth(Number(parsed.mensesDaysPerMonth));
-        if (parsed.prayerStatus) setPrayerStatus(parsed.prayerStatus);
-        if (parsed.prayingAge) setPrayingAge(Number(parsed.prayingAge));
-        if (parsed.trackWitr !== undefined) setWizardTrackWitr(Boolean(parsed.trackWitr));
-      }
-    } catch {}
-  }, [trackWitr]);
-
-  // Wizard calculated debts preview
-  const wizardCalculated = useMemo(() => {
-    return calculateWizardInitialDebt({
-      gender,
-      currentAge,
-      pubertyAge,
-      subtractMenses,
-      mensesDaysPerMonth,
-      prayerStatus,
-      prayingAge,
-      trackWitr: wizardTrackWitr,
-    });
-  }, [gender, currentAge, pubertyAge, subtractMenses, mensesDaysPerMonth, prayerStatus, prayingAge, wizardTrackWitr]);
-
-  function handleCommitWizard() {
-    commitWizard(
-      wizardCalculated.initialDebts,
-      {
-        gender,
-        currentAge,
-        pubertyAge,
-        subtractMenses,
-        mensesDaysPerMonth,
-        prayerStatus,
-        prayingAge,
-        trackWitr: wizardTrackWitr,
-        dailyTarget: wizardPace,
-      },
-      wizardPace
-    );
-    setIsModalOpen(false);
-    setModalStep(1);
-    toast.success("Initial Qaza debt estimate established successfully.");
-  }
+  // Latest estimate version bounds
+  const latestEstimateVersion = estimateVersions[0] || null;
 
   function handleUndo() {
     const result = undoRecentAction();
@@ -466,11 +433,18 @@ export default function Qaza() {
       if (result.type === "reversed_completion") {
         toast.info(`Undid prayer completion for ${PRAYER_DISPLAY_NAMES[result.target.prayer]}.`);
       } else {
-        toast.info(`Undid recent debt adjustment for ${PRAYER_DISPLAY_NAMES[result.target.prayer]}.`);
+        toast.info(`Undid debt adjustment for ${PRAYER_DISPLAY_NAMES[result.target.prayer]}.`);
       }
     } else {
       toast.info("No recent action available to undo.");
     }
+  }
+
+  function handleWizardCommit(wizardPayload) {
+    const newVersion = commitComprehensiveEstimate(wizardPayload);
+    toast.success("New Qaza debt estimate established successfully!", {
+      description: `Target set to ${newVersion.totalTarget.toLocaleString()} prayers across ${newVersion.madhhab} profile.`,
+    });
   }
 
   return (
@@ -491,15 +465,23 @@ export default function Qaza() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setIsJurisprudenceOpen(true)}
-              className="p-2 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
+              className="p-2 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer"
               title="Islamic Jurisprudence & Sources"
               aria-label="Islamic Jurisprudence & Sources"
             >
               <BookOpen size={16} />
             </button>
             <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="p-2 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer"
+              title="Audit trail and history"
+              aria-label="Audit trail and history"
+            >
+              <History size={16} />
+            </button>
+            <button
               onClick={handleUndo}
-              className="p-2 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
+              className="p-2 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer"
               title="Undo recent action"
               aria-label="Undo recent action"
             >
@@ -525,7 +507,7 @@ export default function Qaza() {
               Your remaining balance is safely clamped to 0 and all completion records are preserved.
             </p>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setIsWizardOpen(true)}
               className="text-xs font-semibold text-amber-800 dark:text-amber-300 underline cursor-pointer"
             >
               Recalculate or adjust estimated debt →
@@ -537,9 +519,14 @@ export default function Qaza() {
         <div className="bg-gradient-to-br from-green-50 via-white to-green-50/50 dark:from-green-950/40 dark:via-card dark:to-green-950/20 border border-green-200/80 dark:border-green-900/60 rounded-3xl p-5 shadow-xs">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[11px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">
-                Remaining Qaza
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-[#134D37] dark:text-emerald-400 uppercase tracking-wider">
+                  Remaining Qaza
+                </span>
+                <span className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+                  {activeFiqhConfig.title.split("(")[0].trim()}
+                </span>
+              </div>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-5xl font-black text-foreground tabular-nums tracking-tight">
                   {loading ? "—" : total.toLocaleString()}
@@ -550,7 +537,7 @@ export default function Qaza() {
 
             {totalTrackedDebt > 0 && (
               <div className="text-right">
-                <span className="inline-block bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 text-xs font-bold px-2.5 py-1 rounded-full">
+                <span className="inline-block bg-green-100 text-[#134D37] dark:bg-green-900/50 dark:text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-full">
                   {clearedPercentage.toFixed(1)}% cleared
                 </span>
               </div>
@@ -567,7 +554,7 @@ export default function Qaza() {
             </div>
             <div className="w-full bg-secondary/80 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-green-600 h-2.5 rounded-full transition-all duration-1000 ease-out"
+                className="bg-[#134D37] h-2.5 rounded-full transition-all duration-1000 ease-out"
                 style={{ width: `${Math.min(100, Math.max(0, clearedPercentage))}%` }}
               />
             </div>
@@ -587,7 +574,7 @@ export default function Qaza() {
               <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                 Completed
               </span>
-              <span className="text-sm font-bold text-green-700 dark:text-green-400 tabular-nums">
+              <span className="text-sm font-bold text-[#134D37] dark:text-emerald-400 tabular-nums">
                 {totalMadeUp.toLocaleString()}
               </span>
             </div>
@@ -600,7 +587,30 @@ export default function Qaza() {
               </span>
             </div>
           </div>
+
+          {/* Inspect Assumptions Link */}
+          <div className="mt-3 pt-2 text-center border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => setIsEstimateDetailsOpen(true)}
+              className="text-[11px] text-[#134D37] dark:text-emerald-400 font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+            >
+              <Info size={12} />
+              <span>Inspect or edit estimate assumptions & bounds →</span>
+            </button>
+          </div>
         </div>
+
+        {/* Repayment Planner Card */}
+        <RepaymentPlannerCard
+          totalRemaining={total}
+          repaymentPlan={repaymentPlan}
+          repaymentProjections={repaymentProjections}
+          activePrayers={activePrayers}
+          onUpdatePlan={updateRepaymentPlan}
+          onPausePlan={pauseRepaymentPlan}
+          onResumePlan={resumeRepaymentPlan}
+        />
 
         {/* Quick Actions Panel */}
         <div className="bg-card border border-border rounded-3xl p-4 shadow-xs space-y-2.5">
@@ -608,13 +618,13 @@ export default function Qaza() {
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Quick Actions
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <label className="text-[11px] text-muted-foreground flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={trackWitr}
                   onChange={(e) => setTrackWitr(e.target.checked)}
-                  className="rounded text-green-600 focus:ring-green-500 cursor-pointer"
+                  className="rounded text-[#134D37] focus:ring-[#134D37] cursor-pointer"
                 />
                 <span>Track Witr</span>
               </label>
@@ -627,7 +637,7 @@ export default function Qaza() {
                 const count = addFullDay();
                 toast.success(`Added 1 full day (+${count} missed prayers) to your debt.`);
               }}
-              className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-green-700 hover:bg-green-800 active:scale-95 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+              className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#134D37] hover:bg-[#0E3D2B] active:scale-95 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
             >
               <CalendarDays size={14} />
               <span>+ Full Day ({activePrayers.length})</span>
@@ -650,79 +660,24 @@ export default function Qaza() {
             </button>
           </div>
 
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-secondary/80 hover:bg-secondary text-foreground text-xs font-semibold border border-border transition-all active:scale-95 cursor-pointer"
-          >
-            <Calculator size={14} className="text-green-700 dark:text-green-400" />
-            <span>Calculate Debt Wizard</span>
-          </button>
-        </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              onClick={() => setIsBatchModalOpen(true)}
+              className="flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-secondary/80 hover:bg-secondary text-foreground text-xs font-semibold border border-border transition-all active:scale-95 cursor-pointer"
+            >
+              <Layers size={14} className="text-[#134D37] dark:text-emerald-400" />
+              <span>Log Batch</span>
+            </button>
 
-        {/* Repayment Planner & Accurate Forecast */}
-        {total > 0 && (
-          <div className="bg-card border border-border rounded-3xl p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingDown size={15} className="text-green-700 dark:text-green-400" />
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Repayment Forecast
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] text-muted-foreground">Target:</span>
-                <select
-                  value={dailyTarget}
-                  onChange={(e) => setDailyPace(Number(e.target.value))}
-                  className="text-xs font-bold bg-secondary border border-border rounded-lg px-2 py-1 text-foreground"
-                >
-                  <option value={1}>1 / day</option>
-                  <option value={3}>3 / day</option>
-                  <option value={5}>5 / day</option>
-                  <option value={10}>10 / day</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              {/* Forecast at current observed rate */}
-              <div className="flex justify-between items-center p-2.5 rounded-xl bg-secondary/70">
-                <div>
-                  <span className="font-semibold text-foreground block">
-                    At observed pace ({forecast.observedDailyRate}/day)
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    Based on last 30 calendar days
-                  </span>
-                </div>
-                <span className="text-sm font-bold text-foreground tabular-nums">
-                  {forecast.formattedCurrentPace || "—"}
-                </span>
-              </div>
-
-              {/* Forecast at target pace */}
-              <div className="flex justify-between items-center p-2.5 rounded-xl bg-green-50/80 dark:bg-green-950/30 border border-green-200/80 dark:border-green-900/60">
-                <div>
-                  <span className="font-semibold text-green-900 dark:text-green-200 block">
-                    At target pace ({dailyTarget}/day)
-                  </span>
-                  <span className="text-[11px] text-green-800/70 dark:text-green-400/70">
-                    If target is met daily
-                  </span>
-                </div>
-                <span className="text-sm font-bold text-green-700 dark:text-green-400 tabular-nums">
-                  {forecast.formattedTargetPace}
-                </span>
-              </div>
-
-              {forecast.statusMessage && (
-                <p className="text-[11px] text-muted-foreground text-center italic pt-1">
-                  {forecast.statusMessage}
-                </p>
-              )}
-            </div>
+            <button
+              onClick={() => setIsWizardOpen(true)}
+              className="flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-secondary/80 hover:bg-secondary text-foreground text-xs font-semibold border border-border transition-all active:scale-95 cursor-pointer"
+            >
+              <Calculator size={14} className="text-[#134D37] dark:text-emerald-400" />
+              <span>Recalculate Wizard</span>
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Per-Prayer Individual Trackers */}
         <div className="space-y-2.5">
@@ -731,323 +686,111 @@ export default function Qaza() {
               By Prayer Type
             </span>
             <span className="text-[11px] text-muted-foreground">
-              Tap "Prayed" to log Qaza • Tap number to edit
+              Tap "Prayed" to log Qaza • Tap count to edit
             </span>
           </div>
 
           <div className="space-y-2.5">
-            {activePrayers.map((p) => (
-              <PrayerCounterCard
-                key={p}
-                prayerKey={p}
-                name={PRAYER_DISPLAY_NAMES[p]}
-                remaining={qaza[p] ?? 0}
-                completed={perPrayerProgress[p] !== undefined ? Math.round(((qaza[p] ?? 0) * (perPrayerProgress[p] / 100)) / (1 - perPrayerProgress[p] / 100 || 1)) : 0}
-                progressPct={perPrayerProgress[p] ?? 0}
-                onMakeUp={() => {
-                  logCompletedQaza(p, 1);
-                  toast.success(`Recorded 1 Qaza ${PRAYER_DISPLAY_NAMES[p]} completed!`, {
-                    description: "May Allah accept your worship.",
-                  });
-                }}
-                onAddDebt={() => {
-                  recordDebtAdjustment(p, 1, { category: "manual_addition" });
-                  toast.info(`Added 1 missed ${PRAYER_DISPLAY_NAMES[p]} to estimate.`);
-                }}
-                onSubDebt={() => {
-                  try {
-                    recordDebtAdjustment(p, -1, { category: "manual_correction" });
-                    toast.info(`Corrected ${PRAYER_DISPLAY_NAMES[p]} estimate downward.`);
-                  } catch (err) {
-                    toast.error(err.message);
+            {activePrayers.map((p) => {
+              const low = latestEstimateVersion?.lowerBounds?.[p];
+              const high = latestEstimateVersion?.upperBounds?.[p];
+              const rangeInfo = low !== undefined && high !== undefined && low !== high ? { low, high } : null;
+
+              return (
+                <PrayerCounterCard
+                  key={p}
+                  prayerKey={p}
+                  name={PRAYER_DISPLAY_NAMES[p]}
+                  remaining={qaza[p] ?? 0}
+                  completed={
+                    perPrayerProgress[p] !== undefined
+                      ? Math.round(
+                          ((qaza[p] ?? 0) * (perPrayerProgress[p] / 100)) /
+                            (1 - perPrayerProgress[p] / 100 || 1)
+                        )
+                      : 0
                   }
-                }}
-                onSetRemaining={(n) => {
-                  setAmount(p, n);
-                  toast.success(`Updated ${PRAYER_DISPLAY_NAMES[p]} remaining debt to ${n}.`);
-                }}
-              />
-            ))}
+                  progressPct={perPrayerProgress[p] ?? 0}
+                  rangeInfo={rangeInfo}
+                  onMakeUp={() => {
+                    logCompletedQaza(p, 1);
+                    toast.success(`Recorded 1 Qaza ${PRAYER_DISPLAY_NAMES[p]} completed!`, {
+                      description: "May Allah accept your worship.",
+                    });
+                  }}
+                  onAddDebt={() => {
+                    recordDebtAdjustment(p, 1, { category: "manual_addition" });
+                    toast.info(`Added 1 missed ${PRAYER_DISPLAY_NAMES[p]} to estimate.`);
+                  }}
+                  onSubDebt={() => {
+                    try {
+                      recordDebtAdjustment(p, -1, { category: "manual_correction" });
+                      toast.info(`Corrected ${PRAYER_DISPLAY_NAMES[p]} estimate downward.`);
+                    } catch (err) {
+                      toast.error(err.message);
+                    }
+                  }}
+                  onSetRemaining={(n) => {
+                    setAmount(p, n);
+                    toast.success(`Updated ${PRAYER_DISPLAY_NAMES[p]} remaining debt to ${n}.`);
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
+
+      {/* Guided 5-Step Estimation Wizard Modal */}
+      <QazaWizardModal
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onCommit={handleWizardCommit}
+        initialData={{
+          madhhab: activeFiqhConfig.madhhab,
+          trackWitr,
+          dailyTarget,
+        }}
+      />
+
+      {/* Batch Completion Logging Modal */}
+      <BatchLogModal
+        isOpen={isBatchModalOpen}
+        onClose={() => setIsBatchModalOpen(false)}
+        activePrayers={activePrayers}
+        onLogBatch={(items, opts) => {
+          const res = logBatchCompletions(items, opts);
+          if (res) {
+            toast.success(`Successfully recorded batch of ${res.entries.reduce((a, b) => a + b.count, 0)} completed Qaza prayers!`);
+          }
+        }}
+      />
+
+      {/* Audit Trail & History Modal */}
+      <HistoryAuditModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        historyLogs={history.logs}
+        onUndo={handleUndo}
+      />
+
+      {/* Estimate Assumptions & Provenance Details Modal */}
+      <EstimateDetailsModal
+        isOpen={isEstimateDetailsOpen}
+        onClose={() => setIsEstimateDetailsOpen(false)}
+        profile={activeFiqhConfig}
+        activeFiqhConfig={activeFiqhConfig}
+        timelineSegments={timelineSegments}
+        excludedPeriods={excludedPeriods}
+        estimateVersions={estimateVersions}
+        onOpenWizard={() => setIsWizardOpen(true)}
+      />
 
       {/* Jurisprudence References Modal */}
       <JurisprudenceModal
         isOpen={isJurisprudenceOpen}
         onClose={() => setIsJurisprudenceOpen(false)}
       />
-
-      {/* Upgraded 3-Step Debt Calculation Wizard Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              onClick={() => setIsModalOpen(false)}
-              className="fixed inset-0 bg-green-950/60 backdrop-blur-xs"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 20 }}
-              className="relative bg-card border border-border w-full max-w-lg p-6 md:p-8 rounded-3xl shadow-2xl z-10 text-left max-h-[90vh] overflow-y-auto space-y-6"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div>
-                  <span className="text-[11px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">
-                    Step {modalStep} of 3
-                  </span>
-                  <h3 className="text-xl font-serif font-bold text-foreground mt-0.5">
-                    {modalStep === 1
-                      ? "Accountability & Starting Point"
-                      : modalStep === 2
-                      ? "Prayer Practice History"
-                      : "Review & Establish Estimate"}
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              {/* Step 1: Starting point (puberty / accountability) */}
-              {modalStep === 1 && (
-                <div className="space-y-5 text-sm">
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Under Islamic jurisprudence, prayer becomes obligatory upon reaching puberty (Bulugh). Enter your approximate accountability starting point.
-                  </p>
-
-                  <div className="space-y-3">
-                    <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-                      Gender
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {["male", "female"].map((g) => (
-                        <button
-                          key={g}
-                          onClick={() => {
-                            setGender(g);
-                            if (g === "male") setSubtractMenses(false);
-                          }}
-                          className={`py-2.5 px-3 rounded-xl border text-xs font-semibold capitalize transition-all ${
-                            gender === g
-                              ? "bg-green-700 text-white border-green-700 shadow-xs"
-                              : "bg-secondary border-border text-foreground"
-                          }`}
-                        >
-                          {g}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {gender === "female" && (
-                    <div className="p-3 bg-secondary/80 rounded-2xl border border-border/80 space-y-2">
-                      <label className="flex items-center gap-2.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={subtractMenses}
-                          onChange={(e) => setSubtractMenses(e.target.checked)}
-                          className="rounded text-green-600 focus:ring-green-500 cursor-pointer"
-                        />
-                        <span className="text-xs font-semibold text-foreground">
-                          Exclude menstruation & postpartum days
-                        </span>
-                      </label>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Under Sahih al-Bukhari 321 and Dar al-Ifta Fatwa 7959, prayers during menses are waived and not made up.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
-                        Current Age: <strong className="text-green-700 dark:text-green-400">{currentAge}</strong>
-                      </label>
-                      <input
-                        type="range"
-                        min="10"
-                        max="85"
-                        value={currentAge}
-                        onChange={(e) => setCurrentAge(Number(e.target.value))}
-                        className="w-full accent-green-600 cursor-pointer"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-foreground block mb-1">
-                        Puberty Age: <strong className="text-green-700 dark:text-green-400">{pubertyAge}</strong>
-                      </label>
-                      <input
-                        type="range"
-                        min="9"
-                        max={currentAge}
-                        value={pubertyAge}
-                        onChange={(e) => setPubertyAge(Number(e.target.value))}
-                        className="w-full accent-green-600 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex justify-end">
-                    <button
-                      onClick={() => setModalStep(2)}
-                      className="px-5 py-2.5 rounded-xl bg-green-700 hover:bg-green-800 text-white text-xs font-semibold shadow-xs cursor-pointer flex items-center gap-1.5"
-                    >
-                      <span>Continue</span>
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Practice history */}
-              {modalStep === 2 && (
-                <div className="space-y-5 text-sm">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-                      Prayer Practice Since Puberty
-                    </label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {[
-                        { id: "consistent", label: "Started praying regularly at a specific age" },
-                        { id: "never", label: "Missed all prayers throughout accountability period" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.id}
-                          onClick={() => setPrayerStatus(opt.id)}
-                          className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all ${
-                            prayerStatus === opt.id
-                              ? "bg-green-50 dark:bg-green-950/40 border-green-600 text-foreground"
-                              : "bg-secondary border-border text-muted-foreground"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {prayerStatus === "consistent" && (
-                    <div className="p-3 bg-secondary/80 rounded-2xl border border-border space-y-2">
-                      <label className="text-xs font-semibold text-foreground block">
-                        Age you began praying regularly: <strong className="text-green-700 dark:text-green-400">{prayingAge}</strong>
-                      </label>
-                      <input
-                        type="range"
-                        min={pubertyAge}
-                        max={currentAge}
-                        value={prayingAge}
-                        onChange={(e) => setPrayingAge(Number(e.target.value))}
-                        className="w-full accent-green-600 cursor-pointer"
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        Unprayed span: {Math.max(0, prayingAge - pubertyAge)} years (~{Math.round(Math.max(0, prayingAge - pubertyAge) * 365.25)} days)
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="p-3 bg-secondary/80 rounded-2xl border border-border">
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-xs font-semibold text-foreground">
-                        Include Witr Prayer (Hanafi Wajib)
-                      </span>
-                      <input
-                        type="checkbox"
-                        checked={wizardTrackWitr}
-                        onChange={(e) => setWizardTrackWitr(e.target.checked)}
-                        className="rounded text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-2">
-                    <button
-                      onClick={() => setModalStep(1)}
-                      className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={() => setModalStep(3)}
-                      className="px-5 py-2.5 rounded-xl bg-green-700 hover:bg-green-800 text-white text-xs font-semibold shadow-xs cursor-pointer flex items-center gap-1.5"
-                    >
-                      <span>Review Estimate</span>
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Review & Commit */}
-              {modalStep === 3 && (
-                <div className="space-y-5 text-sm">
-                  <div className="bg-secondary/60 rounded-2xl p-4 border border-border/80 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">Total Estimated Debt:</span>
-                      <span className="text-xl font-bold text-foreground tabular-nums">
-                        {wizardCalculated.totalCalculated.toLocaleString()} prayers
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/60">
-                      {wizardCalculated.activePrayers.map((p) => (
-                        <div key={p} className="flex justify-between p-1.5 rounded bg-card/60">
-                          <span className="text-muted-foreground">{PRAYER_DISPLAY_NAMES[p]}:</span>
-                          <span className="font-bold text-foreground">
-                            {wizardCalculated.initialDebts[p]?.toLocaleString()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <p>• Accountable span: {wizardCalculated.totalAccountableYears} years</p>
-                    {gender === "female" && subtractMenses && (
-                      <p>• Menses days excluded: ~{wizardCalculated.excludedDays} days</p>
-                    )}
-                    <p>• Note: This is an estimated opening balance, not an absolute proof of past history.</p>
-                  </div>
-
-                  <div className="pt-2 flex justify-between items-center">
-                    <button
-                      onClick={() => setModalStep(2)}
-                      className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={handleCommitWizard}
-                      className="px-5 py-2.5 rounded-xl bg-green-700 hover:bg-green-800 text-white text-xs font-semibold shadow-xs cursor-pointer"
-                    >
-                      Establish Estimate
-                    </button>
-                  </div>
-
-                  <div className="pt-4 border-t border-border flex justify-center">
-                    <button
-                      onClick={() => {
-                        if (window.confirm("Are you sure you want to completely clear all Qaza data?")) {
-                          resetAllDebt();
-                          setIsModalOpen(false);
-                          toast.success("All Qaza debt cleared to zero.");
-                        }
-                      }}
-                      className="text-xs text-red-600 hover:text-red-700 font-semibold"
-                    >
-                      Clear all debt to zero
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <BottomNav />
     </div>
