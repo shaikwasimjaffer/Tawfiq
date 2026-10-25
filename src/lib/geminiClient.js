@@ -9,14 +9,13 @@ import { formatEvidencePacketXML } from "./mentorRagService.js";
 import { generateLocalGroundedAnswer } from "./localGroundedReasoner.js";
 import { validateCitations } from "./citationValidator.js";
 
-// Candidate Gemini models in order of capability & availability
+// Candidate Gemini models in order of capability, availability, and active status
 export const GEMINI_CANDIDATE_MODELS = [
-  "gemini-3.8-flash",
   "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-flash-latest",
   "gemini-flash-lite-latest",
   "gemini-3-flash-preview",
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
 ];
 
 export function getStoredGeminiKey() {
@@ -45,6 +44,9 @@ export function getActiveGeminiKey() {
   if (custom) return custom;
   if (typeof import.meta !== "undefined" && import.meta.env?.VITE_GEMINI_API_KEY) {
     return import.meta.env.VITE_GEMINI_API_KEY;
+  }
+  if (typeof process !== "undefined" && (process.env?.GEMINI_API_KEY || process.env?.VITE_GEMINI_API_KEY)) {
+    return process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   }
   return "";
 }
@@ -137,8 +139,7 @@ export async function askTawfiqMentor(userQuery, packet) {
           }
         } else if (directRes.status === 429) {
           lastError = "Gemini API free-tier request quota exceeded (HTTP 429).";
-          // If quota exceeded on this key, don't keep hammering subsequent models with same key
-          break;
+          continue;
         } else {
           const errData = await directRes.json().catch(() => ({}));
           lastError = errData?.error?.message || `Model ${model} returned HTTP ${directRes.status}`;

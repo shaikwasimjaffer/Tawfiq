@@ -76,35 +76,55 @@ export function generateLocalGroundedAnswer(packet, fallbackOptions = {}) {
     ? `${fallbackOptions.apiNotice}\n\n`
     : "";
 
+  const subjectTopic = cleanQuery.replace(/[?.!]+$/, "").trim();
+
   if (intentType === "ruling_inquiry") {
     dynamicCategory = "explicit_permission";
-    dynamicTitle = "Scripturally Grounded Islamic Guidance";
-    dynamicAnswer = `${noticePrefix}Regarding your inquiry, Islamic guidance evaluates actions through the foundational principles of sound intention, absence of harm, and adherence to scriptural bounds. Based on available scriptural evidence, actions undertaken with pure intention and within divine allowances are guided by divine ease and righteousness.`;
+    dynamicTitle = primaryVerse ? `Guidance on ${primaryVerse.surahName}` : "Scripturally Grounded Islamic Guidance";
+    const evidenceSummary = primaryHadith
+      ? `The Sunnah clarifies this directly: ${primaryHadith.english?.slice(0, 160)}...`
+      : primaryVerse
+      ? `Divine scripture highlights this in Surah ${primaryVerse.surahName}: "${primaryVerse.translation?.slice(0, 160)}..."`
+      : "Authentic sources emphasize acting within divine allowances with sincere intention.";
+
+    dynamicAnswer = `${noticePrefix}Regarding your inquiry ("${subjectTopic}"), Islamic teachings evaluate actions through sound intention, avoidance of harm, and adherence to scriptural bounds. ${evidenceSummary}`;
     dynamicApplication = primaryVerse
-      ? `In Surah ${primaryVerse.surahName} (${primaryVerse.key}), Allah establishes: *"${primaryVerse.translation}"*. This highlights that divine law guides believers toward righteousness, balance, and practical ease.`
+      ? `In Surah ${primaryVerse.surahName} (${primaryVerse.key}), Allah establishes: *"${primaryVerse.translation}"*. This highlights that divine law guides believers toward righteousness, balance, and practical ease in matters like "${subjectTopic}".`
       : primaryHadith
-      ? `In ${primaryHadith.collectionName || "authentic Hadith"} (#${primaryHadith.idInBook || primaryHadith.id}), the Prophet ﷺ taught: *"${primaryHadith.english}"*.`
+      ? `In ${primaryHadith.collectionName || "authentic Hadith"} (#${primaryHadith.idInBook || primaryHadith.id}), the Prophet ﷺ taught: *"${primaryHadith.english}"*. Applying this principle to your situation gives clear direction on how to proceed uprightly.`
       : "The Sunnah establishes clear benchmarks ensuring believers act with ethical uprightness and divine consciousness.";
     dynamicSteps = [
-      "Align your intention purely for the sake of Allah before undertaking the action.",
-      "Ensure the action causes no harm to yourself or others, fulfilling the prophetic principle 'Do not cause harm, nor reciprocate harm.'",
+      `Align your intention purely for the sake of Allah when addressing this situation.`,
+      `Follow the established prophetic guidance highlighted in the scriptures below without introducing undue hardship.`,
     ];
   } else if (intentType === "obligation_inquiry") {
     dynamicCategory = "explicit_obligation";
     dynamicTitle = "Fulfilling Islamic Duty & Guidance";
-    dynamicAnswer = `${noticePrefix}Fulfilling established duties with consistency is central to Islamic worship, while keeping in mind that obligations in Islam are linked directly with human capability and practical capacity.`;
+    const dutyContext = primaryHadith
+      ? `As instructed by the Messenger of Allah ﷺ: "${primaryHadith.english?.slice(0, 150)}..."`
+      : primaryVerse
+      ? `As commanded in the Holy Quran (Surah ${primaryVerse.surahName}): "${primaryVerse.translation?.slice(0, 150)}..."`
+      : "Established duties are to be observed according to prophetic instructions and personal capacity.";
+
+    dynamicAnswer = `${noticePrefix}In response to your inquiry regarding "${subjectTopic}": fulfilling established religious duties with sincerity and consistency is foundational in Islam. ${dutyContext}`;
     dynamicApplication = primaryVerse
       ? `In Surah ${primaryVerse.surahName} (${primaryVerse.key}), Allah instructs: *"${primaryVerse.translation}"*. This divine directive emphasizes maintaining steadfastness in your relationship with the Creator.`
       : primaryHadith
-      ? `In ${primaryHadith.collectionName || "authentic Hadith"} (#${primaryHadith.idInBook || primaryHadith.id}), the Prophet ﷺ taught: *"${primaryHadith.english}"*.`
+      ? `In ${primaryHadith.collectionName || "authentic Hadith"} (#${primaryHadith.idInBook || primaryHadith.id}), the Prophet ﷺ taught: *"${primaryHadith.english}"*. In your specific scenario, this directs you to fulfill the duty without delay once capable.`
       : "The Sunnah consistently highlights the supreme value of consistency in foundational duties.";
     dynamicSteps = [
-      "Prioritize this obligation in your daily routine.",
-      "Ask Allah for steadfastness (*Istiqamah*) and ease in fulfilling your duties.",
+      `Prioritize fulfilling this duty promptly in accordance with prophetic sunnah.`,
+      `Seek Allah's assistance and steadfastness (*Istiqamah*) in maintaining your religious commitments.`,
     ];
   } else {
-    dynamicTitle = "Scriptural Reflection & Contextual Guidance";
-    dynamicAnswer = `${noticePrefix}The authentic Quran and Sunnah provide timeless guidance to help you navigate this situation with spiritual clarity, moral uprightness, and practical wisdom.`;
+    dynamicTitle = primaryVerse ? `Guidance from Surah ${primaryVerse.surahName}` : "Scriptural Reflection & Guidance";
+    const coreInsight = primaryVerse
+      ? `Allah provides solace and wisdom in Surah ${primaryVerse.surahName}: "${primaryVerse.translation?.slice(0, 160)}..."`
+      : primaryHadith
+      ? `The Prophet ﷺ advised: "${primaryHadith.english?.slice(0, 160)}..."`
+      : "Authentic sources guide believers toward mindfulness, patience, and righteous conduct.";
+
+    dynamicAnswer = `${noticePrefix}Regarding "${subjectTopic}": the sacred Quran and authentic Sunnah provide direct guidance to navigate this with clarity, peace of mind, and uprightness. ${coreInsight}`;
     dynamicApplication = primaryVerse
       ? `Allah reminds us in Surah ${primaryVerse.surahName} (${primaryVerse.key}): *"${primaryVerse.translation}"*. ${
           primaryHadith
