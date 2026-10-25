@@ -35,12 +35,14 @@ export function saveRegisteredUser(userProfile) {
     lastLoginAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     createdAt: existing.createdAt || new Date().toISOString(),
+    middle_name: userProfile.middle_name !== undefined ? userProfile.middle_name : (userProfile.middleName !== undefined ? userProfile.middleName : existing.middle_name),
     profile: {
       madhhab: existing.profile?.madhhab || "hanafi",
       calculationMethod: existing.profile?.calculationMethod || "ISNA",
       streakGoal: existing.profile?.streakGoal || 30,
       dailyQazaGoal: existing.profile?.dailyQazaGoal || 5,
       notificationsEnabled: existing.profile?.notificationsEnabled ?? true,
+      middle_name: userProfile.profile?.middle_name || userProfile.profile?.middleName || existing.profile?.middle_name,
       ...(userProfile.profile || {}),
     },
     stats: {
@@ -175,3 +177,79 @@ export function clearActiveUserSession() {
     window.dispatchEvent(new CustomEvent("tawfiq_auth_state_changed", { detail: { user: null } }));
   }
 }
+
+/**
+ * Extracts or resolves the authenticated user's actual middle name with strict validation.
+ * Hierarchy:
+ * 1. user.middle_name or user.middleName
+ * 2. user.profile.middle_name or user.profile.middleName
+ * 3. user.user_metadata.middle_name or user.user_metadata.middleName
+ * 4. Genuine 3+ word structured personal names (e.g., 'Shaik Wasim Jaffer' -> middle is 'Wasim')
+ * Returns empty string if no valid middle name exists (never invents a name or returns undefined/null).
+ */
+export function getUserMiddleName(user) {
+  if (!user || typeof user !== "object") return "";
+
+  // 1. Explicit middle_name / middleName fields on user
+  if (typeof user.middle_name === "string" && user.middle_name.trim()) {
+    return user.middle_name.trim();
+  }
+  if (typeof user.middleName === "string" && user.middleName.trim()) {
+    return user.middleName.trim();
+  }
+
+  // 2. Explicit fields in user.profile
+  if (user.profile && typeof user.profile === "object") {
+    if (typeof user.profile.middle_name === "string" && user.profile.middle_name.trim()) {
+      return user.profile.middle_name.trim();
+    }
+    if (typeof user.profile.middleName === "string" && user.profile.middleName.trim()) {
+      return user.profile.middleName.trim();
+    }
+  }
+
+  // 3. Supabase / OAuth user_metadata
+  if (user.user_metadata && typeof user.user_metadata === "object") {
+    if (typeof user.user_metadata.middle_name === "string" && user.user_metadata.middle_name.trim()) {
+      return user.user_metadata.middle_name.trim();
+    }
+    if (typeof user.user_metadata.middleName === "string" && user.user_metadata.middleName.trim()) {
+      return user.user_metadata.middleName.trim();
+    }
+  }
+
+  // 4. Genuine multi-part full name: only when 3 or more distinct words exist
+  // e.g. "Shaik Wasim Jaffer" -> Given: Shaik, Middle: Wasim, Family: Jaffer
+  const rawName = (user.name || user.displayName || user.fullName || "").trim();
+  if (rawName) {
+    const parts = rawName.split(/\s+/).filter(Boolean);
+    if (parts.length >= 3) {
+      // Middle portion (between first token and last token)
+      return parts.slice(1, -1).join(" ").trim();
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Returns formatted personalized greeting:
+ * - "Welcome {middleName}" if middle name exists
+ * - "Welcome {preferredName}" if explicit preferred display name exists
+ * - "Welcome" neutral greeting when unauthenticated or name unavailable
+ */
+export function getUserHeaderGreeting(user) {
+  const middle = getUserMiddleName(user);
+  if (middle) {
+    return `Welcome ${middle}`;
+  }
+
+  // Fallback if middle name is missing: use explicit first name or preferred display name
+  const fallbackName = (user?.preferred_name || user?.preferredName || user?.given_name || user?.name?.split(/\s+/)[0] || "").trim();
+  if (fallbackName) {
+    return `Welcome ${fallbackName}`;
+  }
+
+  return "Welcome";
+}
+

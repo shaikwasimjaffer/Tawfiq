@@ -193,7 +193,7 @@ export default function Qaza() {
             </p>
             <p className="text-[12px] font-sans" style={{ color: ACCENT }}>
               Remaining {totalOwed}
-            </p>
+             </p>
           </div>
 
           <div className="divide-y divide-[#e0e0e0]">

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
-import AuthLayout from "@/components/AuthLayout";
+import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import AuthLayout, { TawfiqSquareLogo } from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "sonner";
 import { createUserVault, setActiveUserSession } from "@/lib/userStorage";
@@ -126,8 +126,10 @@ export default function Login() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to resume your daily prayers, Qaza tracking, and authentic guidance."
+      title="Sign in"
+      subtitle=""
+      showTopNav={false}
+      customLogo={<TawfiqSquareLogo className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl" />}
       footer={
         <p className="text-[#5C5549] text-xs">
           New to Tawfiq?{" "}
@@ -140,12 +142,13 @@ export default function Login() {
         </p>
       }
     >
-      {/* Google OAuth Action */}
+      {/* Google OAuth Action - Generously Rounded Pill Button */}
       <button
         type="button"
         onClick={handleGoogle}
         disabled={googleLoading || loading}
-        className="w-full h-11 sm:h-12 px-4 rounded-xl sm:rounded-2xl border border-[#D5CDC0] bg-white hover:bg-[#FAF8F5] text-[#2A261F] text-[13.5px] sm:text-[14px] font-semibold flex items-center justify-center gap-3 transition-all shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-[#134D37]/30 group disabled:opacity-60"
+        className="w-full h-11 sm:h-12 px-5 rounded-full border border-[#D5CDC0] bg-white hover:bg-[#FAF8F5] text-[#2A261F] text-[13.5px] sm:text-[14px] font-semibold flex items-center justify-center gap-3 transition-all shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-[#134D37]/30 group disabled:opacity-60 cursor-pointer"
+        aria-label="Continue with Google"
       >
         {googleLoading ? (
           <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#134D37]" />
@@ -158,7 +161,7 @@ export default function Login() {
       {/* Divider */}
       <div className="relative my-5 sm:my-6 flex items-center justify-center">
         <div className="w-full border-t border-[#EAE4D9]" />
-        <span className="absolute px-3 bg-white text-[11px] uppercase tracking-widest text-[#787062] font-semibold">
+        <span className="absolute px-3 bg-white text-[10.5px] uppercase tracking-widest text-[#787062] font-semibold">
           or sign in with email
         </span>
       </div>
@@ -168,7 +171,7 @@ export default function Login() {
         <div
           role="alert"
           aria-live="polite"
-          className="mb-4 sm:mb-5 p-3 sm:p-3.5 rounded-xl bg-[#FDF2F2] border border-[#F8B4B4] text-[#9B1C1C] text-xs leading-relaxed flex items-start gap-2.5 shadow-2xs"
+          className="mb-4 p-3 sm:p-3.5 rounded-xl bg-[#FDF2F2] border border-[#F8B4B4] text-[#9B1C1C] text-xs leading-relaxed flex items-start gap-2.5 shadow-2xs"
         >
           <div className="w-1.5 h-1.5 rounded-full bg-[#9B1C1C] mt-1.5 shrink-0" />
           <p className="flex-1 font-medium">{error}</p>
@@ -176,44 +179,38 @@ export default function Login() {
       )}
 
       {/* Sign-in Form */}
-      <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4" noValidate>
-        {/* Email Field */}
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {/* Email Field - No Leading Icon, Explicit Label & Placeholder */}
         <div className="space-y-1.5 text-left">
           <label
             htmlFor="login-email"
             className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
           >
-            Email address
+            EMAIL ADDRESS
           </label>
-          <div className="relative">
-            <Mail
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
-              aria-hidden="true"
-            />
-            <input
-              id="login-email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (error) setError("");
-              }}
-              className="w-full h-11 sm:h-12 pl-10 pr-4 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
-            />
-          </div>
+          <input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (error) setError("");
+            }}
+            className="w-full h-11 sm:h-12 px-3.5 sm:px-4 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[14px] text-[#2A261F] placeholder:text-[#9C9487] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
+          />
         </div>
 
-        {/* Password Field */}
+        {/* Password Field - No Leading Icon, Preserved Eye Toggle & Explicit Placeholder */}
         <div className="space-y-1.5 text-left">
           <div className="flex items-center justify-between">
             <label
               htmlFor="login-password"
               className="block text-xs font-bold text-[#3B362C] uppercase tracking-wider text-[10.5px]"
             >
-              Password
+              PASSWORD
             </label>
             <Link
               to="/forgot-password"
@@ -223,10 +220,6 @@ export default function Login() {
             </Link>
           </div>
           <div className="relative">
-            <Lock
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787062] pointer-events-none"
-              aria-hidden="true"
-            />
             <input
               id="login-password"
               type={showPassword ? "text" : "password"}
@@ -238,12 +231,12 @@ export default function Login() {
                 setPassword(e.target.value);
                 if (error) setError("");
               }}
-              className="w-full h-11 sm:h-12 pl-10 pr-11 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
+              className="w-full h-11 sm:h-12 pl-3.5 sm:pl-4 pr-11 bg-[#FAF8F5] border border-[#DDD7CC] rounded-xl sm:rounded-2xl text-[14px] text-[#2A261F] placeholder:text-[#9C9487] focus:outline-none focus:bg-white focus:border-[#134D37] focus:ring-3 focus:ring-[#134D37]/15 transition-all font-medium"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#787062] hover:text-[#2A261F] hover:bg-[#EAE4D9]/50 transition-colors rounded-xl focus:outline-none focus:ring-1 focus:ring-[#134D37]/30"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#787062] hover:text-[#2A261F] hover:bg-[#EAE4D9]/50 transition-colors rounded-xl focus:outline-none focus:ring-1 focus:ring-[#134D37]/30 cursor-pointer"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -255,11 +248,11 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Primary Submit Button */}
         <button
           type="submit"
           disabled={loading || googleLoading}
-          className="w-full h-11 sm:h-12 mt-1 sm:mt-2 bg-[#134D37] hover:bg-[#0E3B2A] active:bg-[#0A2D20] text-white rounded-xl sm:rounded-2xl text-[14px] sm:text-[14.5px] font-bold flex items-center justify-center gap-2.5 shadow-[0_4px_16px_rgba(19,77,55,0.22)] hover:shadow-[0_6px_20px_rgba(19,77,55,0.28)] transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.99] outline-none focus-visible:ring-4 focus-visible:ring-[#134D37]/30"
+          className="w-full h-11 sm:h-12 mt-2 bg-[#134D37] hover:bg-[#0E3B2A] active:bg-[#0A2D20] text-white rounded-xl sm:rounded-2xl text-[14px] sm:text-[14.5px] font-bold flex items-center justify-center gap-2.5 shadow-[0_4px_16px_rgba(19,77,55,0.22)] hover:shadow-[0_6px_20px_rgba(19,77,55,0.28)] transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.99] outline-none focus-visible:ring-4 focus-visible:ring-[#134D37]/30 cursor-pointer"
         >
           {loading ? (
             <>
@@ -277,3 +270,4 @@ export default function Login() {
     </AuthLayout>
   );
 }
+

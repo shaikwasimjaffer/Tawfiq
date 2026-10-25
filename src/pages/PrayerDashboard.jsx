@@ -15,10 +15,13 @@ import {
   PlusCircle,
   Plus,
   RotateCcw,
+  Check,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import TawfiqHeader from "@/components/TawfiqHeader";
 import DailyVerseCarousel from "@/components/DailyVerseCarousel";
+import AdhkarRecommendationSection from "@/components/dhikr/AdhkarRecommendationSection";
+import { DAILY_DHIKR_ITEMS } from "@/data/dhikrData";
 import AzanSettingsModal from "@/components/prayer/AzanSettingsModal";
 import FloatingAzanPlayer from "@/components/prayer/FloatingAzanPlayer";
 import {
@@ -47,17 +50,10 @@ import { toast } from "sonner";
  */
 const STATUS_CONFIG = {
   unprayed: {
-    label: "Mark Salah",
+    label: "Log Salah",
     sublabel: "Tap to record Salah",
     badge: "border border-[#DDD7CD] text-[#6E685F] bg-[#FAF8F5]/80 hover:bg-[#F2ECE1] focus-visible:ring-2 focus-visible:ring-stone-400/40",
     icon: null,
-  },
-  on_time: {
-    label: "On time",
-    sublabel: "Prayed within its prescribed window",
-    badge: "bg-[#E3EEE6] text-[#1B4332] border border-[#BFD9C7] font-medium hover:bg-[#D9E8DD] focus-visible:ring-2 focus-visible:ring-[#1B4332]/30",
-    icon: CheckCircle2,
-    accent: "text-[#1B4332] bg-[#E3EEE6]",
   },
   jamaah: {
     label: "With Jama'ah",
@@ -66,8 +62,15 @@ const STATUS_CONFIG = {
     icon: Users,
     accent: "text-[#163B2C] bg-[#DFEDE4]",
   },
+  on_time: {
+    label: "Without Jama'ah",
+    sublabel: "Prayed individually on time",
+    badge: "bg-[#E3EEE6] text-[#1B4332] border border-[#BFD9C7] font-medium hover:bg-[#D9E8DD] focus-visible:ring-2 focus-visible:ring-[#1B4332]/30",
+    icon: CheckCircle2,
+    accent: "text-[#1B4332] bg-[#E3EEE6]",
+  },
   late: {
-    label: "Late (Made up)",
+    label: "Prayed late",
     sublabel: "Prayed after its appointed time",
     badge: "bg-[#F5EEDF] text-[#745517] border border-[#E3D6BC] font-medium hover:bg-[#EDE3CE] focus-visible:ring-2 focus-visible:ring-[#745517]/30",
     icon: Clock,
@@ -84,17 +87,8 @@ const STATUS_CONFIG = {
 
 const LOG_OPTIONS = [
   {
-    key: "on_time",
-    title: "Prayed On Time",
-    description: "Prayed promptly within time",
-    icon: CheckCircle2,
-    badgeBg: "bg-[#E3EEE6]",
-    badgeText: "text-[#1B4332]",
-    border: "border-[#BFD9C7]",
-  },
-  {
     key: "jamaah",
-    title: "With Jama'ah",
+    title: "Prayed with Jama'ah",
     description: "In congregation at the Masjid or at home",
     icon: Users,
     badgeBg: "bg-[#DFEDE4]",
@@ -102,8 +96,17 @@ const LOG_OPTIONS = [
     border: "border-[#B5D3C0]",
   },
   {
+    key: "on_time",
+    title: "Prayed without Jama'ah",
+    description: "Performed individually within appointed time",
+    icon: CheckCircle2,
+    badgeBg: "bg-[#E3EEE6]",
+    badgeText: "text-[#1B4332]",
+    border: "border-[#BFD9C7]",
+  },
+  {
     key: "late",
-    title: "Prayed Late (Qada)",
+    title: "Prayed late",
     description: "Completed after the appointed time has passed",
     icon: Clock,
     badgeBg: "bg-[#F5EEDF]",
@@ -112,7 +115,7 @@ const LOG_OPTIONS = [
   },
   {
     key: "missed",
-    title: "Missed Prayer",
+    title: "Missed",
     description: "Unable to pray • Automatically adds +1 to your Qaza debt",
     icon: XCircle,
     badgeBg: "bg-[#FDE8E8]",
@@ -124,31 +127,10 @@ const LOG_OPTIONS = [
 
 /**
  * Authentic Daily Dhikr collection:
- * Uses verified Sunnah adhkar with standard 33 target for daily tasbih.
+ * Extends the Sunnah adhkar to include SubhanAllah (33), Alhamdulillah (33), Allahu Akbar (33),
+ * and La ilaha illallah (100) with authentic hadith references.
  */
-const DHIKR_ITEMS = [
-  {
-    id: "subhanallah",
-    arabic: "سُبْحَانَ اللَّهِ",
-    transliteration: "SubhanAllah",
-    translation: "Glory be to Allah",
-    target: 33,
-  },
-  {
-    id: "alhamdulillah",
-    arabic: "الْحَمْدُ لِلَّهِ",
-    transliteration: "Alhamdulillah",
-    translation: "All praise is due to Allah",
-    target: 33,
-  },
-  {
-    id: "allahuakbar",
-    arabic: "اللَّهُ أَكْبَرُ",
-    transliteration: "Allahu Akbar",
-    translation: "Allah is the Greatest",
-    target: 33,
-  },
-];
+const DHIKR_ITEMS = DAILY_DHIKR_ITEMS;
 
 export default function PrayerDashboard() {
   const navigate = useNavigate();
@@ -159,6 +141,7 @@ export default function PrayerDashboard() {
   const [location, setLocation] = useState(getSavedLocation());
   const [calcPrefs, setCalcPrefs] = useState(getCalculationPreferences());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState("location");
   const [schedSettings, setSchedSettings] = useState(azanScheduler.getSettings());
 
   // Subscribe to Azan scheduler settings changes
@@ -369,8 +352,34 @@ export default function PrayerDashboard() {
     }
   }, [todayDateStr, userScope, prayerStatuses, recordDayStatuses]);
 
-  // Selected prayer for bottom drawer sheet
+  // Selected prayer for bottom drawer sheet and staged status selection
   const [selectedPrayerForLog, setSelectedPrayerForLog] = useState(null);
+  const [selectedStatusForModal, setSelectedStatusForModal] = useState(null);
+
+  // Sync modal selection with current prayer status when opening (pre-selects existing status for editing)
+  useEffect(() => {
+    if (selectedPrayerForLog) {
+      const current = prayerStatuses[selectedPrayerForLog];
+      setSelectedStatusForModal(
+        current && current !== "unprayed" ? current : null
+      );
+    } else {
+      setSelectedStatusForModal(null);
+    }
+  }, [selectedPrayerForLog, prayerStatuses]);
+
+  // Keyboard accessibility: dismiss modal on Escape key
+  useEffect(() => {
+    if (!selectedPrayerForLog && !selectedSunnahForLog) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setSelectedPrayerForLog(null);
+        setSelectedSunnahForLog(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedPrayerForLog, selectedSunnahForLog]);
 
   /**
    * Sets prayer status with smart Qaza synchronization:
@@ -409,9 +418,15 @@ export default function PrayerDashboard() {
         });
         toast.success(`Removed 1 ${PRAYER_NAMES[prayerKey]} from Qaza debt.`);
       } else if (newStatus === "unprayed") {
-        toast.info(`Reset ${PRAYER_NAMES[prayerKey]} to unprayed.`);
+        toast.info(`Reset ${PRAYER_NAMES[prayerKey]} to unlogged.`);
       } else {
-        toast.success(`Marked ${PRAYER_NAMES[prayerKey]} as completed.`, {
+        const readableStatus =
+          newStatus === "jamaah"
+            ? "with Jama'ah"
+            : newStatus === "late"
+            ? "as prayed late"
+            : "without Jama'ah";
+        toast.success(`Logged ${PRAYER_NAMES[prayerKey]} (${readableStatus}).`, {
           description: "May Allah accept your Salah.",
           action: {
             label: "Undo",
@@ -555,10 +570,13 @@ export default function PrayerDashboard() {
   return (
     <div className="w-full bg-[#F7F5EF] text-stone-900 pb-28 font-sans select-none">
       <main className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
-        {/* Zomato-inspired Integrated Header (Location & Profile) */}
+        {/* Tawfiq Header (Avatar, Greeting, Location Subtitle & Settings Icon) */}
         <TawfiqHeader
           location={location}
-          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenSettings={(tab = "location") => {
+            setSettingsInitialTab(tab);
+            setIsSettingsOpen(true);
+          }}
         />
 
         {/* Next Namaz Hero Card: Immersive Mecca Dawn Photography */}
@@ -764,7 +782,7 @@ export default function PrayerDashboard() {
                       {time}
                     </span>
 
-                    <div className="w-[102px] sm:w-[110px] text-right flex items-center justify-end">
+                    <div className="w-[114px] sm:w-[124px] text-right flex items-center justify-end">
                       {isCompleted ? (
                         <button
                           type="button"
@@ -772,13 +790,23 @@ export default function PrayerDashboard() {
                             e.stopPropagation();
                             setSelectedPrayerForLog(key);
                           }}
-                          className="w-full h-[35px] px-2 rounded-full text-[12.5px] sm:text-[13px] font-medium inline-flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 bg-[#E6F0EA] hover:bg-[#DCECE1] text-[#14422F] border border-[#BFD9C7] shadow-2xs cursor-pointer group"
-                          title="Completed • Tap to edit or undo"
-                          aria-label={`${name} marked completed. Tap to edit or undo.`}
+                          className={`w-full h-[35px] px-2 rounded-full text-[12px] sm:text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 border shadow-2xs cursor-pointer group ${
+                            status === "late"
+                              ? "bg-[#F5EEDF] hover:bg-[#EDE3CE] text-[#745517] border-[#E3D6BC]"
+                              : "bg-[#E6F0EA] hover:bg-[#DCECE1] text-[#14422F] border-[#BFD9C7]"
+                          }`}
+                          title={`${name}: ${status === "jamaah" ? "Prayed with Jama'ah" : status === "late" ? "Prayed late" : "Prayed without Jama'ah"} • Tap to edit`}
+                          aria-label={`${name} logged. Tap to edit.`}
                         >
-                          <CheckCircle2 size={14} className="text-[#14422F] stroke-[2.2] shrink-0" />
+                          {status === "jamaah" ? (
+                            <Users size={13.5} className="text-[#14422F] shrink-0" />
+                          ) : status === "late" ? (
+                            <Clock size={13.5} className="text-[#745517] shrink-0" />
+                          ) : (
+                            <CheckCircle2 size={13.5} className="text-[#14422F] stroke-[2.2] shrink-0" />
+                          )}
                           <span className="truncate">
-                            {status === "jamaah" ? "Jama'ah" : status === "late" ? "Late" : "Completed"}
+                            {status === "jamaah" ? "With Jama'ah" : status === "late" ? "Prayed late" : "Without Jama'ah"}
                           </span>
                         </button>
                       ) : status === "missed" ? (
@@ -800,13 +828,13 @@ export default function PrayerDashboard() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleSetPrayerStatus(key, "on_time");
+                            setSelectedPrayerForLog(key);
                           }}
                           className="w-full h-[35px] px-2 rounded-full text-[12.5px] sm:text-[13px] font-medium inline-flex items-center justify-center transition-all duration-150 active:scale-95 bg-[#1B4332] hover:bg-[#143527] text-white shadow-2xs cursor-pointer hover:shadow-sm"
-                          title={`Mark ${name} as completed`}
-                          aria-label={`Mark ${name} as completed`}
+                          title={`Log ${name} Salah`}
+                          aria-label={`Log ${name} Salah`}
                         >
-                          Mark Salah
+                          Log Salah
                         </button>
                       )}
                     </div>
@@ -961,7 +989,7 @@ export default function PrayerDashboard() {
             <h3 className="text-[20px] sm:text-[21px] font-bold text-stone-900 leading-none tracking-tight">
               Daily Dhikr
             </h3>
-            {/* Authentic Dhikr Switcher: SubhanAllah, Alhamdulillah, Allahu Akbar */}
+            {/* Authentic Dhikr Switcher: SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah */}
             <div className="flex items-center gap-1 bg-[#F5F2EA] p-1 rounded-xl border border-[#EBE4D7]">
               {DHIKR_ITEMS.map((item, idx) => (
                 <button
@@ -980,7 +1008,7 @@ export default function PrayerDashboard() {
                   }`}
                   title={`${item.transliteration} (${idx + 1}/${DHIKR_ITEMS.length})`}
                 >
-                  {item.transliteration.slice(0, 3)}
+                  {item.shortCode || item.transliteration.slice(0, 3)}
                 </button>
               ))}
             </div>
@@ -1084,130 +1112,154 @@ export default function PrayerDashboard() {
           </div>
         </section>
 
+        {/* Morning & Evening Adhkar Recommendations (Time-aware, independent session tracking) */}
+        <AdhkarRecommendationSection
+          todayDateStr={todayDateStr}
+          currentHour={now.getHours()}
+        />
+
         {/* Multi-Verse Islamic Inspiration Carousel with Smooth Horizontal Sliding Transitions */}
         <DailyVerseCarousel />
       </main>
 
-      {/* Slide-up Bottom Sheet (Pulls up ~30-35% of the screen) */}
+      {/* Slide-up Bottom Sheet (Pulls up from the bottom of the screen) */}
       {selectedPrayerForLog && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label={`Log status for ${PRAYER_NAMES[selectedPrayerForLog]}`}
-          className="fixed inset-0 z-50 flex flex-col justify-end"
+          className="fixed inset-0 z-[70] flex flex-col justify-end"
         >
           {/* Backdrop with soft blur */}
           <div
             onClick={() => setSelectedPrayerForLog(null)}
-            className="fixed inset-0 bg-stone-900/40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
+            className="fixed inset-0 bg-stone-900/50 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
           />
 
-          {/* Bottom Sheet Drawer content - Constrained to ~32% max height */}
-          <div className="relative w-full max-w-md mx-auto bg-[#FAF8F5] rounded-t-[26px] shadow-[0_-8px_30px_rgba(0,0,0,0.18)] border-t border-[#E5DFD5] p-4 pb-6 z-10 animate-in slide-in-from-bottom duration-300">
+          {/* Bottom Sheet Drawer content - max-h-[88dvh], rounded-t-[28px], smooth slide-up, safe bottom padding */}
+          <div
+            className="relative w-full max-w-md mx-auto bg-[#FAF8F5] rounded-t-[28px] shadow-[0_-10px_40px_rgba(0,0,0,0.22)] border-t border-[#E5DFD5] p-4.5 pt-3 z-10 animate-in slide-in-from-bottom duration-300 flex flex-col max-h-[88dvh] overflow-hidden"
+            style={{
+              paddingBottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem))",
+            }}
+          >
             {/* Grab handle indicator */}
-            <div className="w-10 h-1 bg-[#D3CDC4] rounded-full mx-auto mb-3" />
+            <div className="w-10 h-1.5 bg-[#D3CDC4] rounded-full mx-auto mb-2.5 shrink-0" />
 
             {/* Header: Prayer name, appointed time, and close button */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#EAE4D9]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAE4D9] shrink-0">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-[17px] font-semibold text-stone-900 leading-none">
-                    Log {PRAYER_NAMES[selectedPrayerForLog]}
+                  <h3 className="text-[17px] sm:text-[18px] font-semibold text-stone-900 leading-none">
+                    Log {PRAYER_NAMES[selectedPrayerForLog]} Salah
                   </h3>
                   <span className="text-xs font-medium text-[#134D37] bg-[#E3EEE6] px-2 py-0.5 rounded-full">
                     {prayerInfo.times[selectedPrayerForLog]}
                   </span>
                 </div>
                 <p className="text-[12px] text-[#6E685F] mt-0.5">
-                  Select your prayer completion status
+                  Select how you performed {PRAYER_NAMES[selectedPrayerForLog]} Salah
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => setSelectedPrayerForLog(null)}
-                className="w-7 h-7 rounded-full bg-[#EFE9DF] text-[#6E685F] hover:bg-[#E4DDCF] flex items-center justify-center transition-colors focus:outline-none"
+                className="w-7 h-7 rounded-full bg-[#EFE9DF] text-[#6E685F] hover:bg-[#E4DDCF] flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
                 aria-label="Close sheet"
               >
                 <X size={15} />
               </button>
             </div>
 
-            {/* Options Grid: On Time, With Jama'ah, Prayed Late, Missed */}
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-2.5">
+            {/* The 4 Prayer Status Options in authentic order - Scrollable area with min-h-0 */}
+            <div className="mt-3.5 space-y-2 overflow-y-auto min-h-0 flex-1 pr-0.5">
               {LOG_OPTIONS.map((opt) => {
                 const IconComponent = opt.icon;
-                const isSelected = prayerStatuses[selectedPrayerForLog] === opt.key;
+                const isSelected = selectedStatusForModal === opt.key;
 
                 return (
                   <button
                     key={opt.key}
                     type="button"
-                    onClick={() => handleSetPrayerStatus(selectedPrayerForLog, opt.key)}
-                    className={`text-left p-3 rounded-2xl border transition-all duration-200 active:scale-[0.98] flex flex-col justify-between ${
+                    onClick={() => setSelectedStatusForModal(opt.key)}
+                    className={`w-full text-left p-3 rounded-xl border transition-all duration-150 active:scale-[0.99] flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? "bg-[#173F2E] text-white border-[#173F2E] shadow-sm"
+                        ? "bg-[#EBF3EE] border-[#134D37] ring-1 ring-[#134D37] shadow-xs"
                         : opt.isMissed
-                        ? "bg-rose-50/70 hover:bg-rose-100/70 border-rose-200/80 text-stone-900"
-                        : "bg-white hover:bg-[#F5F2EB] border-[#E8E2D7] text-stone-900"
+                        ? "bg-white hover:bg-rose-50/50 border-[#E8E2D7] text-stone-900"
+                        : "bg-white hover:bg-[#F7F4EC] border-[#E8E2D7] text-stone-900"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full mb-1">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                           isSelected
-                            ? "bg-white/20 text-white"
+                            ? "bg-[#134D37] text-white"
                             : `${opt.badgeBg} ${opt.badgeText}`
                         }`}
                       >
-                        <IconComponent size={15} />
+                        <IconComponent size={16} />
                       </div>
-                      {isSelected && (
-                        <span className="text-[10px] font-semibold bg-white/25 text-white px-1.5 py-0.5 rounded-full">
-                          Active
-                        </span>
-                      )}
+                      <div className="min-w-0">
+                        <h4 className="text-[13.5px] sm:text-[14px] font-semibold text-stone-900 leading-tight">
+                          {opt.title}
+                        </h4>
+                        <p className="text-[11px] sm:text-[11.5px] text-[#6E685F] truncate mt-0.5">
+                          {opt.description}
+                        </p>
+                      </div>
                     </div>
 
-                    <div>
-                      <h4
-                        className={`text-[13.5px] font-semibold leading-tight ${
-                          isSelected ? "text-white" : opt.isMissed ? "text-rose-900" : "text-stone-900"
-                        }`}
-                      >
-                        {opt.title}
-                      </h4>
-                      <p
-                        className={`text-[11px] mt-0.5 line-clamp-1 leading-tight ${
+                    <div className="shrink-0 ml-2">
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                           isSelected
-                            ? "text-white/80"
-                            : opt.isMissed
-                            ? "text-rose-700 font-medium"
-                            : "text-[#6E685F]"
+                            ? "border-[#134D37] bg-[#134D37] text-white"
+                            : "border-[#C5BEB3] bg-transparent"
                         }`}
                       >
-                        {opt.description}
-                      </p>
+                        {isSelected && <Check size={12} strokeWidth={3} className="text-white" />}
+                      </div>
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* Clear / Unprayed option reset */}
-            {prayerStatuses[selectedPrayerForLog] &&
-              prayerStatuses[selectedPrayerForLog] !== "unprayed" && (
-                <div className="mt-3 pt-2.5 border-t border-[#EAE4D9] flex items-center justify-between">
-                  <span className="text-[12px] text-stone-500">Need to undo?</span>
-                  <button
-                    type="button"
-                    onClick={() => handleSetPrayerStatus(selectedPrayerForLog, "unprayed")}
-                    className="text-[12px] font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-lg transition-colors py-1.5 px-3 cursor-pointer shadow-2xs"
-                  >
-                    Reset to Unprayed
-                  </button>
-                </div>
-              )}
+            {/* Primary Action Button: Save Prayer Log (Fixed footer within sheet) */}
+            <div className="mt-3.5 pt-3 border-t border-[#EAE4D9] space-y-2 shrink-0">
+              <button
+                type="button"
+                disabled={!selectedStatusForModal}
+                onClick={() => {
+                  if (selectedPrayerForLog && selectedStatusForModal) {
+                    handleSetPrayerStatus(selectedPrayerForLog, selectedStatusForModal);
+                  }
+                }}
+                className={`w-full h-11 font-semibold text-[13.5px] sm:text-sm rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs ${
+                  selectedStatusForModal
+                    ? "bg-[#134D37] hover:bg-[#0E3D2B] text-white active:scale-[0.98] cursor-pointer"
+                    : "bg-[#134D37]/15 text-[#134D37]/40 cursor-not-allowed border border-[#134D37]/10"
+                }`}
+              >
+                <span>Save Prayer Log</span>
+              </button>
+
+              {/* Clear / Unprayed option reset if existing log exists */}
+              {prayerStatuses[selectedPrayerForLog] &&
+                prayerStatuses[selectedPrayerForLog] !== "unprayed" && (
+                  <div className="flex items-center justify-center pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSetPrayerStatus(selectedPrayerForLog, "unprayed")}
+                      className="text-[12px] font-medium text-stone-500 hover:text-rose-700 transition-colors py-1 px-2 cursor-pointer"
+                    >
+                      Reset to Unlogged
+                    </button>
+                  </div>
+                )}
+            </div>
           </div>
         </div>
       )}
@@ -1218,18 +1270,23 @@ export default function PrayerDashboard() {
           role="dialog"
           aria-modal="true"
           aria-label={`Log ${selectedSunnahForLog.name} Sunnah prayers`}
-          className="fixed inset-0 z-50 flex flex-col justify-end"
+          className="fixed inset-0 z-[70] flex flex-col justify-end"
         >
           {/* Backdrop with soft blur */}
           <div
             onClick={() => setSelectedSunnahForLog(null)}
-            className="fixed inset-0 bg-stone-900/40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
+            className="fixed inset-0 bg-stone-900/50 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
           />
 
-          {/* Bottom Sheet Drawer content - Constrained to ~32% max height */}
-          <div className="relative w-full max-w-md mx-auto bg-[#FAF8F5] rounded-t-[26px] shadow-[0_-8px_30px_rgba(0,0,0,0.18)] border-t border-[#E5DFD5] p-4 pb-6 z-10 animate-in slide-in-from-bottom duration-300">
+          {/* Bottom Sheet Drawer content - Constrained to ~40% max height with safe area */}
+          <div
+            className="relative w-full max-w-md mx-auto bg-[#FAF8F5] rounded-t-[28px] shadow-[0_-10px_40px_rgba(0,0,0,0.22)] border-t border-[#E5DFD5] p-4.5 pt-3 z-10 animate-in slide-in-from-bottom duration-300 flex flex-col max-h-[85dvh] overflow-hidden"
+            style={{
+              paddingBottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem))",
+            }}
+          >
             {/* Grab handle indicator */}
-            <div className="w-10 h-1 bg-[#D3CDC4] rounded-full mx-auto mb-3" />
+            <div className="w-10 h-1.5 bg-[#D3CDC4] rounded-full mx-auto mb-2.5 shrink-0" />
 
             {/* Header: Prayer name, appointed time, and close button */}
             <div className="flex items-center justify-between pb-3 border-b border-[#EAE4D9]">
@@ -1336,12 +1393,12 @@ export default function PrayerDashboard() {
       {/* Floating Active Azan Player */}
       <FloatingAzanPlayer />
 
-      {/* Azan, Location & Calculation Settings Modal */}
+      {/* Centralized Settings & Preferences Modal (Location, Azan Audio, Notifications & Account) */}
       {isSettingsOpen && (
         <AzanSettingsModal
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
-          initialTab="location"
+          initialTab={settingsInitialTab}
           onLocationOrPrefsChanged={(newLoc, newPrefs) => {
             if (newLoc) setLocation(newLoc);
             if (newPrefs) setCalcPrefs(newPrefs);

@@ -3,13 +3,27 @@
   "name": "Tawfiq — Devotion, Without the Noise",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any"
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any"
     }
   ],
   "start_url": "/",
-  "background_color": "#F7F5F1",
-  "theme_color": "#1F2937",
-  "display": "standalone"
+  "background_color": "#F7F5EF",
+  "theme_color": "#134D37",
+  "display": "standalone",
+  "orientation": "portrait"
 }

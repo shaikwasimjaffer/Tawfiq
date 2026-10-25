@@ -70,6 +70,30 @@ export function TawfiqWordmark({ className = "" }) {
 }
 
 /**
+ * Tawfiq Standalone Square Emblem Logo
+ *
+ * The official green square logo containing the cream-coloured Islamic arch emblem,
+ * matching the authentic brand identity shown in the reference screenshot.
+ */
+export function TawfiqSquareLogo({ className = "w-14 h-14", imgClassName = "w-full h-full" }) {
+  return (
+    <Link
+      to="/website"
+      className={`inline-flex items-center justify-center rounded-2xl bg-[#134D37] overflow-hidden shadow-[0_4px_16px_rgba(19,77,55,0.22)] border border-[#1C5E45] hover:scale-105 active:scale-95 transition-all duration-200 select-none ${className}`}
+      title="Tawfiq"
+      aria-label="Tawfiq Home"
+    >
+      <img
+        src="/apple-touch-icon.png"
+        alt="Tawfiq Emblem"
+        className={`object-cover ${imgClassName}`}
+        loading="eager"
+      />
+    </Link>
+  );
+}
+
+/**
  * Unified, Art-Directed Authentication Shell Layout
  * - Quiet, serene warm stone palette (#F7F5EF) matching Tawfiq core.
  * - Subtly textured background with subtle radial gradient.
@@ -81,6 +105,8 @@ export default function AuthLayout({
   subtitle = "",
   footer = null,
   headerAction = null,
+  showTopNav = true,
+  customLogo = null,
   children,
 }) {
   const location = useLocation();
@@ -95,29 +121,27 @@ export default function AuthLayout({
       />
 
       {/* Top Bar with Brand & Contextual Nav Action */}
-      <header className="w-full max-w-5xl mx-auto px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between z-10">
-        <TawfiqWordmark />
-        {headerAction ? (
-          headerAction
-        ) : isLoginPage ? (
-          <Link
-            to="/register"
-            className="text-xs font-semibold text-[#134D37] hover:text-[#0E3B2A] py-1.5 px-3 rounded-full hover:bg-[#EBE5DB]/70 transition-colors"
-          >
-            Create account
-          </Link>
-        ) : (
-          <Link
-            to="/login"
-            className="text-xs font-semibold text-[#134D37] hover:text-[#0E3B2A] py-1.5 px-3 rounded-full hover:bg-[#EBE5DB]/70 transition-colors"
-          >
-            Sign in
-          </Link>
-        )}
-      </header>
+      {showTopNav && (
+        <header className="w-full max-w-5xl mx-auto px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between z-10">
+          <TawfiqWordmark />
+          {headerAction ? (
+            headerAction
+          ) : isLoginPage ? (
+            /* On login page, top-right link is removed as requested */
+            null
+          ) : (
+            <Link
+              to="/login"
+              className="text-xs font-semibold text-[#134D37] hover:text-[#0E3B2A] py-1.5 px-3 rounded-full hover:bg-[#EBE5DB]/70 transition-colors"
+            >
+              Sign in
+            </Link>
+          )}
+        </header>
+      )}
 
       {/* Main Form Container: Starts naturally on mobile, centered on larger screens */}
-      <main className="flex-1 flex flex-col justify-start sm:justify-center items-center px-4 sm:px-6 py-2 sm:py-8 z-10">
+      <main className={`flex-1 flex flex-col justify-start sm:justify-center items-center px-4 sm:px-6 ${showTopNav ? "py-2 sm:py-8" : "py-6 sm:py-10"} z-10`}>
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -125,6 +149,12 @@ export default function AuthLayout({
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-[420px]"
         >
+          {/* Centered Top Logo when customLogo is provided or on login page */}
+          {customLogo && (
+            <div className="flex justify-center mb-5 sm:mb-6">
+              {customLogo}
+            </div>
+          )}
           {/* Card Container */}
           <div className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-[0_4px_24px_-4px_rgba(42,38,31,0.06),0_1px_3px_rgba(42,38,31,0.04)] border border-[#E8E2D6] transition-all">
             {/* Header within Card */}

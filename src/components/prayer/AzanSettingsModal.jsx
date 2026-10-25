@@ -19,8 +19,15 @@ import {
   Sliders,
   Clock,
   RefreshCw,
+  User,
+  LogOut,
+  Settings as SettingsIcon,
+  Shield,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
+import { getUserMiddleName, getUserHeaderGreeting } from "@/lib/userStorage";
 import {
   AZAN_VOICES,
   azanAudioService,
@@ -43,6 +50,14 @@ import {
 } from "@/lib/locationService";
 import { PRAYER_NAMES, PRAYERS } from "@/lib/prayerUtils";
 
+function useAuthSafe() {
+  try {
+    return useAuth();
+  } catch {
+    return { user: null, isAuthenticated: false, logout: () => {} };
+  }
+}
+
 export default function AzanSettingsModal({
   isOpen,
   onClose,
@@ -50,7 +65,12 @@ export default function AzanSettingsModal({
   initialTab = "location",
 }) {
   const navigate = useNavigate();
-  // Active Tab: "location" | "notifications" | "audio"
+  const auth = useAuthSafe();
+  const user = auth?.user;
+  const isAuthenticated = auth?.isAuthenticated;
+  const logout = auth?.logout || (() => {});
+
+  // Active Tab: "location" | "notifications" | "audio" | "account"
   const [activeTab, setActiveTab] = useState(initialTab);
 
   useEffect(() => {
@@ -244,14 +264,14 @@ export default function AzanSettingsModal({
         <div className="px-5 py-4 border-b border-[#ECE7DD] bg-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-[#EAF2ED] text-[#134D37] flex items-center justify-center border border-[#CFDFD5]">
-              <BellRing size={18} />
+              <SettingsIcon size={18} />
             </div>
             <div>
               <h2 id="azan-settings-title" className="text-[17px] font-semibold text-stone-900 leading-tight">
-                Prayer & Azan Settings
+                Settings & Preferences
               </h2>
               <p className="text-[12px] text-stone-500">
-                Astronomical times, reciters & notifications
+                Location, Azan audio, notifications & account
               </p>
             </div>
           </div>
@@ -266,11 +286,24 @@ export default function AzanSettingsModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-[#ECE7DD] bg-[#F4F1EA] px-3 pt-2 gap-1 text-[13px] font-medium">
+        <div className="flex border-b border-[#ECE7DD] bg-[#F4F1EA] px-3 pt-2 gap-1 text-[13px] font-medium overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab("location")}
+            className={`flex-1 py-2 px-3 rounded-t-xl flex items-center justify-center gap-1.5 transition-colors shrink-0 ${
+              activeTab === "location"
+                ? "bg-[#FAF8F5] text-[#134D37] border-t border-x border-[#ECE7DD] font-semibold"
+                : "text-stone-600 hover:text-stone-900 hover:bg-[#EAE6DD]"
+            }`}
+          >
+            <MapPin size={14} />
+            <span>Location</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveTab("audio")}
-            className={`flex-1 py-2 px-3 rounded-t-xl flex items-center justify-center gap-1.5 transition-colors ${
+            className={`flex-1 py-2 px-3 rounded-t-xl flex items-center justify-center gap-1.5 transition-colors shrink-0 ${
               activeTab === "audio"
                 ? "bg-[#FAF8F5] text-[#134D37] border-t border-x border-[#ECE7DD] font-semibold"
                 : "text-stone-600 hover:text-stone-900 hover:bg-[#EAE6DD]"
@@ -283,7 +316,7 @@ export default function AzanSettingsModal({
           <button
             type="button"
             onClick={() => setActiveTab("notifications")}
-            className={`flex-1 py-2 px-3 rounded-t-xl flex items-center justify-center gap-1.5 transition-colors ${
+            className={`flex-1 py-2 px-3 rounded-t-xl flex items-center justify-center gap-1.5 transition-colors shrink-0 ${
               activeTab === "notifications"
                 ? "bg-[#FAF8F5] text-[#134D37] border-t border-x border-[#ECE7DD] font-semibold"
                 : "text-stone-600 hover:text-stone-900 hover:bg-[#EAE6DD]"
@@ -295,15 +328,15 @@ export default function AzanSettingsModal({
 
           <button
             type="button"
-            onClick={() => setActiveTab("location")}
-            className={`flex-1 py-2 px-3 rounded-t-xl flex items-center justify-center gap-1.5 transition-colors ${
-              activeTab === "location"
+            onClick={() => setActiveTab("account")}
+            className={`flex-1 py-2 px-3 rounded-t-xl flex items-center justify-center gap-1.5 transition-colors shrink-0 ${
+              activeTab === "account"
                 ? "bg-[#FAF8F5] text-[#134D37] border-t border-x border-[#ECE7DD] font-semibold"
                 : "text-stone-600 hover:text-stone-900 hover:bg-[#EAE6DD]"
             }`}
           >
-            <MapPin size={14} />
-            <span>Location</span>
+            <User size={14} />
+            <span>Account</span>
           </button>
         </div>
 
@@ -768,6 +801,109 @@ export default function AzanSettingsModal({
                   })}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 4: ACCOUNT & PROFILE */}
+          {activeTab === "account" && (
+            <div className="space-y-4">
+              {isAuthenticated && user ? (
+                <>
+                  {/* User Profile Card */}
+                  <div className="bg-white p-4 rounded-2xl border border-[#E8E2D7] shadow-xs flex items-center gap-3.5">
+                    <div className="w-13 h-13 rounded-full bg-[#134D37] text-white flex items-center justify-center font-bold text-lg shadow-sm border-2 border-white overflow-hidden shrink-0">
+                      {user.picture ? (
+                        <img
+                          src={user.picture}
+                          alt={user.name || "User profile"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>
+                          {(getUserMiddleName(user) || user.name || user.email || "T")[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-[15px] font-bold text-stone-900 truncate">
+                          {user.name || "Tawfiq Believer"}
+                        </h4>
+                        <span className="text-[10.5px] font-semibold bg-[#EAF2ED] text-[#134D37] px-2 py-0.5 rounded-full border border-[#CFDFD5]">
+                          Active
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-stone-500 truncate mt-0.5">
+                        {user.email}
+                      </p>
+                      {getUserMiddleName(user) && (
+                        <p className="text-[11.5px] text-[#134D37] font-medium mt-1 inline-flex items-center gap-1 bg-[#F4F8F5] px-2 py-0.5 rounded-md">
+                          <span>Middle Name:</span>
+                          <span className="font-semibold">{getUserMiddleName(user)}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Account Details & Sign Out */}
+                  <div className="bg-white p-4 rounded-2xl border border-[#E8E2D7] shadow-xs space-y-3">
+                    <div className="flex items-center justify-between text-[12.5px] pb-2.5 border-b border-[#F4F0E8]">
+                      <span className="text-stone-500">Authentication</span>
+                      <span className="font-medium text-stone-800 capitalize">
+                        {user.authProvider || "Email & Password"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[12.5px] pb-2.5 border-b border-[#F4F0E8]">
+                      <span className="text-stone-500">Security</span>
+                      <span className="font-medium text-emerald-700 flex items-center gap-1">
+                        <Shield size={13} />
+                        <span>Protected</span>
+                      </span>
+                    </div>
+
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onClose) onClose();
+                          logout();
+                          navigate("/login");
+                        }}
+                        className="w-full py-2.5 px-3.5 text-xs text-rose-700 bg-rose-50 hover:bg-rose-100/70 border border-rose-200 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
+                      >
+                        <LogOut size={14} className="text-rose-600" />
+                        <span>Sign out of Tawfiq</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Unauthenticated View */
+                <div className="bg-white p-6 rounded-2xl border border-[#E8E2D7] text-center space-y-3 shadow-xs">
+                  <div className="w-12 h-12 rounded-full bg-[#EAF2ED] text-[#134D37] mx-auto flex items-center justify-center">
+                    <User size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-[15px] font-bold text-stone-900">
+                      Sign in to your Tawfiq Account
+                    </h4>
+                    <p className="text-[12px] text-stone-500 mt-1 max-w-xs mx-auto">
+                      Synchronize prayer tracking, daily Dhikr progress, and Qaza ledger across your devices.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onClose) onClose();
+                      navigate("/login");
+                    }}
+                    className="w-full py-2.5 px-4 text-[13px] font-semibold text-white bg-[#134D37] hover:bg-[#0E3B2A] rounded-xl transition-colors shadow-sm cursor-pointer"
+                  >
+                    Sign In or Create Account
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
