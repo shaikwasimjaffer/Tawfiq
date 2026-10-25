@@ -694,18 +694,32 @@ export default function MentorApp() {
 
             {/* Drawer Bottom Bar */}
             <div className="p-3 border-t border-white/10 flex items-center justify-between text-[11px] text-stone-400">
-              <span className="truncate max-w-[140px]">
+              <span className="truncate max-w-[130px]">
                 {user?.name || "Tawfiq Seeker"}
               </span>
-              {sessions.length > 0 && (
+              <div className="flex items-center gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={handleClearAllSessions}
-                  className="text-stone-400 hover:text-rose-400 transition-colors"
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    setApiKeyModalOpen(true);
+                  }}
+                  className="text-stone-400 hover:text-[#34D399] transition-colors flex items-center gap-1"
+                  title="Configure Gemini API Key"
                 >
-                  Clear all
+                  <Sparkles size={11} className="text-[#34D399]" />
+                  <span>API Key</span>
                 </button>
-              )}
+                {sessions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllSessions}
+                    className="text-stone-400 hover:text-rose-400 transition-colors"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -719,7 +733,7 @@ export default function MentorApp() {
         className="w-full bg-[#F7F5EF] border-b border-[#E8E2D6] px-3 sm:px-4 py-2.5 flex items-center justify-between shrink-0 z-30"
       >
         {/* Left: History drawer toggle & New Chat */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex-1 flex items-center gap-1 sm:gap-2 justify-start">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -744,7 +758,7 @@ export default function MentorApp() {
         </div>
 
         {/* Center: Segmented Toggle (Tawfiq <-> Mentor) */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center shrink-0">
           <div className="inline-flex items-center h-[34px] p-[2.5px] bg-[#EAE4D9] rounded-full border border-[#DFD8CC] shadow-2xs">
             <Link
               to="/"
@@ -758,38 +772,8 @@ export default function MentorApp() {
           </div>
         </div>
 
-        {/* Right: API Key, Day Streak & Clear */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setApiKeyModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EAE4D9]/80 hover:bg-[#E2DBCF] border border-[#DDD7CD] hover:border-[#134D37]/40 text-xs font-semibold text-[#134D37] transition-all shadow-2xs"
-            title="Configure Google Gemini API Key"
-          >
-            <Sparkles size={13} className="text-[#10B981]" />
-            <span className="hidden sm:inline">Gemini AI</span>
-            <span className="sm:hidden text-[11px]">AI</span>
-          </button>
-
-          <div
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#EAE4D9]/80 border border-[#DDD7CD] text-xs font-bold text-[#134D37]"
-            title={`Prayer streak: ${currentStreak} days`}
-          >
-            <Flame size={13} className="text-[#C4883B] fill-[#C4883B]/80" />
-            <span className="tabular-nums">{currentStreak}</span>
-          </div>
-
-          {messages.length > 0 && (
-            <button
-              type="button"
-              onClick={handleNewChat}
-              className="p-2 text-[#70685C] hover:text-[#134D37] hover:bg-[#EBE5DB] rounded-xl transition-colors sm:hidden"
-              title="Start new conversation"
-            >
-              <SquarePen size={16} />
-            </button>
-          )}
-        </div>
+        {/* Right: Symmetrical spacer to balance left nav controls and keep center toggle perfectly centered */}
+        <div className="flex-1 flex items-center justify-end" />
       </motion.header>
 
       {/* ── Main Chat Area (ChatGPT-Style Canvas) ────────────────────────── */}
@@ -991,34 +975,16 @@ export default function MentorApp() {
         initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full bg-[#F7F5EF] border-t border-[#E8E2D6] px-4 pt-2 pb-3 sm:pb-4 shrink-0 z-30"
+        className="w-full bg-[#F7F5EF] border-t border-[#E8E2D6] px-3 sm:px-6 pt-2.5 pb-3 sm:pb-4 shrink-0 z-30"
       >
         <div className="max-w-2xl mx-auto w-full">
-          {/* Quick Mode Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
-            {FOCUS_MODES.map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => setSelectedMode(mode.id)}
-                className={`text-[11px] px-3 py-1 rounded-full font-semibold whitespace-nowrap transition-all border ${
-                  selectedMode === mode.id
-                    ? "bg-[#134D37] text-white border-[#134D37] shadow-xs"
-                    : "bg-white text-[#70685C] border-[#DDD7CD] hover:border-[#134D37]/50"
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ChatGPT Prompt Bar Container */}
+          {/* Continuous Capsule Prompt Composer */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className="flex items-end gap-2 bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 border border-[#DDD7CC] shadow-[0_2px_12px_rgba(0,0,0,0.05)] focus-within:border-[#134D37] focus-within:ring-3 focus-within:ring-[#134D37]/15 transition-all"
+            className="flex items-center gap-2 bg-white rounded-full pl-4 sm:pl-5 pr-1.5 sm:pr-2 py-1.5 sm:py-2 border border-[#DDD7CC] shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-within:border-[#134D37] focus-within:ring-2 focus-within:ring-[#134D37]/15 transition-all"
           >
             <textarea
               ref={textareaRef}
@@ -1028,15 +994,16 @@ export default function MentorApp() {
               onKeyDown={handleKeyDown}
               disabled={loading}
               placeholder="Ask anything on prayer, repentance, or Islamic guidance..."
-              className="flex-1 bg-transparent px-2.5 py-1 text-[14px] text-[#2A261F] placeholder:text-[#A8A093] focus:outline-none resize-none max-h-32 disabled:opacity-50 font-medium"
+              className="flex-1 bg-transparent px-1 py-1 text-[13.5px] sm:text-[14px] text-[#2A261F] placeholder:text-[#9B9386] focus:outline-none resize-none max-h-32 disabled:opacity-50 font-normal leading-relaxed min-w-0"
             />
 
             {loading ? (
               <button
                 type="button"
                 onClick={handleStopGeneration}
-                className="w-9 h-9 rounded-xl sm:rounded-2xl bg-[#9B1C1C] hover:bg-[#801414] text-white flex items-center justify-center transition-all shrink-0 shadow-xs"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#9B1C1C] hover:bg-[#801414] text-white flex items-center justify-center transition-all shrink-0 shadow-2xs active:scale-95"
                 title="Stop generation"
+                aria-label="Stop generation"
               >
                 <Square size={13} className="fill-current" />
               </button>
@@ -1044,16 +1011,17 @@ export default function MentorApp() {
               <button
                 type="submit"
                 disabled={!input.trim()}
-                className="w-9 h-9 rounded-xl sm:rounded-2xl bg-[#134D37] hover:bg-[#0E3B2A] text-white flex items-center justify-center transition-all disabled:opacity-20 shrink-0 shadow-xs"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#134D37] hover:bg-[#0E3B2A] text-white flex items-center justify-center transition-all disabled:opacity-25 shrink-0 shadow-2xs active:scale-95 disabled:pointer-events-none"
                 title="Send message (Enter)"
+                aria-label="Send message"
               >
-                <ArrowUp size={16} />
+                <ArrowUp size={16} strokeWidth={2.2} />
               </button>
             )}
           </form>
 
           {/* Bottom Disclaimer */}
-          <p className="text-[10.5px] text-[#8C8273] text-center mt-2 font-normal leading-none truncate">
+          <p className="text-[11px] text-[#8C8273] text-center mt-2 font-normal leading-tight px-2 truncate sm:whitespace-normal">
             Tawfiq Mentor references sacred Islamic texts. For binding rulings, consult a qualified scholar.
           </p>
         </div>
