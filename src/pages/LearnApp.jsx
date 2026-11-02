@@ -35,6 +35,7 @@ import { SALAH_CURRICULUM } from "../data/salahCurriculumData";
 import YouTubeLessonPlayer from "../components/learn/YouTubeLessonPlayer";
 import AudioStepPlayer from "../components/learn/AudioStepPlayer";
 import SalahQuizModal from "../components/learn/SalahQuizModal";
+import HadithCollectionsView from "../components/learn/HadithCollectionsView";
 
 // --- Custom Hook for Local Storage ---
 function useLocalStorage(key, initialValue) {
@@ -516,7 +517,11 @@ export default function Learn() {
                   )}
                 </div>
                 <h1 className="text-lg font-black tracking-tight text-foreground truncate mt-0.5">
-                  {selectedTopic ? selectedTopic.title : "Topics"}
+                  {selectedTopic
+                    ? selectedTopic.title
+                    : selectedCategory?.title === "Hadith"
+                    ? "Hadith Library"
+                    : "Topics"}
                 </h1>
               </div>
 
@@ -777,67 +782,71 @@ export default function Learn() {
           </div>
         ) : selectedCategory ? (
           /* --- LAYER 2: TOPICS / SYLLABUS LIST VIEW --- */
-          <div className="space-y-4 animate-in slide-in-from-right-8 fade-in duration-300">
-            {/* Header info bar */}
-            <div className="px-1 flex items-center justify-between">
-              <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                <ListOrdered size={16} /> Syllabus & Lessons
-              </h2>
-              <span className="text-xs font-medium text-muted-foreground">
-                {currentCategoryTopics.length} lessons
-              </span>
-            </div>
+          selectedCategory.title === "Hadith" ? (
+            <HadithCollectionsView onBack={goBack} />
+          ) : (
+            <div className="space-y-4 animate-in slide-in-from-right-8 fade-in duration-300">
+              {/* Header info bar */}
+              <div className="px-1 flex items-center justify-between">
+                <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                  <ListOrdered size={16} /> Syllabus & Lessons
+                </h2>
+                <span className="text-xs font-medium text-muted-foreground">
+                  {currentCategoryTopics.length} lessons
+                </span>
+              </div>
 
-            {/* Clean Topics List — Metadata badges removed as requested */}
-            <div className="space-y-3">
-              {currentCategoryTopics.map((topic, idx) => {
-                const isDone = completedLessons.includes(topic.id);
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => openTopic(topic)}
-                    className="w-full flex items-center gap-4 p-4 rounded-3xl border border-border bg-card hover:border-primary/40 hover:shadow-md active:scale-[0.98] transition-all duration-300 text-left group relative overflow-hidden"
-                  >
-                    {/* Completion indicator line */}
-                    {isDone && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
-                    )}
-
-                    <div
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold transition-colors ${
-                        isDone
-                          ? "bg-primary text-white"
-                          : "bg-secondary text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
-                      }`}
+              {/* Clean Topics List — Metadata badges removed as requested */}
+              <div className="space-y-3">
+                {currentCategoryTopics.map((topic, idx) => {
+                  const isDone = completedLessons.includes(topic.id);
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => openTopic(topic)}
+                      className="w-full flex items-center gap-4 p-4 rounded-3xl border border-border bg-card hover:border-primary/40 hover:shadow-md active:scale-[0.98] transition-all duration-300 text-left group relative overflow-hidden"
                     >
-                      {isDone ? <CheckCircle2 size={20} /> : idx + 1}
-                    </div>
+                      {/* Completion indicator line */}
+                      {isDone && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+                      )}
 
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`font-bold text-base truncate ${
-                          isDone ? "text-primary" : "text-foreground"
+                      <div
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold transition-colors ${
+                          isDone
+                            ? "bg-primary text-white"
+                            : "bg-secondary text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
                         }`}
                       >
-                        {topic.title}
-                      </p>
-                      {topic.type && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {topic.type}
-                          {topic.totalRakahs ? ` • ${topic.totalRakahs} Rak'ahs` : ""}
-                        </p>
-                      )}
-                    </div>
+                        {isDone ? <CheckCircle2 size={20} /> : idx + 1}
+                      </div>
 
-                    <ArrowRight
-                      size={18}
-                      className="text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0"
-                    />
-                  </button>
-                );
-              })}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`font-bold text-base truncate ${
+                            isDone ? "text-primary" : "text-foreground"
+                          }`}
+                        >
+                          {topic.title}
+                        </p>
+                        {topic.type && (
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {topic.type}
+                            {topic.totalRakahs ? ` • ${topic.totalRakahs} Rak'ahs` : ""}
+                          </p>
+                        )}
+                      </div>
+
+                      <ArrowRight
+                        size={18}
+                        className="text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )
         ) : (
           /* --- LAYER 1: MAIN DASHBOARD VIEW --- */
           <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
