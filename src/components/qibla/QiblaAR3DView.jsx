@@ -5,24 +5,20 @@ import { Sliders, ChevronDown, ChevronUp } from "lucide-react";
 /**
  * QiblaAR3DView
  *
- * Highly intuitive 3D AR Directional Arrow for Qibla Navigation.
+ * Clean, modern, unambiguous 3D Directional AR Arrow for Qibla Navigation.
  *
- * Key Design Principles:
- * 1. Unambiguous 3D Directional Geometry:
- *    - A sculpted 3D arrowhead pointing clearly along the forward trajectory towards the Kaaba.
- *    - Sleek tapered 3D body + aerodynamic chevron wings that provide immediate depth perspective.
- *    - Elevated slightly upward on a floating ground compass ring so the user can easily see which
- *      direction to turn in real 3D space, whether facing upright, tilted, or turning around.
- * 2. Visual Clarity & Friendly AR Interface:
- *    - Premium Islamic emerald-green color palette with metallic reflection and subtle glow.
- *    - Floating horizon target beacon at the head of the arrow indicating the Kaaba horizon.
- *    - Unobtrusive positioning: doesn't block the user's face or camera feed.
- * 3. Hysteresis & Smooth Quaternion Tracking:
- *    - Smooth slerp rotation without gimbal lock or erratic jumps.
- *    - Active glow feedback when aligned with Qibla.
- * 4. Clean Controls:
- *    - "Align Kaaba" artificial override button removed as requested.
- *    - Clean responsive slider/preset simulation controls for desktop testing.
+ * Design:
+ * - Unmistakable 3D arrow:
+ *   * Bold, sculpted, tapered 3D arrow pointing along -Z toward the Kaaba.
+ *   * Dual swept-wing chevrons and a sharp leading arrowhead.
+ *   * Polished emerald metallic finish with warm gold accent bevels.
+ *   * No weird boxes, no confusing ring obstacles, no oversized elements blocking faces.
+ * - Floating horizon guidance:
+ *   * Clean ground compass guide ring that tilts in 3D space with device pitch & yaw.
+ *   * Smooth 60fps quaternion slerp rotation tracks device orientation smoothly.
+ *   * Active emerald glow pulse feedback upon alignment.
+ * - Desktop test controls:
+ *   * Preset pitch postures and manual heading sliders for testing without hardware gyro.
  */
 export default function QiblaAR3DView({
   qiblaBearing,
@@ -122,12 +118,12 @@ export default function QiblaAR3DView({
     // 1. Scene
     const scene = new THREE.Scene();
 
-    // 2. Camera: 50° FOV, comfortable distance
+    // 2. Camera: 50° FOV, balanced depth
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
     camera.position.set(0, 0, 3.2);
     camera.lookAt(0, 0, 0);
 
-    // 3. WebGL Renderer (Transparent background for camera view)
+    // 3. WebGL Renderer with alpha transparency for camera feed
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -141,11 +137,11 @@ export default function QiblaAR3DView({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. Balanced 3D Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.7);
+    // 4. Lighting System
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 2.2);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 2.4);
     dirLight1.position.set(3, 5, 4);
     scene.add(dirLight1);
 
@@ -154,26 +150,25 @@ export default function QiblaAR3DView({
     scene.add(dirLight2);
 
     // ============================================================
-    // BUILD USER-FRIENDLY 3D AR DIRECTIONAL ARROW
+    // BUILD CLEAN, HIGH-CLARITY 3D AR DIRECTIONAL ARROW
     // ============================================================
     const arrowGroup = new THREE.Group();
-    // Position comfortably in center of viewport, slightly lower
-    arrowGroup.position.set(0, -0.15, 0);
+    arrowGroup.position.set(0, -0.05, 0);
     scene.add(arrowGroup);
     arrowGroupRef.current = arrowGroup;
 
     materialsRef.current = [];
 
-    // --- Material A: Primary Emerald Metallic Finish ---
-    const primaryMat = new THREE.MeshStandardMaterial({
+    // Metallic Islamic Emerald Material
+    const emeraldMat = new THREE.MeshStandardMaterial({
       color: 0x10b981,
       metalness: 0.6,
-      roughness: 0.2,
+      roughness: 0.25,
       emissive: 0x064e3b,
       emissiveIntensity: 0.4,
     });
     materialsRef.current.push({
-      mat: primaryMat,
+      mat: emeraldMat,
       baseColor: 0x10b981,
       alignedColor: 0x34d399,
       baseEmissive: 0x064e3b,
@@ -182,16 +177,16 @@ export default function QiblaAR3DView({
       alignedIntensity: 1.0,
     });
 
-    // --- Material B: Warm Gold Accent Trim ---
+    // Warm Gold Accent Material
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
-      metalness: 0.8,
+      metalness: 0.85,
       roughness: 0.2,
       emissive: 0x78350f,
-      emissiveIntensity: 0.3,
+      emissiveIntensity: 0.35,
     });
 
-    // --- Material C: Translucent Radiant Base Compass Disc ---
+    // Glowing Compass Horizon Ring Material
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0x34d399,
       transparent: true,
@@ -204,72 +199,75 @@ export default function QiblaAR3DView({
       alignedColor: 0x6ee7b7,
     });
 
-    // Sub-part 1: Sculpted 3D Arrowhead (Sharp pyramid/cone pointing forward along -Z)
-    // Tip at Z = -0.95, base at Z = -0.42
-    const headGeom = new THREE.ConeGeometry(0.26, 0.55, 4); // 4-sided faceted diamond pyramid
-    headGeom.rotateY(Math.PI / 4); // Turn 45° so flat ridge faces top
-    headGeom.rotateX(-Math.PI / 2); // Point towards -Z
-    headGeom.translate(0, 0, -0.7);
-    const headMesh = new THREE.Mesh(headGeom, primaryMat);
-    arrowGroup.add(headMesh);
+    // -------------------------------------------------------------
+    // 1. Classical 3D Arrow Shape (Extruded clean chevron arrow)
+    // -------------------------------------------------------------
+    // Defined in X-Y plane where +Y points toward destination, then rotated so +Y -> -Z
+    const arrowShape = new THREE.Shape();
+    // Tip at (0, 0.72)
+    arrowShape.moveTo(0, 0.72);
+    // Right wing tip
+    arrowShape.lineTo(0.38, 0.16);
+    // Right inner notch
+    arrowShape.lineTo(0.14, 0.16);
+    // Right shaft base
+    arrowShape.lineTo(0.14, -0.52);
+    // Shaft tail bottom center notch (v-cut tail)
+    arrowShape.lineTo(0, -0.38);
+    // Left shaft base
+    arrowShape.lineTo(-0.14, -0.52);
+    // Left inner notch
+    arrowShape.lineTo(-0.14, 0.16);
+    // Left wing tip
+    arrowShape.lineTo(-0.38, 0.16);
+    arrowShape.closePath();
 
-    // Sub-part 2: Golden Collar Ring at Head Junction (Z = -0.42)
-    const collarGeom = new THREE.TorusGeometry(0.14, 0.022, 12, 24);
-    collarGeom.translate(0, 0, -0.42);
-    const collarMesh = new THREE.Mesh(collarGeom, goldMat);
-    arrowGroup.add(collarMesh);
-
-    // Sub-part 3: Tapered 3D Arrow Shaft (Extending back to Z = 0.38)
-    const shaftGeom = new THREE.CylinderGeometry(0.08, 0.11, 0.8, 16);
-    shaftGeom.rotateX(-Math.PI / 2);
-    shaftGeom.translate(0, 0, -0.02);
-    const shaftMesh = new THREE.Mesh(shaftGeom, primaryMat);
-    arrowGroup.add(shaftMesh);
-
-    // Sub-part 4: Dual Swept Aerodynamic Guide Wings / Chevrons
-    // Clear horizontal visual fins telling the user which direction the arrow is pointing
-    const wingShape = new THREE.Shape();
-    wingShape.moveTo(0, 0);
-    wingShape.lineTo(0.36, -0.22);
-    wingShape.lineTo(0.36, -0.34);
-    wingShape.lineTo(0, -0.15);
-    wingShape.lineTo(-0.36, -0.34);
-    wingShape.lineTo(-0.36, -0.22);
-    wingShape.closePath();
-
-    const wingExtrude = new THREE.ExtrudeGeometry(wingShape, {
-      depth: 0.035,
+    const extrudeSettings = {
+      depth: 0.08,
       bevelEnabled: true,
-      bevelSize: 0.01,
-      bevelThickness: 0.01,
-    });
-    wingExtrude.rotateX(Math.PI / 2);
-    wingExtrude.translate(0, 0, 0.12);
-    const wingMesh = new THREE.Mesh(wingExtrude, goldMat);
-    arrowGroup.add(wingMesh);
+      bevelSegments: 4,
+      steps: 1,
+      bevelSize: 0.02,
+      bevelThickness: 0.02,
+    };
 
-    // Sub-part 5: Tail Fin (Vertical stabilizer)
-    const tailFinGeom = new THREE.BoxGeometry(0.024, 0.28, 0.24);
-    tailFinGeom.translate(0, 0.04, 0.28);
-    const tailFinMesh = new THREE.Mesh(tailFinGeom, primaryMat);
-    arrowGroup.add(tailFinMesh);
+    const arrowGeom = new THREE.ExtrudeGeometry(arrowShape, extrudeSettings);
+    // Rotate so top (+Y) faces forward (-Z), and flat face is horizontal
+    arrowGeom.rotateX(Math.PI / 2);
+    // Center extrusion vertically (Y axis)
+    arrowGeom.translate(0, 0, 0);
 
-    // Sub-part 6: Floating Compass Horizon Ring (Gives 3D spatial grounding)
-    const baseDiscGeom = new THREE.RingGeometry(0.65, 0.72, 40);
+    const arrowMesh = new THREE.Mesh(arrowGeom, emeraldMat);
+    arrowGroup.add(arrowMesh);
+
+    // -------------------------------------------------------------
+    // 2. Beveled Golden Spine / Ridge down the center of the arrow
+    // -------------------------------------------------------------
+    const spineGeom = new THREE.BoxGeometry(0.04, 0.035, 1.15);
+    spineGeom.translate(0, 0.05, 0.06);
+    const spineMesh = new THREE.Mesh(spineGeom, goldMat);
+    arrowGroup.add(spineMesh);
+
+    // -------------------------------------------------------------
+    // 3. Radiant Guidance Tip Beacon (Bright pearl sphere at tip)
+    // -------------------------------------------------------------
+    const tipGeom = new THREE.SphereGeometry(0.05, 20, 20);
+    tipGeom.translate(0, 0, -0.74);
+    const tipMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    const tipMesh = new THREE.Mesh(tipGeom, tipMat);
+    arrowGroup.add(tipMesh);
+
+    // -------------------------------------------------------------
+    // 4. Ground Plane Spatial Horizon Ring (clean, floating below arrow)
+    // -------------------------------------------------------------
+    const baseDiscGeom = new THREE.RingGeometry(0.68, 0.74, 48);
     baseDiscGeom.rotateX(-Math.PI / 2);
-    baseDiscGeom.translate(0, -0.16, -0.1);
+    baseDiscGeom.translate(0, -0.16, 0);
     const baseDiscMesh = new THREE.Mesh(baseDiscGeom, ringMat);
     arrowGroup.add(baseDiscMesh);
 
-    // Sub-part 7: Front Direction Indicator Beacon / Dot (at tip)
-    const beaconGeom = new THREE.SphereGeometry(0.045, 16, 16);
-    beaconGeom.translate(0, 0, -1.02);
-    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-    const beaconMesh = new THREE.Mesh(beaconGeom, beaconMat);
-    arrowGroup.add(beaconMesh);
-
     // ============================================================
-    // ANIMATION LOOP (Smooth 60 FPS Slerp tracking & subtle breathing)
+    // ANIMATION LOOP (Smooth 60 FPS Slerp tracking & gentle breath)
     // ============================================================
     const clock = new THREE.Clock();
 
@@ -282,10 +280,11 @@ export default function QiblaAR3DView({
         arrowGroupRef.current.quaternion.slerp(targetQuatRef.current, 0.20);
       }
 
-      // Gentle floating forward momentum wave (0.02 unit translation)
-      const forwardPulse = Math.sin(elapsed * 2.5) * 0.025;
-      headMesh.position.z = forwardPulse;
-      beaconMesh.position.z = forwardPulse;
+      // Subtle forward momentum floating wave
+      const floatWave = Math.sin(elapsed * 2.8) * 0.03;
+      arrowMesh.position.z = floatWave;
+      spineMesh.position.z = floatWave;
+      tipMesh.position.z = floatWave;
 
       renderer.render(scene, camera);
     };
@@ -312,17 +311,14 @@ export default function QiblaAR3DView({
       if (rendererRef.current) {
         rendererRef.current.dispose();
       }
-      headGeom.dispose();
-      collarGeom.dispose();
-      shaftGeom.dispose();
-      wingExtrude.dispose();
-      tailFinGeom.dispose();
+      arrowGeom.dispose();
+      spineGeom.dispose();
+      tipGeom.dispose();
       baseDiscGeom.dispose();
-      beaconGeom.dispose();
-      primaryMat.dispose();
+      emeraldMat.dispose();
       goldMat.dispose();
       ringMat.dispose();
-      beaconMat.dispose();
+      tipMat.dispose();
       scene.clear();
     };
   }, []);
@@ -376,7 +372,7 @@ export default function QiblaAR3DView({
 
           {showControls && (
             <div className="mt-2.5 pt-2.5 border-t border-white/15 space-y-2 text-xs animate-in fade-in duration-150">
-              {/* Preset Buttons Grid (Align Kaaba button removed) */}
+              {/* Preset Buttons Grid */}
               <div className="grid grid-cols-3 gap-1.5 text-[10.5px]">
                 <button
                   type="button"
