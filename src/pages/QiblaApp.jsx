@@ -355,11 +355,6 @@ export default function QiblaApp() {
           heading={heading}
           pitch={pitch}
           roll={roll}
-          distanceKm={distanceKm}
-          sensorAvailable={sensorAvailable}
-          onSimulateHeading={setSimulatedHeading}
-          onSimulatePitch={setSimulatedPitch}
-          onSimulateRoll={setSimulatedRoll}
         />
       </div>
     );

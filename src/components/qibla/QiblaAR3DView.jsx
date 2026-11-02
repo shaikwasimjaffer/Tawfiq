@@ -1,34 +1,26 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
-import { Sliders, ChevronDown, ChevronUp } from "lucide-react";
 
 /**
  * QiblaAR3DView
  *
- * Clean, modern, unambiguous 3D Directional AR Arrow for Qibla Navigation.
+ * Streamlined, high-performance 3D AR Directional Arrow for Qibla Navigation.
  *
- * Design:
- * - Unmistakable 3D arrow:
- *   * Bold, sculpted, tapered 3D arrow pointing along -Z toward the Kaaba.
- *   * Dual swept-wing chevrons and a sharp leading arrowhead.
- *   * Polished emerald metallic finish with warm gold accent bevels.
- *   * No weird boxes, no confusing ring obstacles, no oversized elements blocking faces.
- * - Floating horizon guidance:
- *   * Clean ground compass guide ring that tilts in 3D space with device pitch & yaw.
- *   * Smooth 60fps quaternion slerp rotation tracks device orientation smoothly.
- *   * Active emerald glow pulse feedback upon alignment.
- * - Desktop test controls:
- *   * Preset pitch postures and manual heading sliders for testing without hardware gyro.
+ * Characteristics:
+ * - 100% clean, distraction-free AR camera view with ZERO bottom sensor control drawers.
+ * - Bold, unmistakable 3D directional arrow pointing directly forward towards the true Qibla (Kaaba).
+ * - Sculpted emerald green aerodynamic body with gold centerline spine and forward tip beacon.
+ * - Perfectly oriented in 3D camera space:
+ *     * When aligned, the arrow points straight forward into the horizon towards the Kaaba.
+ *     * When the user turns left or right, the arrow stays fixed in real-world direction,
+ *       clearly showing the user which way to rotate their phone and body to face the Kaaba.
+ * - Active mint-emerald glow pulse upon reaching alignment.
  */
 export default function QiblaAR3DView({
   qiblaBearing,
   heading,
   pitch = 90,
   roll = 0,
-  sensorAvailable = false,
-  onSimulateHeading,
-  onSimulatePitch,
-  onSimulateRoll,
 }) {
   const mountRef = useRef(null);
   const rendererRef = useRef(null);
@@ -38,10 +30,8 @@ export default function QiblaAR3DView({
   const forwardVecRef = useRef(new THREE.Vector3(0, 0, -1));
   const materialsRef = useRef([]);
 
-  // Desktop simulation controls drawer
-  const [showControls, setShowControls] = useState(false);
-
-  // Target angle diff normalized to [-180, 180]
+  // Target angle difference normalized to [-180, 180]
+  // deltaYawDeg > 0 means Qibla is to the right of current heading
   const shortestDiff = useMemo(() => {
     return ((qiblaBearing - heading + 540) % 360) - 180;
   }, [qiblaBearing, heading]);
@@ -59,7 +49,7 @@ export default function QiblaAR3DView({
     });
   }, [absDiff]);
 
-  // Update target orientation quaternion whenever sensors change
+  // Update target orientation quaternion whenever sensors update
   useEffect(() => {
     const deltaYawDeg = shortestDiff;
     const yawRad = (deltaYawDeg * Math.PI) / 180;
@@ -72,7 +62,8 @@ export default function QiblaAR3DView({
     const safeRoll = typeof roll === "number" && !Number.isNaN(roll) ? roll : 0;
     const rollRad = -(safeRoll * Math.PI) / 180;
 
-    // Compute target 3D direction vector in camera space
+    // Compute target 3D direction vector in camera space:
+    // +X is camera right, +Y is camera up, -Z is camera forward (into the screen)
     const targetDir = new THREE.Vector3(
       Math.sin(yawRad) * Math.cos(pitchRad),
       Math.sin(pitchRad),
@@ -112,8 +103,8 @@ export default function QiblaAR3DView({
     const container = mountRef.current;
     if (!container) return;
 
-    const width = container.clientWidth || 360;
-    const height = container.clientHeight || 640;
+    const width = container.clientWidth || window.innerWidth || 360;
+    const height = container.clientHeight || window.innerHeight || 640;
 
     // 1. Scene
     const scene = new THREE.Scene();
@@ -153,7 +144,7 @@ export default function QiblaAR3DView({
     // BUILD CLEAN, HIGH-CLARITY 3D AR DIRECTIONAL ARROW
     // ============================================================
     const arrowGroup = new THREE.Group();
-    arrowGroup.position.set(0, -0.05, 0);
+    arrowGroup.position.set(0, -0.1, 0);
     scene.add(arrowGroup);
     arrowGroupRef.current = arrowGroup;
 
@@ -202,23 +193,16 @@ export default function QiblaAR3DView({
     // -------------------------------------------------------------
     // 1. Classical 3D Arrow Shape (Extruded clean chevron arrow)
     // -------------------------------------------------------------
-    // Defined in X-Y plane where +Y points toward destination, then rotated so +Y -> -Z
+    // Tip at (0, 0.72) pointing up in 2D (+Y).
+    // When rotated around X by -PI/2: +Y rotates directly to -Z (FORWARD into the horizon)
     const arrowShape = new THREE.Shape();
-    // Tip at (0, 0.72)
     arrowShape.moveTo(0, 0.72);
-    // Right wing tip
     arrowShape.lineTo(0.38, 0.16);
-    // Right inner notch
     arrowShape.lineTo(0.14, 0.16);
-    // Right shaft base
     arrowShape.lineTo(0.14, -0.52);
-    // Shaft tail bottom center notch (v-cut tail)
     arrowShape.lineTo(0, -0.38);
-    // Left shaft base
     arrowShape.lineTo(-0.14, -0.52);
-    // Left inner notch
     arrowShape.lineTo(-0.14, 0.16);
-    // Left wing tip
     arrowShape.lineTo(-0.38, 0.16);
     arrowShape.closePath();
 
@@ -232,9 +216,8 @@ export default function QiblaAR3DView({
     };
 
     const arrowGeom = new THREE.ExtrudeGeometry(arrowShape, extrudeSettings);
-    // Rotate so top (+Y) faces forward (-Z), and flat face is horizontal
-    arrowGeom.rotateX(Math.PI / 2);
-    // Center extrusion vertically (Y axis)
+    // Rotate so top (+Y tip) points directly forward along -Z towards destination
+    arrowGeom.rotateX(-Math.PI / 2);
     arrowGeom.translate(0, 0, 0);
 
     const arrowMesh = new THREE.Mesh(arrowGeom, emeraldMat);
@@ -252,6 +235,7 @@ export default function QiblaAR3DView({
     // 3. Radiant Guidance Tip Beacon (Bright pearl sphere at tip)
     // -------------------------------------------------------------
     const tipGeom = new THREE.SphereGeometry(0.05, 20, 20);
+    // Tip is at Z = -0.74 along -Z
     tipGeom.translate(0, 0, -0.74);
     const tipMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
     const tipMesh = new THREE.Mesh(tipGeom, tipMat);
@@ -275,16 +259,16 @@ export default function QiblaAR3DView({
       animFrameRef.current = requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
 
-      // Smoothly slerp arrow quaternion towards target
+      // Smoothly slerp arrow quaternion towards target (responsive 60fps tracking)
       if (arrowGroupRef.current) {
-        arrowGroupRef.current.quaternion.slerp(targetQuatRef.current, 0.20);
+        arrowGroupRef.current.quaternion.slerp(targetQuatRef.current, 0.22);
       }
 
       // Subtle forward momentum floating wave
       const floatWave = Math.sin(elapsed * 2.8) * 0.03;
-      arrowMesh.position.z = floatWave;
-      spineMesh.position.z = floatWave;
-      tipMesh.position.z = floatWave;
+      arrowMesh.position.z = -floatWave;
+      spineMesh.position.z = -floatWave;
+      tipMesh.position.z = -floatWave;
 
       renderer.render(scene, camera);
     };
@@ -294,8 +278,8 @@ export default function QiblaAR3DView({
     // Handle Resize
     const handleResize = () => {
       if (!container || !renderer || !camera) return;
-      const w = container.clientWidth || 360;
-      const h = container.clientHeight || 640;
+      const w = container.clientWidth || window.innerWidth || 360;
+      const h = container.clientHeight || window.innerHeight || 640;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -334,141 +318,6 @@ export default function QiblaAR3DView({
           <div className="w-32 h-32 rounded-full border border-emerald-400/50 shadow-[0_0_40px_rgba(52,211,153,0.35)] animate-pulse" />
         </div>
       )}
-
-      {/* Spacer to push controls to bottom */}
-      <div className="flex-1 pointer-events-none" />
-
-      {/* Responsive Bottom Sensor Controls Drawer */}
-      <div className="relative z-30 px-3 pb-3 pointer-events-auto">
-        <div className="bg-black/85 backdrop-blur-lg border border-white/20 rounded-2xl p-2.5 sm:p-3 shadow-2xl text-white">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setShowControls((prev) => !prev)}
-              className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-[13px] font-semibold text-emerald-300 hover:text-emerald-200 transition-colors cursor-pointer"
-              aria-expanded={showControls}
-            >
-              <Sliders size={14} className="shrink-0 text-emerald-400" />
-              <span>3D Orientation & Sensor Controls</span>
-              {showControls ? (
-                <ChevronDown size={14} className="shrink-0 text-stone-300" />
-              ) : (
-                <ChevronUp size={14} className="shrink-0 text-stone-300" />
-              )}
-            </button>
-
-            {/* Sensor Verification Status Badge */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 shrink-0 text-[11px] font-medium">
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  sensorAvailable ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
-                }`}
-              />
-              <span className="text-stone-200">
-                {sensorAvailable ? "Hardware Gyro Active" : "Manual / Simulation"}
-              </span>
-            </div>
-          </div>
-
-          {showControls && (
-            <div className="mt-2.5 pt-2.5 border-t border-white/15 space-y-2 text-xs animate-in fade-in duration-150">
-              {/* Preset Buttons Grid */}
-              <div className="grid grid-cols-3 gap-1.5 text-[10.5px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSimulatePitch?.(90);
-                    onSimulateRoll?.(0);
-                  }}
-                  className={`px-2 py-1 rounded-lg border text-center font-medium cursor-pointer transition-all ${
-                    Math.abs(pitch - 90) < 5
-                      ? "bg-emerald-500/30 border-emerald-400 text-emerald-200"
-                      : "bg-white/5 border-white/15 hover:bg-white/10"
-                  }`}
-                >
-                  📱 Upright (90°)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSimulatePitch?.(65);
-                    onSimulateRoll?.(0);
-                  }}
-                  className={`px-2 py-1 rounded-lg border text-center font-medium cursor-pointer transition-all ${
-                    Math.abs(pitch - 65) < 5
-                      ? "bg-emerald-500/30 border-emerald-400 text-emerald-200"
-                      : "bg-white/5 border-white/15 hover:bg-white/10"
-                  }`}
-                >
-                  📐 Tilted (65°)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSimulatePitch?.(0);
-                    onSimulateRoll?.(0);
-                  }}
-                  className={`px-2 py-1 rounded-lg border text-center font-medium cursor-pointer transition-all ${
-                    Math.abs(pitch) < 5
-                      ? "bg-emerald-500/30 border-emerald-400 text-emerald-200"
-                      : "bg-white/5 border-white/15 hover:bg-white/10"
-                  }`}
-                >
-                  🛏️ Flat (0°)
-                </button>
-              </div>
-
-              {/* Sliders */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between gap-2 text-[11px]">
-                  <span className="text-stone-300 shrink-0 w-24">Heading:</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="359"
-                    value={heading}
-                    onChange={(e) => onSimulateHeading?.(Number(e.target.value))}
-                    className="flex-1 accent-emerald-400 cursor-pointer h-1.5"
-                  />
-                  <span className="font-mono text-emerald-300 w-10 text-right tabular-nums">
-                    {Math.round(heading)}°
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 text-[11px]">
-                  <span className="text-stone-300 shrink-0 w-24">Pitch / Tilt:</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="120"
-                    value={pitch}
-                    onChange={(e) => onSimulatePitch?.(Number(e.target.value))}
-                    className="flex-1 accent-emerald-400 cursor-pointer h-1.5"
-                  />
-                  <span className="font-mono text-emerald-300 w-10 text-right tabular-nums">
-                    {Math.round(pitch)}°
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 text-[11px]">
-                  <span className="text-stone-300 shrink-0 w-24">Roll:</span>
-                  <input
-                    type="range"
-                    min="-45"
-                    max="45"
-                    value={roll}
-                    onChange={(e) => onSimulateRoll?.(Number(e.target.value))}
-                    className="flex-1 accent-emerald-400 cursor-pointer h-1.5"
-                  />
-                  <span className="font-mono text-emerald-300 w-10 text-right tabular-nums">
-                    {Math.round(roll)}°
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
