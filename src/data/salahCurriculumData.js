@@ -13,7 +13,7 @@ export const SALAH_CURRICULUM = [
     title: "Fajr Sunnah (2 Rak'ahs)",
     desc: "The 2 emphasized Sunnah units before the Fajr obligatory prayer. The Prophet ﷺ said they are better than the world and all it contains.",
     totalRakahs: 2,
-    youtubeId: "8b7g5J2Y84M", // Authentic Fajr Salah tutorial
+    youtubeId: "YhgSe6DFK-0", // Authentic Fajr Sunnah tutorial
     steps: [
       {
         rakah: 1,
