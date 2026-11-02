@@ -5,17 +5,16 @@ import { Sliders, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 /**
  * QiblaAR3DView
  *
- * Professional 3D WebGL Augmented Reality component for Qibla direction finder.
- * Renders a sleek 3D metallic emerald green arrow that accurately and smoothly tracks
- * the true geodesic direction of the Holy Kaaba in real-time 3D space.
+ * Minimalist, high-clarity AR directional navigation indicator for Qibla.
+ * Uses clean chevron / tapered directional geometry in refined emerald green with
+ * subtle depth, clean ambient lighting, and elegant AR presence.
  *
  * Features:
- * - Quaternion-based slerp rotation for 100% stable, gimbal-lock-free orientation.
- * - Perfectly scaled and positioned at (0, -0.15, 0) to float in the viewport without clipping or text collision.
- * - Compensates accurately for upright air posture (pitch ~ 90°), casual reading tilt (pitch ~ 65°),
- *   and roll without barrel-rolling or twitching.
- * - Alignment hysteresis (enter at 4°, exit at 6°) to eliminate boundary flickering.
- * - Responsive bottom sensor controls card with clean wrapping and verified gyro status.
+ * - Immediate visual clarity: intuitive chevron / forward arrow indicating "Move this way".
+ * - Fully maintains quaternion-based smooth slerp rotation without gimbal lock.
+ * - Perfectly responsive to phone heading, pitch, and roll in real AR 3D space.
+ * - Aligned state feedback with soft emerald glow and gentle pulse.
+ * - Minimal, unobtrusive footprint so real-world camera view remains clear.
  */
 export default function QiblaAR3DView({
   qiblaBearing,
@@ -29,14 +28,11 @@ export default function QiblaAR3DView({
 }) {
   const mountRef = useRef(null);
   const rendererRef = useRef(null);
-  const arrowGroupRef = useRef(null);
-  const kaabaBeaconRef = useRef(null);
-  const laserBeamRef = useRef(null);
-  const haloRingRef = useRef(null);
-  const arrowMaterialsRef = useRef([]);
+  const indicatorGroupRef = useRef(null);
   const animFrameRef = useRef(null);
   const targetQuatRef = useRef(new THREE.Quaternion());
   const forwardVecRef = useRef(new THREE.Vector3(0, 0, -1));
+  const chevronMeshesRef = useRef([]);
 
   // Desktop simulation controls drawer
   const [showControls, setShowControls] = useState(false);
@@ -48,7 +44,7 @@ export default function QiblaAR3DView({
 
   const absDiff = Math.abs(shortestDiff);
 
-  // Alignment state with Hysteresis (prevents flickering at boundary)
+  // Alignment state with Hysteresis (enter at 4°, exit at 6°)
   const [isAlignedState, setIsAlignedState] = useState(false);
 
   useEffect(() => {
@@ -85,45 +81,26 @@ export default function QiblaAR3DView({
 
     // Compute target quaternion from default forward (0, 0, -1) to targetDir
     targetQuatRef.current.setFromUnitVectors(forwardVecRef.current, targetDir);
-
-    // Position Kaaba beacon at distance
-    if (kaabaBeaconRef.current) {
-      const beaconDist = 7.5;
-      const bx = Math.sin(yawRad) * beaconDist;
-      const by = Math.sin(pitchRad) * beaconDist + 0.3;
-      const bz = -Math.cos(yawRad) * beaconDist;
-      kaabaBeaconRef.current.position.set(bx, by, bz);
-      // Visible within front 42° FOV
-      kaabaBeaconRef.current.visible = Math.abs(deltaYawDeg) <= 42;
-    }
   }, [shortestDiff, pitch, roll]);
 
   // Update visual materials on alignment state change
   useEffect(() => {
-    const [bodyMat, , haloMat, beamMat] = arrowMaterialsRef.current;
-    if (bodyMat) {
+    chevronMeshesRef.current.forEach(({ mesh, baseColor, alignedColor }) => {
+      if (!mesh?.material) return;
       if (isAlignedState) {
-        bodyMat.color.setHex(0x34d399); // Radiant mint-emerald
-        bodyMat.emissive.setHex(0x10b981);
-        bodyMat.emissiveIntensity = 1.1;
+        mesh.material.color.setHex(alignedColor || 0x34d399);
+        if (mesh.material.emissive) {
+          mesh.material.emissive.setHex(0x10b981);
+          mesh.material.emissiveIntensity = 0.9;
+        }
       } else {
-        bodyMat.color.setHex(0x10b981); // Rich metallic Islamic green
-        bodyMat.emissive.setHex(0x064e3b);
-        bodyMat.emissiveIntensity = 0.4;
+        mesh.material.color.setHex(baseColor || 0x10b981);
+        if (mesh.material.emissive) {
+          mesh.material.emissive.setHex(0x064e3b);
+          mesh.material.emissiveIntensity = 0.35;
+        }
       }
-    }
-
-    if (laserBeamRef.current && beamMat) {
-      laserBeamRef.current.visible = isAlignedState;
-      if (isAlignedState) {
-        beamMat.opacity = 0.8;
-      }
-    }
-
-    if (haloMat) {
-      haloMat.color.setHex(isAlignedState ? 0x6ee7b7 : 0x34d399);
-      haloMat.opacity = isAlignedState ? 0.9 : 0.45;
-    }
+    });
   }, [isAlignedState]);
 
   // Initialize Three.js Scene
@@ -137,12 +114,12 @@ export default function QiblaAR3DView({
     // 1. Scene
     const scene = new THREE.Scene();
 
-    // 2. Camera: 50° FOV, positioned comfortably at (0, 0, 3.2)
+    // 2. Camera
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
     camera.position.set(0, 0, 3.2);
     camera.lookAt(0, 0, 0);
 
-    // 3. Renderer with transparent background to overlay on live camera feed
+    // 3. Transparent WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -156,177 +133,144 @@ export default function QiblaAR3DView({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. Lighting System
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+    // 4. Lighting - Balanced, clean studio lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 2.2);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 2.0);
     dirLight1.position.set(2, 4, 3);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0x34d399, 1.2);
-    dirLight2.position.set(-2, -2, 2);
+    const dirLight2 = new THREE.DirectionalLight(0x34d399, 1.4);
+    dirLight2.position.set(-2, -1, 2);
     scene.add(dirLight2);
 
-    const pointLight = new THREE.PointLight(0x10b981, 2.0, 6);
-    pointLight.position.set(0, 0, 1.5);
-    scene.add(pointLight);
-
     // ============================================================
-    // BUILD 3D SLEEK EMERALD GREEN NAVIGATIONAL ARROW
+    // BUILD CLEAN, INTUITIVE AR DIRECTIONAL NAVIGATION INDICATOR
     // ============================================================
-    const arrowGroup = new THREE.Group();
-    // Positioned comfortably in center-lower viewport
-    arrowGroup.position.set(0, -0.15, 0);
-    scene.add(arrowGroup);
-    arrowGroupRef.current = arrowGroup;
+    const indicatorGroup = new THREE.Group();
+    // Position comfortably in center of view, slightly lowered to keep center clear
+    indicatorGroup.position.set(0, -0.1, 0);
+    scene.add(indicatorGroup);
+    indicatorGroupRef.current = indicatorGroup;
 
-    // Materials
-    const greenBodyMaterial = new THREE.MeshStandardMaterial({
+    chevronMeshesRef.current = [];
+
+    // Helper: Build a sleek extruded chevron shape pointing along -Z
+    // X is horizontal width, Z is depth along direction of travel
+    function createChevronGeometry(width, length, thickness, angleOffset = 0.35) {
+      const shape = new THREE.Shape();
+      const halfW = width / 2;
+      const t = thickness;
+
+      // Draw 2D V-shape in X-Y plane, which we will later rotate to lie on X-Z plane
+      // Tip at (0, length)
+      shape.moveTo(0, length);
+      shape.lineTo(halfW, angleOffset);
+      shape.lineTo(halfW - t * 0.7, 0);
+      shape.lineTo(0, length - t * 1.3);
+      shape.lineTo(-(halfW - t * 0.7), 0);
+      shape.lineTo(-halfW, angleOffset);
+      shape.closePath();
+
+      const extrudeSettings = {
+        depth: 0.04,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        steps: 1,
+        bevelSize: 0.012,
+        bevelThickness: 0.012,
+      };
+
+      const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      // Rotate so it points forward towards -Z (into horizon)
+      geom.rotateX(Math.PI / 2);
+      // Center vertical extrusion
+      geom.translate(0, 0, 0);
+      return geom;
+    }
+
+    // --- Chevron 1: Primary Lead Chevron (Front, Sharp & Bright) ---
+    const primaryChevronGeom = createChevronGeometry(0.72, 0.44, 0.16, 0.14);
+    // Position lead chevron at forward position (Z = -0.45)
+    primaryChevronGeom.translate(0, 0, -0.45);
+
+    const primaryMat = new THREE.MeshStandardMaterial({
       color: 0x10b981,
-      metalness: 0.7,
-      roughness: 0.2,
+      metalness: 0.5,
+      roughness: 0.25,
       emissive: 0x064e3b,
       emissiveIntensity: 0.4,
-    });
-
-    const goldAccentMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf59e0b,
-      metalness: 0.85,
-      roughness: 0.15,
-      emissive: 0x78350f,
-      emissiveIntensity: 0.3,
-    });
-
-    const haloMaterial = new THREE.MeshBasicMaterial({
-      color: 0x34d399,
       transparent: true,
-      opacity: 0.45,
-      side: THREE.DoubleSide,
+      opacity: 0.95,
+    });
+    const primaryChevronMesh = new THREE.Mesh(primaryChevronGeom, primaryMat);
+    indicatorGroup.add(primaryChevronMesh);
+    chevronMeshesRef.current.push({
+      mesh: primaryChevronMesh,
+      baseColor: 0x10b981,
+      alignedColor: 0x34d399,
     });
 
-    const beamMaterial = new THREE.MeshBasicMaterial({
-      color: 0x6ee7b7,
+    // --- Chevron 2: Supporting Mid Chevron ---
+    const midChevronGeom = createChevronGeometry(0.58, 0.36, 0.14, 0.12);
+    // Position mid chevron slightly behind lead (Z = -0.15)
+    midChevronGeom.translate(0, 0, -0.15);
+
+    const midMat = new THREE.MeshStandardMaterial({
+      color: 0x059669,
+      metalness: 0.4,
+      roughness: 0.3,
+      emissive: 0x064e3b,
+      emissiveIntensity: 0.3,
       transparent: true,
       opacity: 0.75,
-      blending: THREE.AdditiveBlending,
+    });
+    const midChevronMesh = new THREE.Mesh(midChevronGeom, midMat);
+    indicatorGroup.add(midChevronMesh);
+    chevronMeshesRef.current.push({
+      mesh: midChevronMesh,
+      baseColor: 0x059669,
+      alignedColor: 0x10b981,
     });
 
-    arrowMaterialsRef.current = [greenBodyMaterial, goldAccentMaterial, haloMaterial, beamMaterial];
+    // --- Chevron 3: Trailing Subtle Chevron ---
+    const trailChevronGeom = createChevronGeometry(0.46, 0.28, 0.12, 0.1);
+    // Position trail chevron at tail (Z = 0.1)
+    trailChevronGeom.translate(0, 0, 0.1);
 
-    // Sub-part A: Arrow Shaft (Slender cylinder, aligned along -Z)
-    // From Z = 0.4 (tail) to Z = -0.5 (head junction)
-    const shaftGeom = new THREE.CylinderGeometry(0.075, 0.095, 0.9, 16);
-    shaftGeom.rotateX(-Math.PI / 2);
-    shaftGeom.translate(0, 0, -0.05);
-    const shaftMesh = new THREE.Mesh(shaftGeom, greenBodyMaterial);
-    arrowGroup.add(shaftMesh);
+    const trailMat = new THREE.MeshStandardMaterial({
+      color: 0x047857,
+      metalness: 0.3,
+      roughness: 0.35,
+      emissive: 0x064e3b,
+      emissiveIntensity: 0.2,
+      transparent: true,
+      opacity: 0.5,
+    });
+    const trailChevronMesh = new THREE.Mesh(trailChevronGeom, trailMat);
+    indicatorGroup.add(trailChevronMesh);
+    chevronMeshesRef.current.push({
+      mesh: trailChevronMesh,
+      baseColor: 0x047857,
+      alignedColor: 0x059669,
+    });
 
-    // Sub-part B: 3D Arrowhead (Sharp faceted cone pointing along -Z towards horizon)
-    // Base at Z = -0.5, sharp tip at Z = -1.1
-    const headGeom = new THREE.ConeGeometry(0.24, 0.6, 24);
-    headGeom.rotateX(-Math.PI / 2);
-    headGeom.translate(0, 0, -0.8);
-    const headMesh = new THREE.Mesh(headGeom, greenBodyMaterial);
-    arrowGroup.add(headMesh);
-
-    // Sub-part C: Golden Collar Ring at arrowhead junction (Z = -0.5)
-    const collarGeom = new THREE.TorusGeometry(0.12, 0.022, 12, 24);
-    collarGeom.translate(0, 0, -0.5);
-    const collarMesh = new THREE.Mesh(collarGeom, goldAccentMaterial);
-    arrowGroup.add(collarMesh);
-
-    // Sub-part D: Aerodynamic Tail Stabilizer Fins (at Z = 0.32)
-    const finGeom1 = new THREE.BoxGeometry(0.025, 0.36, 0.28);
-    finGeom1.translate(0, 0, 0.32);
-    const fin1 = new THREE.Mesh(finGeom1, goldAccentMaterial);
-    arrowGroup.add(fin1);
-
-    const finGeom2 = new THREE.BoxGeometry(0.36, 0.025, 0.28);
-    finGeom2.translate(0, 0, 0.32);
-    const fin2 = new THREE.Mesh(finGeom2, goldAccentMaterial);
-    arrowGroup.add(fin2);
-
-    // Sub-part E: Pulsing Halo Ring (around center of arrow at Z = -0.1)
-    const haloGeom = new THREE.TorusGeometry(0.36, 0.016, 12, 32);
-    haloGeom.translate(0, 0, -0.1);
-    const haloMesh = new THREE.Mesh(haloGeom, haloMaterial);
-    arrowGroup.add(haloMesh);
-    haloRingRef.current = haloMesh;
-
-    // Sub-part F: Green Targeting Laser Beam towards Kaaba
-    const beamGeom = new THREE.CylinderGeometry(0.015, 0.035, 10, 12);
-    beamGeom.rotateX(-Math.PI / 2);
-    beamGeom.translate(0, 0, -6.1);
-    const beamMesh = new THREE.Mesh(beamGeom, beamMaterial);
-    beamMesh.visible = false;
-    arrowGroup.add(beamMesh);
-    laserBeamRef.current = beamMesh;
-
-    // Sub-part G: Subtle Horizon Compass Base Ring
-    const baseRingGeom = new THREE.RingGeometry(0.68, 0.72, 32);
-    baseRingGeom.rotateX(-Math.PI / 2);
-    const baseRingMat = new THREE.MeshBasicMaterial({
+    // --- Elegant Minimal Horizon Ring on the Ground Plane ---
+    const horizonRingGeom = new THREE.RingGeometry(0.65, 0.68, 48);
+    horizonRingGeom.rotateX(-Math.PI / 2);
+    const horizonRingMat = new THREE.MeshBasicMaterial({
       color: 0x34d399,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.25,
       side: THREE.DoubleSide,
     });
-    const baseRing = new THREE.Mesh(baseRingGeom, baseRingMat);
-    baseRing.position.set(0, -0.18, 0);
-    arrowGroup.add(baseRing);
+    const horizonRingMesh = new THREE.Mesh(horizonRingGeom, horizonRingMat);
+    horizonRingMesh.position.set(0, -0.04, -0.15);
+    indicatorGroup.add(horizonRingMesh);
 
     // ============================================================
-    // BUILD 3D FLOATING KAABA BEACON (Visible in distance when facing Qibla)
-    // ============================================================
-    const kaabaBeacon = new THREE.Group();
-    kaabaBeacon.position.set(0, 0.3, -7.5);
-    scene.add(kaabaBeacon);
-    kaabaBeaconRef.current = kaabaBeacon;
-
-    // Kaaba Cube (Black body)
-    const kaabaGeom = new THREE.BoxGeometry(0.55, 0.6, 0.55);
-    const kaabaMat = new THREE.MeshStandardMaterial({
-      color: 0x18181b,
-      roughness: 0.4,
-      metalness: 0.1,
-    });
-    const kaabaMesh = new THREE.Mesh(kaabaGeom, kaabaMat);
-    kaabaBeacon.add(kaabaMesh);
-
-    // Golden Kiswah Band
-    const bandGeom = new THREE.BoxGeometry(0.57, 0.09, 0.57);
-    bandGeom.translate(0, 0.12, 0);
-    const bandMesh = new THREE.Mesh(bandGeom, goldAccentMaterial);
-    kaabaBeacon.add(bandMesh);
-
-    // Kaaba Vertical Sky Pillar of Light
-    const pillarGeom = new THREE.CylinderGeometry(0.06, 0.18, 10, 16);
-    pillarGeom.translate(0, 5, 0);
-    const pillarMat = new THREE.MeshBasicMaterial({
-      color: 0x34d399,
-      transparent: true,
-      opacity: 0.32,
-      blending: THREE.AdditiveBlending,
-    });
-    const pillarMesh = new THREE.Mesh(pillarGeom, pillarMat);
-    kaabaBeacon.add(pillarMesh);
-
-    // Golden Halo Ring around Kaaba
-    const kaabaHaloGeom = new THREE.RingGeometry(0.5, 0.65, 24);
-    kaabaHaloGeom.rotateX(-Math.PI / 2);
-    const kaabaHaloMat = new THREE.MeshBasicMaterial({
-      color: 0xf59e0b,
-      transparent: true,
-      opacity: 0.45,
-      side: THREE.DoubleSide,
-    });
-    const kaabaHalo = new THREE.Mesh(kaabaHaloGeom, kaabaHaloMat);
-    kaabaHalo.position.y = -0.3;
-    kaabaBeacon.add(kaabaHalo);
-
-    // ============================================================
-    // ANIMATION & RENDER LOOP WITH SLERP ROTATION
+    // ANIMATION & RENDER LOOP WITH SMOOTH SLERP
     // ============================================================
     const clock = new THREE.Clock();
 
@@ -334,22 +278,16 @@ export default function QiblaAR3DView({
       animFrameRef.current = requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
 
-      // Smoothly slerp arrow quaternion towards target (buttery smooth 60fps tracking)
-      if (arrowGroupRef.current) {
-        arrowGroupRef.current.quaternion.slerp(targetQuatRef.current, 0.20);
+      // Smoothly slerp navigation indicator quaternion towards target (buttery smooth 60fps tracking)
+      if (indicatorGroupRef.current) {
+        indicatorGroupRef.current.quaternion.slerp(targetQuatRef.current, 0.20);
       }
 
-      // Gentle floating animation on Kaaba beacon
-      if (kaabaBeaconRef.current) {
-        kaabaBeaconRef.current.position.y = 0.3 + Math.sin(elapsed * 2.2) * 0.06;
-        kaabaBeaconRef.current.rotation.y = elapsed * 0.35;
-      }
-
-      // Gentle pulse on halo ring
-      if (haloRingRef.current) {
-        const scale = 1.0 + Math.sin(elapsed * 3) * 0.05;
-        haloRingRef.current.scale.set(scale, scale, scale);
-      }
+      // Subtle, gentle forward floating / breathing motion to convey forward momentum
+      const wave = Math.sin(elapsed * 2.8);
+      primaryChevronMesh.position.z = wave * 0.035;
+      midChevronMesh.position.z = Math.sin(elapsed * 2.8 - 0.4) * 0.025;
+      trailChevronMesh.position.z = Math.sin(elapsed * 2.8 - 0.8) * 0.015;
 
       renderer.render(scene, camera);
     };
@@ -376,9 +314,20 @@ export default function QiblaAR3DView({
       if (rendererRef.current) {
         rendererRef.current.dispose();
       }
-      arrowMaterialsRef.current.forEach((m) => m?.dispose?.());
+      primaryGeomDispose();
       scene.clear();
     };
+
+    function primaryGeomDispose() {
+      primaryChevronGeom.dispose();
+      midChevronGeom.dispose();
+      trailChevronGeom.dispose();
+      horizonRingGeom.dispose();
+      primaryMat.dispose();
+      midMat.dispose();
+      trailMat.dispose();
+      horizonRingMat.dispose();
+    }
   }, []);
 
   return (
@@ -386,10 +335,10 @@ export default function QiblaAR3DView({
       {/* Three.js 3D WebGL Canvas Mount */}
       <div ref={mountRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
-      {/* Alignment Center Glow Ring (Subtle ambient effect, never blocks view) */}
+      {/* Alignment Center Pulse Glow (Active only when facing Qibla) */}
       {isAlignedState && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-36 h-36 rounded-full border border-emerald-400/40 shadow-[0_0_50px_rgba(52,211,153,0.35)] animate-pulse" />
+          <div className="w-32 h-32 rounded-full border border-emerald-400/50 shadow-[0_0_40px_rgba(52,211,153,0.35)] animate-pulse" />
         </div>
       )}
 

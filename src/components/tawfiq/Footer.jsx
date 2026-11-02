@@ -59,16 +59,20 @@ export default function Footer() {
           Every prayer is a step home.
         </motion.p>
 
-        {/* Wordmark */}
-        <motion.h2
+        {/* Brand Logo */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="font-serif text-[clamp(3rem,9vw,6.5rem)] font-bold uppercase tracking-[-0.02em] text-stone-900 leading-none mt-12"
+          className="mt-12 flex flex-col items-center justify-center"
         >
-          Tawfiq
-        </motion.h2>
+          <img
+            src="/footer-logo.jpg"
+            alt="Tawfiq Logo"
+            className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl shadow-lg object-cover mx-auto transition-transform duration-300 hover:scale-105 ring-1 ring-stone-900/5"
+          />
+        </motion.div>
 
         {/* The Bismillah call */}
         <motion.div

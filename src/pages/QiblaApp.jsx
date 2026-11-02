@@ -607,19 +607,8 @@ export default function QiblaApp() {
 
             {/* TOP AR HUD: Clean Non-Overlapping Structured Flex Layout */}
             <div className="relative z-20 flex flex-col items-center w-full p-3 sm:p-4 bg-gradient-to-b from-black/85 via-black/40 to-transparent pointer-events-none">
-              {/* Row 1: Header Bar (Live AR Finder badge + Exit AR button) */}
-              <div className="w-full flex items-center justify-between text-white mb-2 pointer-events-auto">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      cameraState === "ready" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
-                    }`}
-                  />
-                  <span className="font-bold text-xs sm:text-[13px] tracking-tight flex items-center gap-1.5 drop-shadow">
-                    <Camera size={14} className="text-emerald-400" />
-                    Live AR Finder
-                  </span>
-                </div>
+              {/* Top Navigation Row: Clean Exit AR button pinned top-right */}
+              <div className="w-full flex items-center justify-end text-white mb-2 pointer-events-auto">
                 <button
                   type="button"
                   onClick={() => setMode("2d")}
@@ -629,36 +618,13 @@ export default function QiblaApp() {
                 </button>
               </div>
 
-              {/* Row 2: Target Information Pill (Kaaba Bearing & Distance) */}
-              <div className="w-full max-w-[320px] flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-white shadow-md text-xs pointer-events-auto">
-                <span className="flex items-center gap-1.5 font-semibold text-emerald-300">
-                  <span>🕋</span>
-                  <span>
-                    Kaaba: {qiblaBearing}° {cardinal}
-                  </span>
-                </span>
-                <span className="text-white/40">•</span>
-                <span className="text-stone-300 tabular-nums font-mono">
-                  {distanceKm.toLocaleString()} km
-                </span>
-              </div>
-
-              {/* Row 3: Horizontal Degree Ruler Tape (Independent layout slot) */}
-              <div className="w-full max-w-[320px] mt-2 pointer-events-auto">
-                <QiblaDegreeRuler
-                  heading={heading}
-                  qiblaBearing={qiblaBearing}
-                  isAligned={alignment.isAligned}
-                />
-              </div>
-
-              {/* Row 4: Direction Guidance Instruction Chip (Strictly positive magnitude) */}
-              <div className="mt-2 pointer-events-auto">
+              {/* Turn Instruction: Relocated directly into the former Kaaba information pill position */}
+              <div className="w-full max-w-[320px] flex items-center justify-center pointer-events-auto">
                 <div
-                  className={`px-4 py-1.5 rounded-full backdrop-blur-md text-xs font-bold tracking-wide flex items-center gap-2 shadow-lg transition-all duration-300 ${
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-1.5 rounded-full backdrop-blur-md text-xs font-bold tracking-wide shadow-lg transition-all duration-300 ${
                     alignment.isAligned
                       ? "bg-emerald-500/90 text-white border border-emerald-300/80 shadow-[0_0_20px_rgba(52,211,153,0.5)]"
-                      : "bg-black/75 text-white border border-white/20"
+                      : "bg-black/65 text-white border border-white/20"
                   }`}
                 >
                   {alignment.isAligned ? (
@@ -679,8 +645,16 @@ export default function QiblaApp() {
                   )}
                 </div>
               </div>
-            </div>
 
+              {/* Horizontal Degree Ruler Tape */}
+              <div className="w-full max-w-[320px] mt-2 pointer-events-auto">
+                <QiblaDegreeRuler
+                  heading={heading}
+                  qiblaBearing={qiblaBearing}
+                  isAligned={alignment.isAligned}
+                />
+              </div>
+            </div>
             {/* True 3D WebGL Green Arrow AR Spatial Layer */}
             <QiblaAR3DView
               qiblaBearing={qiblaBearing}
