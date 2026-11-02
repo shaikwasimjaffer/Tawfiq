@@ -12,28 +12,29 @@ import {
   FileText,
   CheckCircle2,
   ListOrdered,
-  Clock,
   BookOpen,
   Volume2,
   Info,
-  Play,
-  Pause,
-  Repeat,
   Bookmark,
   BookmarkCheck,
   AlertCircle,
   ThumbsUp,
-  Video,
   PlayCircle,
   Trophy,
   BookMarked,
-  Star,
   GraduationCap,
   Map,
   Scale,
   Palette,
   Users,
+  Award,
+  Layers,
 } from "lucide-react";
+
+import { SALAH_CURRICULUM } from "../data/salahCurriculumData";
+import YouTubeLessonPlayer from "../components/learn/YouTubeLessonPlayer";
+import AudioStepPlayer from "../components/learn/AudioStepPlayer";
+import SalahQuizModal from "../components/learn/SalahQuizModal";
 
 // --- Custom Hook for Local Storage ---
 function useLocalStorage(key, initialValue) {
@@ -95,7 +96,7 @@ const CATEGORIES = [
   { title: "Hajj", icon: Map, color: "text-stone-600", bg: "bg-stone-100" },
   {
     title: "Prophets",
-    icon: Star,
+    icon: BookMarked,
     color: "text-yellow-600",
     bg: "bg-yellow-100",
   },
@@ -121,334 +122,233 @@ const CATEGORIES = [
   { title: "Manners", icon: Users, color: "text-pink-600", bg: "bg-pink-100" },
 ];
 
-// --- Highly Detailed, Convert-Friendly Database ---
-const MOCK_TOPICS = {
-  Salah: [
-    {
-      id: "salah-fajr-fard",
-      title: "Fajr Fard (Obligatory)",
-      desc: "The 2 obligatory units of the morning prayer, recited aloud.",
-      time: "7 min",
-      stepsCount: 11,
-      difficulty: "beginner",
-      video:
-        "https://dummyimage.com/800x400/0f172a/10b981.png&text=▶+Watch+Fajr+Demonstration",
-      steps: [
-        {
-          title: "Intention (Niyyah)",
-          text: "Stand facing the Qiblah. Intend in your heart to pray the 2 Fard Rakats of Fajr. (You do not need to say it aloud).",
-          arabic: "نويت أن أصلي ركعتي الفرض من صلاة الفجر",
-          transliteration:
-            "Nawaytu an usalliya rak'atay al-fard min salat al-fajr",
-          translation:
-            "I intend to pray the 2 obligatory Rakats of Fajr prayer.",
-        },
-        {
-          title: "Opening Takbeer",
-          text: "Raise your hands to your earlobes (men) or shoulders (women). Say the opening phrase to enter the prayer.",
-          arabic: "الله أكبر",
-          transliteration: "Allāhu Akbar",
-          translation: "Allah is the Greatest",
-        },
-        {
-          title: "Standing (Qiyam) & Fatihah",
-          text: "Place your right hand over your left on your chest. Recite Surah Al-Fatihah aloud.",
-          arabic: "الحمد لله رب العالمين...",
-          transliteration: "Alḥamdu lillāhi rabbil-'ālamīn...",
-          translation: "All praise is due to Allah, Lord of the worlds...",
-          note: "Beginner Tip: If you haven't memorized this yet, you can read from a paper or repeat 'Subhanallah' until you learn it.",
-        },
-        {
-          title: "Bowing (Ruku)",
-          text: "Say 'Allahu Akbar' and bow down. Keep your back straight, hands on knees. Say this 3 times:",
-          arabic: "سبحان ربي العظيم",
-          transliteration: "Subḥāna Rabbiyal-'Aẓīm",
-          translation: "Glory be to my Lord, the Greatest",
-        },
-        {
-          title: "Rising from Ruku",
-          text: "Stand back up straight. Say the first phrase while rising, and the second when fully standing.",
-          arabic: "سمع الله لمن حمده. ربنا ولك الحمد.",
-          transliteration: "Sami'allāhu liman ḥamidah. Rabbanā wa lakal-ḥamd.",
-          translation:
-            "Allah hears those who praise Him. Our Lord, to You is all praise.",
-        },
-        {
-          title: "First Prostration (Sujood)",
-          text: "Say 'Allahu Akbar' and go down. Forehead, nose, palms, knees, and toes must touch the floor. Say 3 times:",
-          arabic: "سبحان ربي الأعلى",
-          transliteration: "Subḥāna Rabbiyal-A'lā",
-          translation: "Glory be to my Lord, the Most High",
-        },
-        {
-          title: "Sitting (Jalsah)",
-          text: "Say 'Allahu Akbar' and sit up on your knees. Pause and seek forgiveness.",
-          arabic: "رب اغفر لي",
-          transliteration: "Rabbighfir lī",
-          translation: "My Lord, forgive me.",
-        },
-        {
-          title: "Second Prostration (Sujood)",
-          text: "Say 'Allahu Akbar' and prostrate again. Say 'Subhana Rabbiyal-A'la' 3 times.",
-        },
-        {
-          title: "Second Rakat",
-          text: "Say 'Allahu Akbar', stand up, and repeat the recitation, bowing, and prostrating just like the first Rakat.",
-        },
-        {
-          title: "Final Sitting (Tashahhud)",
-          text: "After the second prostration of the 2nd Rakat, remain sitting. Recite the Tashahhud and blessings on the Prophet.",
-          arabic: "التحيات لله والصلوات والطيبات...",
-          transliteration: "At-taḥiyyātu lillāhi waṣ-ṣalawātu waṭ-ṭayyibāt...",
-          translation:
-            "All greetings, prayers, and pure words are due to Allah...",
-        },
-        {
-          title: "Conclusion (Tasleem)",
-          text: "Turn your head to the right and say the greeting of peace, then turn to the left and repeat it.",
-          arabic: "السلام عليكم ورحمة الله",
-          transliteration: "As-salāmu 'alaykum wa raḥmatullāh",
-          translation: "May the peace and mercy of Allah be upon you",
-        },
-      ],
-      mistakes: [
-        "Moving too fast and not pausing between positions (lack of Khushu).",
-        "Not keeping the back flat and straight during Ruku.",
-        "Forehead or nose not touching the ground during Sujood.",
-        "Looking around instead of looking at the place of prostration.",
-      ],
-      sunnahs: [
-        "Raise your hands when going into Ruku and rising from it.",
-        "Say 'Ameen' aloud after reciting Surah Al-Fatihah.",
-        "Keep your eyes fixed on the spot where your forehead will touch.",
-      ],
-      summaryTable: [
-        {
-          pos: "Opening",
-          arabic: "الله أكبر",
-          trans: "Allahu Akbar",
-          mean: "Allah is the Greatest",
-        },
-        {
-          pos: "Ruku",
-          arabic: "سبحان ربي العظيم",
-          trans: "Subḥāna Rabbiyal-'Aẓīm",
-          mean: "Glory be to my Lord, the Great",
-        },
-        {
-          pos: "Rising",
-          arabic: "سمع الله لمن حمده",
-          trans: "Samiʿallāhu liman ḥamidah",
-          mean: "Allah hears those who praise Him",
-        },
-        {
-          pos: "Standing",
-          arabic: "ربنا ولك الحمد",
-          trans: "Rabbanā wa lakal-ḥamd",
-          mean: "Our Lord, to You belongs all praise",
-        },
-        {
-          pos: "Sujood",
-          arabic: "سبحان ربي الأعلى",
-          trans: "Subḥāna Rabbiyal-Aʿlā",
-          mean: "Glory be to my Lord, the High",
-        },
-        {
-          pos: "Sitting",
-          arabic: "رب اغفر لي",
-          trans: "Rabbighfir lī",
-          mean: "My Lord, forgive me",
-        },
-        {
-          pos: "Tasleem",
-          arabic: "السلام عليكم ورحمة الله",
-          trans: "As-salāmu ʿalaykum wa raḥmatullāh",
-          mean: "Peace and mercy be upon you",
-        },
-      ],
-    },
-    {
-      id: "salah-fajr-sunnah",
-      title: "Fajr Sunnah",
-      desc: "The 2 highly recommended units before Fajr Fard.",
-      time: "5 min",
-      stepsCount: 8,
-      difficulty: "beginner",
-    },
-    {
-      id: "salah-dhuhr-fard",
-      title: "Dhuhr Fard",
-      desc: "The 4 obligatory midday units, recited silently.",
-      time: "10 min",
-      stepsCount: 15,
-      difficulty: "intermediate",
-    },
-    {
-      id: "salah-dhuhr-sunnah",
-      title: "Dhuhr Sunnah",
-      desc: "4 Rakats before and 2 Rakats after Dhuhr Fard.",
-      time: "12 min",
-      stepsCount: 15,
-      difficulty: "intermediate",
-    },
-    {
-      id: "salah-asr-fard",
-      title: "Asr Fard",
-      desc: "The 4 obligatory afternoon units.",
-      time: "10 min",
-      stepsCount: 15,
-      difficulty: "intermediate",
-    },
-    {
-      id: "salah-maghrib-fard",
-      title: "Maghrib Fard",
-      desc: "The 3 obligatory sunset units.",
-      time: "8 min",
-      stepsCount: 13,
-      difficulty: "intermediate",
-    },
-    {
-      id: "salah-isha-fard",
-      title: "Isha Fard",
-      desc: "The 4 obligatory night units.",
-      time: "10 min",
-      stepsCount: 15,
-      difficulty: "intermediate",
-    },
-    {
-      id: "salah-witr",
-      title: "Witr Prayer",
-      desc: "The final odd-numbered prayer of the night.",
-      time: "6 min",
-      stepsCount: 12,
-      difficulty: "advanced",
-    },
-    {
-      id: "salah-tahajjud",
-      title: "Tahajjud",
-      desc: "The voluntary night prayer for immense reward.",
-      time: "15 min",
-      stepsCount: 8,
-      difficulty: "advanced",
-    },
-  ],
+// Fallback topics for other categories
+const OTHER_TOPICS = {
   Purification: [
     {
       id: "wudu-basics",
-      title: "How to perform Wudu",
-      desc: "Step-by-step guide to minor ablution.",
-      time: "4 min",
-      stepsCount: 8,
-      difficulty: "beginner",
+      title: "How to perform Wudu (Ablution)",
+      desc: "Step-by-step authentic minor ablution guide.",
+      totalRakahs: 1,
+      youtubeId: "8b7g5J2Y84M",
       steps: [
         {
+          rakah: 1,
           title: "Intention & Bismillah",
-          text: "Intend to purify yourself.",
-          arabic: "بسم الله",
-          transliteration: "Bismillah",
-          translation: "In the name of Allah",
+          text: "Intend purification in your heart and begin by pronouncing the name of Allah.",
+          arabic: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+          transliteration: "Bismillāhir-Raḥmānir-Raḥīm",
+          translation: "In the name of Allah, Most Gracious, Most Merciful.",
         },
-        { title: "Wash Hands", text: "Wash up to wrists 3 times." },
+        {
+          rakah: 1,
+          title: "Wash Hands Three Times",
+          text: "Wash both hands completely up to the wrists three times, ensuring water passes between fingers.",
+        },
+        {
+          rakah: 1,
+          title: "Rinse Mouth & Sniff Water into Nose",
+          text: "Rinse the mouth thoroughly three times. Sniff water into the nostrils and blow it out gently three times.",
+        },
+        {
+          rakah: 1,
+          title: "Wash the Entire Face Three Times",
+          text: "Wash the face three times from forehead hairline to chin, and ear to ear.",
+        },
+        {
+          rakah: 1,
+          title: "Wash Arms to the Elbows Three Times",
+          text: "Wash the right arm including the elbow three times, then the left arm three times.",
+        },
+        {
+          rakah: 1,
+          title: "Wipe Head & Ears (Masah)",
+          text: "Wipe wet hands from front of hair to back and return, then wipe inside and outside of ears with index fingers and thumbs once.",
+        },
+        {
+          rakah: 1,
+          title: "Wash Feet to the Ankles Three Times",
+          text: "Wash right foot up to and including the ankle three times, then left foot three times, cleaning between toes.",
+        },
       ],
     },
     {
       id: "ghusl-basics",
-      title: "How to perform Ghusl",
-      desc: "The full ritual bath.",
-      time: "6 min",
-      stepsCount: 5,
-      difficulty: "beginner",
+      title: "How to perform Ghusl (Full Bath)",
+      desc: "The complete ritual purification bath according to the Sunnah.",
+      totalRakahs: 1,
+      steps: [
+        {
+          rakah: 1,
+          title: "Intention (Niyyah)",
+          text: "Intend in the heart to remove ritual impurity for the sake of Allah.",
+        },
+        {
+          rakah: 1,
+          title: "Wash Hands & Private Parts",
+          text: "Wash both hands, then wash private areas thoroughly with clean water.",
+        },
+        {
+          rakah: 1,
+          title: "Perform Complete Wudu",
+          text: "Perform standard Wudu as for prayer.",
+        },
+        {
+          rakah: 1,
+          title: "Pour Water Over Head & Entire Body",
+          text: "Pour water over head three times ensuring roots of hair are wet, then wash right side of body, then left side, leaving no spot dry.",
+        },
+      ],
     },
   ],
   default: [
     {
       id: "default-1",
       title: "Introduction Guide",
-      desc: "Select a topic to begin learning.",
-      time: "1 min",
-      stepsCount: 1,
-      difficulty: "beginner",
+      desc: "Select a topic from the library to begin learning.",
+      totalRakahs: 1,
+      steps: [
+        {
+          rakah: 1,
+          title: "Getting Started",
+          text: "Tawfiq provides comprehensive, authentic Islamic knowledge step by step.",
+        },
+      ],
     },
   ],
 };
 
 // --- Helper Components ---
 
-// Individual Step Card with Expandable Arabic
-function InteractiveStepCard({ step, index, isActive, onComplete }) {
-  const [showArabic, setShowArabic] = useState(false);
-
+// Fully Accessible Step Card — Always Displays Arabic, Audio & Gender Notes
+function InteractiveStepCard({
+  step,
+  index,
+  genderTrack,
+  isCompleted,
+  onToggleComplete,
+}) {
   return (
-    <div
-      className={`relative flex flex-col pl-14 transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-50"}`}
-    >
+    <div className="relative flex flex-col pl-14 transition-all duration-200">
+      {/* Clickable step circle — users can tap to toggle completion */}
       <button
-        onClick={onComplete}
-        className={`absolute left-0 top-0 w-10 h-10 rounded-full flex items-center justify-center font-black text-sm ring-4 ring-background shadow-sm transition-colors ${isActive ? "bg-primary text-white" : "bg-secondary text-muted-foreground hover:bg-primary/20"}`}
+        onClick={onToggleComplete}
+        title={isCompleted ? "Mark incomplete" : "Mark step complete"}
+        className={`absolute left-0 top-0 w-10 h-10 rounded-full flex items-center justify-center font-black text-sm ring-4 ring-background shadow-sm transition-all active:scale-95 cursor-pointer ${
+          isCompleted
+            ? "bg-primary text-white shadow-primary/20"
+            : "bg-secondary text-muted-foreground hover:bg-primary/20 hover:text-primary"
+        }`}
       >
-        {isActive ? <CheckCircle2 size={20} /> : index + 1}
+        {isCompleted ? <CheckCircle2 size={20} /> : index + 1}
       </button>
 
+      {/* Step Content Container — Always 100% visible and accessible */}
       <div
-        className={`bg-card border ${isActive ? "border-primary shadow-md" : "border-border"} rounded-3xl p-5 transition-all`}
+        className={`bg-card border ${
+          isCompleted ? "border-primary/50 shadow-sm" : "border-border"
+        } rounded-3xl p-5 transition-all space-y-4`}
       >
-        <h3 className="font-bold text-foreground text-lg mb-2">{step.title}</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+        {/* Step Header */}
+        <div>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Step {index + 1}
+            </span>
+            {step.rakah && (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                Rak'ah {step.rakah}
+              </span>
+            )}
+          </div>
+          <h3 className="font-bold text-foreground text-lg">{step.title}</h3>
+        </div>
+
+        {/* Step Detailed Text */}
+        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
           {step.text}
         </p>
 
+        {/* Dynamic Gender Posture Notes */}
+        {genderTrack === "women" && step.womenNote && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">🧕</span>
+            <div className="text-xs">
+              <span className="font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider block mb-0.5">
+                Women's Posture Guide:
+              </span>
+              <p className="text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
+                {step.womenNote}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {genderTrack === "men" && step.menNote && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">👨</span>
+            <div className="text-xs">
+              <span className="font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider block mb-0.5">
+                Men's Posture Guide:
+              </span>
+              <p className="text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
+                {step.menNote}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* General Note if present */}
         {step.note && (
-          <div className="mt-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-4 flex items-start gap-3">
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-4 flex items-start gap-3">
             <Info
               size={18}
               className="text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0"
             />
-            <p className="text-amber-900 dark:text-amber-200 text-sm font-medium">
+            <p className="text-amber-900 dark:text-amber-200 text-xs font-medium leading-relaxed">
               {step.note}
             </p>
           </div>
         )}
 
+        {/* Arabic Text & Audio Player — Permanently Displayed Without Hide/Unhide */}
         {(step.arabic || step.translation) && (
-          <div className="mt-4">
-            <button
-              onClick={() => setShowArabic(!showArabic)}
-              className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1 mb-2 hover:underline"
-            >
-              {showArabic ? "▼ Hide Arabic & Audio" : "▶ Show Arabic & Audio"}
-            </button>
+          <div className="bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 space-y-4">
+            {/* Functional Audio Player */}
+            <AudioStepPlayer
+              arabicText={step.arabic}
+              transliteration={step.transliteration}
+              audioUrl={step.audioUrl}
+            />
 
-            {showArabic && (
-              <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl p-5 animate-in slide-in-from-top-2 fade-in">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold uppercase bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200 px-2 py-1 rounded-lg flex items-center gap-1">
-                    <Volume2 size={12} /> Say
-                  </span>
-                  <div className="flex gap-2">
-                    <button className="w-8 h-8 rounded-full bg-emerald-200 dark:bg-emerald-800 flex items-center justify-center text-emerald-800 dark:text-emerald-200 hover:scale-105 active:scale-95 transition-transform">
-                      <Play size={14} className="ml-0.5" />
-                    </button>
-                    <button className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:scale-105 active:scale-95 transition-transform">
-                      <Repeat size={14} />
-                    </button>
-                  </div>
-                </div>
+            {/* Arabic Script */}
+            {step.arabic && (
+              <p className="text-2xl sm:text-3xl font-arabic text-right text-emerald-950 dark:text-emerald-100 leading-loose pt-1">
+                {step.arabic}
+              </p>
+            )}
 
-                {step.arabic && (
-                  <p className="text-3xl font-arabic text-right text-emerald-900 dark:text-emerald-100 mb-4 leading-relaxed">
-                    {step.arabic}
-                  </p>
-                )}
-                {step.transliteration && (
-                  <p className="font-bold text-sm text-foreground mb-1">
-                    {step.transliteration}
-                  </p>
-                )}
-                {step.translation && (
-                  <p className="text-sm text-muted-foreground italic">
-                    "{step.translation}"
-                  </p>
-                )}
+            {/* Transliteration */}
+            {step.transliteration && (
+              <div className="border-t border-emerald-200/40 dark:border-emerald-900/40 pt-2">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-400 block mb-0.5">
+                  Transliteration
+                </span>
+                <p className="font-semibold text-xs sm:text-sm text-foreground">
+                  {step.transliteration}
+                </p>
+              </div>
+            )}
+
+            {/* Translation */}
+            {step.translation && (
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block mb-0.5">
+                  Meaning
+                </span>
+                <p className="text-xs sm:text-sm text-muted-foreground italic leading-relaxed">
+                  "{step.translation}"
+                </p>
               </div>
             )}
           </div>
@@ -464,9 +364,29 @@ export default function Learn() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
 
-  // Progress State
+  // Men / Women Learning Track Selector (Persisted in localStorage)
+  const [genderTrack, setGenderTrack] = useLocalStorage(
+    "tawfiq_learn_gender_track",
+    "men",
+  );
+
+  // Rak'ah Selector Filter inside multi-rak'ah lesson detail
+  const [selectedRakahFilter, setSelectedRakahFilter] = useState("all");
+
+  // Quiz Modal State & Score persistence
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [quizScore, setQuizScore] = useLocalStorage(
+    "tawfiq_salah_quiz_score",
+    null,
+  );
+
+  // Lesson Progress State
   const [completedLessons, setCompletedLessons] = useLocalStorage(
     "tawfiq_completed_lessons",
+    [],
+  );
+  const [completedStepIds, setCompletedStepIds] = useLocalStorage(
+    "tawfiq_completed_steps",
     [],
   );
   const [bookmarkedLessons, setBookmarkedLessons] = useLocalStorage(
@@ -478,26 +398,44 @@ export default function Learn() {
     null,
   );
 
-  // Active step tracker for checklists
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  // Get current topics list for selected category
+  const currentCategoryTopics = useMemo(() => {
+    if (!selectedCategory) return [];
+    if (selectedCategory.title === "Salah") {
+      return SALAH_CURRICULUM;
+    }
+    return OTHER_TOPICS[selectedCategory.title] || OTHER_TOPICS.default;
+  }, [selectedCategory]);
 
-  // Computed Search across ALL topics if searching
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return null;
-    const q = searchQuery.toLowerCase();
-    let results = [];
-    Object.keys(MOCK_TOPICS).forEach((cat) => {
-      MOCK_TOPICS[cat].forEach((topic) => {
-        if (
-          topic.title.toLowerCase().includes(q) ||
-          topic.desc.toLowerCase().includes(q)
-        ) {
-          results.push({ ...topic, categoryName: cat });
-        }
+  // Global Search across all topics
+  const allTopics = useMemo(() => {
+    const list = [];
+    SALAH_CURRICULUM.forEach((t) => {
+      list.push({ ...t, categoryName: "Salah" });
+    });
+    Object.keys(OTHER_TOPICS).forEach((cat) => {
+      OTHER_TOPICS[cat].forEach((t) => {
+        list.push({ ...t, categoryName: cat });
       });
     });
-    return results;
-  }, [searchQuery]);
+    return list;
+  }, []);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return allTopics.filter(
+      (topic) =>
+        topic.title.toLowerCase().includes(q) ||
+        topic.desc?.toLowerCase().includes(q) ||
+        topic.steps?.some(
+          (s) =>
+            s.title.toLowerCase().includes(q) ||
+            s.text.toLowerCase().includes(q) ||
+            s.transliteration?.toLowerCase().includes(q),
+        ),
+    );
+  }, [searchQuery, allTopics]);
 
   // Handlers
   const openCategory = (category) => {
@@ -509,7 +447,7 @@ export default function Learn() {
 
   const openTopic = (topic, categoryName) => {
     setSelectedTopic(topic);
-    setActiveStepIndex(0);
+    setSelectedRakahFilter("all");
     setRecentLesson({
       id: topic.id,
       title: topic.title,
@@ -538,19 +476,26 @@ export default function Learn() {
     goBack();
   };
 
-  const getDifficultyColor = (level) => {
-    if (level === "beginner")
-      return "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200";
-    if (level === "intermediate")
-      return "text-amber-500 bg-amber-50 dark:bg-amber-950/30 border-amber-200";
-    return "text-rose-500 bg-rose-50 dark:bg-rose-950/30 border-rose-200";
+  const toggleStepCompletion = (stepIdentifier) => {
+    if (completedStepIds.includes(stepIdentifier)) {
+      setCompletedStepIds(completedStepIds.filter((id) => id !== stepIdentifier));
+    } else {
+      setCompletedStepIds([...completedStepIds, stepIdentifier]);
+    }
   };
+
+  // Filter steps by selected Rak'ah filter if specified
+  const displayedSteps = useMemo(() => {
+    if (!selectedTopic || !selectedTopic.steps) return [];
+    if (selectedRakahFilter === "all") return selectedTopic.steps;
+    return selectedTopic.steps.filter((s) => s.rakah === selectedRakahFilter);
+  }, [selectedTopic, selectedRakahFilter]);
 
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Header / Breadcrumbs */}
       <div className="bg-background border-b border-border sticky top-0 z-40 shadow-sm">
-        <div className="max-w-md mx-auto px-6 py-5">
+        <div className="max-w-md mx-auto px-6 py-4">
           {selectedCategory || selectedTopic ? (
             <div className="flex items-center gap-3 animate-in slide-in-from-left-4 fade-in">
               <button
@@ -559,7 +504,8 @@ export default function Learn() {
               >
                 <ChevronLeft size={20} className="text-foreground" />
               </button>
-              <div className="min-w-0 flex flex-col justify-center">
+
+              <div className="min-w-0 flex flex-col justify-center flex-1">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate">
                   <span>Learn</span>
                   {selectedCategory && (
@@ -569,16 +515,44 @@ export default function Learn() {
                     </>
                   )}
                 </div>
-                <h1 className="text-xl font-black tracking-tight text-foreground truncate mt-0.5">
+                <h1 className="text-lg font-black tracking-tight text-foreground truncate mt-0.5">
                   {selectedTopic ? selectedTopic.title : "Topics"}
                 </h1>
               </div>
 
-              {/* Bookmark Button in Header */}
+              {/* Men / Women Learning Track Selector Toggle in Topics Header */}
+              {!selectedTopic && selectedCategory?.title === "Salah" && (
+                <div className="flex items-center bg-secondary p-1 rounded-2xl border border-border shadow-sm flex-shrink-0 ml-auto">
+                  <button
+                    onClick={() => setGenderTrack("men")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      genderTrack === "men"
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>👨</span>
+                    <span>Men</span>
+                  </button>
+                  <button
+                    onClick={() => setGenderTrack("women")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      genderTrack === "women"
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>🧕</span>
+                    <span>Women</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Bookmark Button in Lesson Detail Header */}
               {selectedTopic && (
                 <button
                   onClick={() => toggleBookmark(selectedTopic.id)}
-                  className="ml-auto w-10 h-10 flex items-center justify-center bg-secondary rounded-full text-foreground hover:text-primary transition-colors"
+                  className="ml-auto w-10 h-10 flex items-center justify-center bg-secondary rounded-full text-foreground hover:text-primary transition-colors flex-shrink-0"
                 >
                   {bookmarkedLessons.includes(selectedTopic.id) ? (
                     <BookmarkCheck
@@ -593,10 +567,10 @@ export default function Learn() {
             </div>
           ) : (
             <div className="animate-in fade-in">
-              <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
+              <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
                 Learn
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 Master your faith, step by step.
               </p>
             </div>
@@ -608,53 +582,100 @@ export default function Learn() {
         {/* --- LAYER 3: THE LESSON VIEW --- */}
         {selectedTopic ? (
           <div className="space-y-6 animate-in slide-in-from-right-8 fade-in duration-300">
-            {/* Video Placeholder */}
-            {selectedTopic.video && (
-              <div className="relative w-full h-48 bg-slate-900 rounded-3xl overflow-hidden shadow-lg group cursor-pointer">
-                <img
-                  src={selectedTopic.video}
-                  alt="Video Thumbnail"
-                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Play size={24} className="text-white fill-white ml-1" />
-                  </div>
+            {/* Real Working YouTube Video Player */}
+            <YouTubeLessonPlayer
+              videoId={selectedTopic.youtubeId}
+              title={selectedTopic.title}
+            />
+
+            {/* Prayer Subtitle & Active Track Pill */}
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                  {selectedTopic.type || "Salah Lesson"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedTopic.desc}
+                </p>
+              </div>
+
+              {/* Track Badge */}
+              <button
+                onClick={() =>
+                  setGenderTrack(genderTrack === "men" ? "women" : "men")
+                }
+                className="px-2.5 py-1 rounded-xl bg-secondary border border-border text-xs font-bold text-foreground flex items-center gap-1 hover:bg-muted transition-colors flex-shrink-0"
+              >
+                <span>{genderTrack === "men" ? "👨 Men" : "🧕 Women"}</span>
+              </button>
+            </div>
+
+            {/* Rak'ah Selector Tabs for Prayers with Multiple Units */}
+            {selectedTopic.totalRakahs > 1 && (
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">
+                  <span className="flex items-center gap-1.5">
+                    <Layers size={14} /> Filter by Rak'ah
+                  </span>
+                  <span>
+                    {selectedRakahFilter === "all"
+                      ? `All ${selectedTopic.totalRakahs} Rak'ahs`
+                      : `Viewing Rak'ah ${selectedRakahFilter}`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                  <button
+                    onClick={() => setSelectedRakahFilter("all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                      selectedRakahFilter === "all"
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    All Steps ({selectedTopic.steps?.length || 0})
+                  </button>
+
+                  {Array.from({ length: selectedTopic.totalRakahs }).map(
+                    (_, i) => {
+                      const rakahNum = i + 1;
+                      return (
+                        <button
+                          key={rakahNum}
+                          onClick={() => setSelectedRakahFilter(rakahNum)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                            selectedRakahFilter === rakahNum
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-secondary text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Rak'ah {rakahNum}
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Lesson Meta Data */}
-            <div className="flex flex-wrap gap-2">
-              <div
-                className={`px-3 py-1 rounded-lg border text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${getDifficultyColor(selectedTopic.difficulty)}`}
-              >
-                <Star size={12} className="fill-current" />{" "}
-                {selectedTopic.difficulty}
-              </div>
-              <div className="px-3 py-1 rounded-lg border border-border bg-card text-muted-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <Clock size={12} /> {selectedTopic.time}
-              </div>
-              <div className="px-3 py-1 rounded-lg border border-border bg-card text-muted-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <ListOrdered size={12} /> {selectedTopic.steps?.length || 0}{" "}
-                Steps
-              </div>
-            </div>
-
-            {/* Steps List (Interactive Checklist) */}
-            {selectedTopic.steps ? (
+            {/* Steps List — 100% Accessible, No Lock, Always Visible */}
+            {displayedSteps.length > 0 ? (
               <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-border">
-                {selectedTopic.steps.map((step, idx) => (
-                  <InteractiveStepCard
-                    key={idx}
-                    step={step}
-                    index={idx}
-                    isActive={idx <= activeStepIndex}
-                    onComplete={() =>
-                      setActiveStepIndex(Math.max(activeStepIndex, idx + 1))
-                    }
-                  />
-                ))}
+                {displayedSteps.map((step, idx) => {
+                  const stepId = `${selectedTopic.id}-step-${step.rakah || 1}-${idx}`;
+                  const isDone = completedStepIds.includes(stepId);
+
+                  return (
+                    <InteractiveStepCard
+                      key={idx}
+                      step={step}
+                      index={idx}
+                      genderTrack={genderTrack}
+                      isCompleted={isDone}
+                      onToggleComplete={() => toggleStepCompletion(stepId)}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-16 bg-card border border-border rounded-3xl">
@@ -667,7 +688,7 @@ export default function Learn() {
             )}
 
             {/* Sunnah Tips Card */}
-            {selectedTopic.sunnahs && (
+            {selectedTopic.sunnahs && selectedTopic.sunnahs.length > 0 && (
               <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-3xl p-6 mt-8">
                 <h3 className="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300 mb-4">
                   <ThumbsUp size={18} /> Sunnah Tips
@@ -685,11 +706,11 @@ export default function Learn() {
               </div>
             )}
 
-            {/* Mistakes Card */}
-            {selectedTopic.mistakes && (
+            {/* Common Mistakes Card */}
+            {selectedTopic.mistakes && selectedTopic.mistakes.length > 0 && (
               <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-3xl p-6 mt-4">
                 <h3 className="flex items-center gap-2 font-bold text-rose-800 dark:text-rose-300 mb-4">
-                  <AlertCircle size={18} /> Common Mistakes
+                  <AlertCircle size={18} /> Common Mistakes to Avoid
                 </h3>
                 <ul className="space-y-3">
                   {selectedTopic.mistakes.map((mistake, i) => (
@@ -704,66 +725,42 @@ export default function Learn() {
               </div>
             )}
 
-            {/* Quick Reference Summary Table */}
-            {selectedTopic.summaryTable && (
-              <div className="bg-card border border-border rounded-3xl overflow-hidden mt-8 shadow-sm">
-                <div className="bg-secondary p-4 border-b border-border">
-                  <h3 className="font-bold text-foreground flex items-center gap-2">
-                    <BookOpen size={16} /> What to Say Quick Reference
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-muted/50 text-muted-foreground text-xs uppercase">
-                      <tr>
-                        <th className="px-4 py-3 font-semibold">Position</th>
-                        <th className="px-4 py-3 font-semibold text-right">
-                          Arabic
-                        </th>
-                        <th className="px-4 py-3 font-semibold">Meaning</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {selectedTopic.summaryTable.map((row, i) => (
-                        <tr
-                          key={i}
-                          className="hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="px-4 py-3 font-medium text-foreground">
-                            {row.pos}
-                          </td>
-                          <td className="px-4 py-3 text-right font-arabic text-lg text-primary">
-                            {row.arabic}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {row.mean}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Quiz Placeholder */}
+            {/* Interactive 10-Question Quiz Card */}
             <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/40 rounded-3xl p-6 mt-8 flex flex-col items-center text-center">
               <Trophy size={32} className="text-indigo-500 mb-3" />
               <h3 className="font-bold text-indigo-900 dark:text-indigo-100 text-lg mb-1">
                 Test Your Knowledge
               </h3>
               <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-4">
-                Take a 5-question quiz to lock in what you've learned.
+                Take a 10-question quiz to lock in what you've learned.
               </p>
-              <button className="bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors">
-                Start Quiz
+
+              {quizScore && (
+                <div className="mb-4 px-4 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 text-xs font-bold flex items-center gap-1.5">
+                  <Award size={14} />
+                  <span>
+                    Best Score: {quizScore.score} / {quizScore.total} (
+                    {Math.round((quizScore.score / quizScore.total) * 100)}%)
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={() => setIsQuizOpen(true)}
+                className="bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-md active:scale-95"
+              >
+                {quizScore ? "Retake Quiz" : "Start Quiz"}
               </button>
             </div>
 
             {/* Completion Button */}
             <button
               onClick={finishLesson}
-              className={`w-full mt-8 font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-md ${completedLessons.includes(selectedTopic.id) ? "bg-secondary text-primary border border-primary/30" : "bg-primary hover:bg-primary/90 text-white"}`}
+              className={`w-full mt-8 font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-md ${
+                completedLessons.includes(selectedTopic.id)
+                  ? "bg-secondary text-primary border border-primary/30"
+                  : "bg-primary hover:bg-primary/90 text-white"
+              }`}
             >
               <CheckCircle2
                 size={20}
@@ -779,56 +776,66 @@ export default function Learn() {
             </button>
           </div>
         ) : selectedCategory ? (
-          /* --- LAYER 2: CATEGORY "TABLE OF CONTENTS" VIEW --- */
+          /* --- LAYER 2: TOPICS / SYLLABUS LIST VIEW --- */
           <div className="space-y-4 animate-in slide-in-from-right-8 fade-in duration-300">
-            <div className="px-2 mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                <ListOrdered size={16} /> Syllabus
+            {/* Header info bar */}
+            <div className="px-1 flex items-center justify-between">
+              <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                <ListOrdered size={16} /> Syllabus & Lessons
               </h2>
+              <span className="text-xs font-medium text-muted-foreground">
+                {currentCategoryTopics.length} lessons
+              </span>
             </div>
+
+            {/* Clean Topics List — Metadata badges removed as requested */}
             <div className="space-y-3">
-              {(MOCK_TOPICS[selectedCategory.title] || MOCK_TOPICS.default).map(
-                (topic, idx) => {
-                  const isDone = completedLessons.includes(topic.id);
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => openTopic(topic)}
-                      className="w-full flex items-center gap-4 p-4 rounded-3xl border border-border bg-card hover:border-primary/30 hover:shadow-md active:scale-[0.98] transition-all duration-300 text-left group relative overflow-hidden"
+              {currentCategoryTopics.map((topic, idx) => {
+                const isDone = completedLessons.includes(topic.id);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => openTopic(topic)}
+                    className="w-full flex items-center gap-4 p-4 rounded-3xl border border-border bg-card hover:border-primary/40 hover:shadow-md active:scale-[0.98] transition-all duration-300 text-left group relative overflow-hidden"
+                  >
+                    {/* Completion indicator line */}
+                    {isDone && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+                    )}
+
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold transition-colors ${
+                        isDone
+                          ? "bg-primary text-white"
+                          : "bg-secondary text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
+                      }`}
                     >
-                      {/* Completion indicator line */}
-                      {isDone && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
-                      )}
+                      {isDone ? <CheckCircle2 size={20} /> : idx + 1}
+                    </div>
 
-                      <div
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold transition-colors ${isDone ? "bg-primary text-white" : "bg-secondary text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"}`}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`font-bold text-base truncate ${
+                          isDone ? "text-primary" : "text-foreground"
+                        }`}
                       >
-                        {isDone ? <CheckCircle2 size={20} /> : idx + 1}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`font-bold text-base truncate ${isDone ? "text-primary" : "text-foreground"}`}
-                        >
-                          {topic.title}
+                        {topic.title}
+                      </p>
+                      {topic.type && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {topic.type}
+                          {topic.totalRakahs ? ` • ${topic.totalRakahs} Rak'ahs` : ""}
                         </p>
-                        <div className="flex items-center gap-2 mt-1 text-xs font-medium text-muted-foreground">
-                          <span
-                            className={`px-2 py-0.5 rounded border ${getDifficultyColor(topic.difficulty).split(" ")[0]} border-current/20`}
-                          >
-                            {topic.difficulty}
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Clock size={12} /> {topic.time}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                },
-              )}
+                      )}
+                    </div>
+
+                    <ArrowRight
+                      size={18}
+                      className="text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0"
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -949,11 +956,17 @@ export default function Learn() {
                         );
                         if (cat) {
                           setSelectedCategory(cat);
-                          openTopic(
-                            MOCK_TOPICS[cat.title].find(
+                          if (cat.title === "Salah") {
+                            const found = SALAH_CURRICULUM.find(
                               (t) => t.id === recentLesson.id,
-                            ),
-                          );
+                            );
+                            if (found) openTopic(found);
+                          } else {
+                            const found = (
+                              OTHER_TOPICS[cat.title] || OTHER_TOPICS.default
+                            ).find((t) => t.id === recentLesson.id);
+                            if (found) openTopic(found);
+                          }
                         }
                       }}
                       className="w-full bg-card border border-primary/30 rounded-3xl p-5 text-left shadow-md flex items-center justify-between group"
@@ -974,7 +987,7 @@ export default function Learn() {
                   </div>
                 )}
 
-                {/* 14 Categories Grid */}
+                {/* 13 Categories Grid */}
                 <div>
                   <h2 className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase mb-4 px-1">
                     Knowledge Library
@@ -1006,6 +1019,21 @@ export default function Learn() {
           </div>
         )}
       </div>
+
+      {/* Interactive 10-Question Salah Quiz Modal */}
+      <SalahQuizModal
+        isOpen={isQuizOpen}
+        onClose={() => setIsQuizOpen(false)}
+        onQuizComplete={(score, total) => {
+          setQuizScore({
+            score,
+            total,
+            date: new Date().toISOString(),
+          });
+        }}
+      />
+
+      <BottomNav />
     </div>
   );
 }

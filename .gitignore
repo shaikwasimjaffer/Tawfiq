@@ -36,7 +36,7 @@ tawfiq-plus/
 tawfiq-plus - Copy/
 hadith-json-1.2.0/
 llm-quran-hadith/
-data/
+/data/
 public/*.mp4
 .claude/
 .vercel/
