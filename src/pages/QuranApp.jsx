@@ -718,6 +718,42 @@ export default function QuranPage() {
           </div>
         </div>
       )}
+
+      {/* Quran Reading Settings Bottom Sheet / Modal */}
+      <QuranSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        readingMode={readingMode}
+        setReadingMode={(mode) => {
+          setReadingMode(mode);
+          LS.set("tawfiq_quran_reading_mode", mode);
+        }}
+        fontSize={fontSize}
+        adjustFontSize={adjustFontSize}
+        showTransliteration={showTransliteration}
+        setShowTransliteration={(val) => {
+          setShowTransliteration(val);
+          LS.set("tawfiq_quran_transliteration", val);
+        }}
+        showWordByWord={showWordByWord}
+        setShowWordByWord={(val) => {
+          setShowWordByWord(val);
+          LS.set("tawfiq_quran_wbw", val);
+        }}
+        showTajweed={showTajweed}
+        setShowTajweed={(val) => {
+          setShowTajweed(val);
+          LS.set("tawfiq_quran_tajweed", val);
+        }}
+        edition={edition}
+        setEdition={(ed) => {
+          setEdition(ed);
+          LS.set("tawfiq_quran_edition", ed);
+        }}
+        editions={EDITIONS}
+        verses={verses}
+        verseRefs={verseRefs}
+      />
     </div>
   );
 }
