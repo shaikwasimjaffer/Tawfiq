@@ -24,6 +24,7 @@ import {
   BookText,
   Volume2,
   Palette,
+  ArrowRight,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import SectionSwitcher from "@/components/SectionSwitcher";
@@ -808,75 +809,140 @@ function ReaderView({
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-3 shadow-sm mb-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex bg-secondary p-1 rounded-xl">
+      <div className="bg-card border border-border rounded-3xl p-4 shadow-sm mb-4 space-y-3.5">
+        {/* Tier 1: Reading Mode (Translation vs Mushaf) + Typography Font Sizing */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Segmented View Mode Toggle */}
+          <div className="flex items-center bg-secondary p-1 rounded-2xl border border-border/80 shadow-xs">
             <button
               onClick={() => setReadingMode("translation")}
-              className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${readingMode === "translation" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                readingMode === "translation"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <AlignRight size={14} /> Translation
+              <AlignRight size={13} />
+              <span>Translation</span>
             </button>
             <button
               onClick={() => setReadingMode("mushaf")}
-              className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${readingMode === "mushaf" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                readingMode === "mushaf"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <BookText size={14} /> Mushaf
+              <BookText size={13} />
+              <span>Mushaf</span>
             </button>
           </div>
-          <div className="flex items-center gap-1">
+
+          {/* Typography Sizing Pill */}
+          <div className="flex items-center bg-secondary p-1 rounded-2xl border border-border/80 gap-1 flex-shrink-0">
             <button
               onClick={() => adjustFontSize(false)}
-              className="p-1.5 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              title="Decrease Arabic text size"
+              aria-label="Decrease text size"
+              className="w-7 h-7 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
             >
-              <Minus size={16} />
+              A⁻
             </button>
+            <span className="text-[11px] font-bold text-muted-foreground px-1 tabular-nums">
+              {fontSize}px
+            </span>
             <button
               onClick={() => adjustFontSize(true)}
-              className="p-1.5 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              title="Increase Arabic text size"
+              aria-label="Increase text size"
+              className="w-7 h-7 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
             >
-              <Plus size={16} />
+              A⁺
             </button>
           </div>
         </div>
 
+        {/* Tier 2: Study Aids (Phonetics, Word-by-Word, Tajweed) + Direct Ayah Jump */}
         <div className="flex items-center justify-between pt-3 border-t border-border gap-2">
-          <div className="flex bg-secondary p-1 rounded-xl overflow-x-auto hide-scrollbar">
+          {/* Study Layer Toggles */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
             {readingMode === "translation" && (
               <>
+                {/* Phonetics / Transliteration */}
                 <button
                   onClick={() => setShowTransliteration(!showTransliteration)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${showTransliteration ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  title="Toggle English phonetics & pronunciation"
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap border ${
+                    showTransliteration
+                      ? "bg-primary text-white border-primary shadow-xs"
+                      : "bg-secondary text-muted-foreground border-border hover:border-primary/40"
+                  }`}
                 >
-                  <Type size={12} /> Phonetics
+                  <Type size={12} />
+                  <span>Phonetics</span>
+                  {showTransliteration && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 ml-0.5" />
+                  )}
                 </button>
+
+                {/* Word by Word (W×W) */}
                 <button
                   onClick={() => setShowWordByWord(!showWordByWord)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${showWordByWord ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  title="Toggle Word by Word vocabulary breakdown"
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap border ${
+                    showWordByWord
+                      ? "bg-primary text-white border-primary shadow-xs"
+                      : "bg-secondary text-muted-foreground border-border hover:border-primary/40"
+                  }`}
                 >
-                  W×W
+                  <span>Word by Word</span>
+                  {showWordByWord && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 ml-0.5" />
+                  )}
                 </button>
               </>
             )}
+
+            {/* Tajweed Rules */}
             <button
               onClick={() => setShowTajweed(!showTajweed)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${showTajweed ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              title="Toggle color-coded Tajweed pronunciation rules"
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap border ${
+                showTajweed
+                  ? "bg-primary text-white border-primary shadow-xs"
+                  : "bg-secondary text-muted-foreground border-border hover:border-primary/40"
+              }`}
             >
-              <Palette size={12} /> Tajweed
+              <Palette size={12} />
+              <span>Tajweed</span>
+              {showTajweed && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 ml-0.5" />
+              )}
             </button>
           </div>
-          <div className="relative w-20 flex-shrink-0">
-            <Hash
-              size={12}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
+
+          {/* Direct Ayah Jump Field with Go Arrow */}
+          <div className="relative flex items-center bg-secondary rounded-xl border border-border px-2 py-1 flex-shrink-0 w-28 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+            <Hash size={12} className="text-muted-foreground flex-shrink-0 mr-1" />
             <input
+              type="number"
+              min="1"
+              max={verses.length}
               value={jumpTo}
               onChange={(e) => setJumpTo(e.target.value)}
               onKeyDown={handleJump}
-              placeholder="Ayah"
-              className="w-full bg-secondary rounded-lg pl-7 pr-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Ayah #"
+              className="w-full bg-transparent text-xs font-bold text-foreground focus:outline-none placeholder:text-muted-foreground placeholder:font-normal"
             />
+            {jumpTo && (
+              <button
+                onClick={handleJump}
+                title="Jump to verse"
+                className="w-5 h-5 rounded-lg bg-primary text-white flex items-center justify-center text-[10px] ml-1 flex-shrink-0 active:scale-90 cursor-pointer"
+              >
+                <ArrowRight size={10} />
+              </button>
+            )}
           </div>
         </div>
       </div>
