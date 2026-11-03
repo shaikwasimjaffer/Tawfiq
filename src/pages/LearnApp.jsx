@@ -29,6 +29,9 @@ import {
   Users,
   Award,
   Layers,
+  Copy,
+  Check,
+  Sparkles,
 } from "lucide-react";
 
 import { SALAH_CURRICULUM } from "../data/salahCurriculumData";
@@ -61,66 +64,125 @@ function useLocalStorage(key, initialValue) {
   return [storedValue, setValue];
 }
 
-// --- Data Categories ---
+// --- Data Categories with Dynamic Counts & Arabic Headings ---
 const CATEGORIES = [
   {
     title: "Salah",
+    arabic: "الصلاة",
     icon: Landmark,
     color: "text-emerald-600",
     bg: "bg-emerald-100",
+    countText: "12 Lessons",
+    desc: "Complete daily prayers breakdown",
   },
   {
     title: "Purification",
+    arabic: "الطهارة",
     icon: Droplet,
     color: "text-blue-600",
     bg: "bg-blue-100",
+    countText: "2 Guides",
+    desc: "Step-by-step Wudu & Ghusl",
   },
   {
     title: "Quran",
+    arabic: "القرآن الكريم",
     icon: BookOpen,
     color: "text-amber-600",
     bg: "bg-amber-100",
+    countText: "Tajweed & Rules",
+    desc: "Recitation & foundational rules",
   },
   {
     title: "Hadith",
+    arabic: "الحديث النبوي",
     icon: FileText,
     color: "text-indigo-600",
     bg: "bg-indigo-100",
+    countText: "50,884 Hadiths",
+    desc: "17 Canonical collections",
   },
-  { title: "Duas", icon: Heart, color: "text-rose-600", bg: "bg-rose-100" },
+  {
+    title: "Duas",
+    arabic: "الأدعية",
+    icon: Heart,
+    color: "text-rose-600",
+    bg: "bg-rose-100",
+    countText: "Daily Adhkar",
+    desc: "Morning, evening & prayer duas",
+  },
   {
     title: "Ramadan",
+    arabic: "رمضان والصيام",
     icon: Moon,
     color: "text-purple-600",
     bg: "bg-purple-100",
+    countText: "Fasting Guide",
+    desc: "Rules, intentions & Taraweeh",
   },
-  { title: "Hajj", icon: Map, color: "text-stone-600", bg: "bg-stone-100" },
+  {
+    title: "Hajj",
+    arabic: "الحج والعمرة",
+    icon: Map,
+    color: "text-stone-600",
+    bg: "bg-stone-100",
+    countText: "Pilgrimage Steps",
+    desc: "Ihram, Tawaf & Sa'i rites",
+  },
   {
     title: "Prophets",
+    arabic: "قصص الأنبياء",
     icon: BookMarked,
     color: "text-yellow-600",
     bg: "bg-yellow-100",
+    countText: "Prophetic Stories",
+    desc: "From Adam (AS) to Isa (AS)",
   },
   {
     title: "Seerah",
+    arabic: "السيرة النبوية",
     icon: BookMarked,
     color: "text-teal-600",
     bg: "bg-teal-100",
+    countText: "Life of the Prophet ﷺ",
+    desc: "Makkan & Madinan periods",
   },
-  { title: "Aqeedah", icon: Scale, color: "text-cyan-600", bg: "bg-cyan-100" },
+  {
+    title: "Aqeedah",
+    arabic: "العقيدة",
+    icon: Scale,
+    color: "text-cyan-600",
+    bg: "bg-cyan-100",
+    countText: "Tawheed & Faith",
+    desc: "Six Pillars of Iman",
+  },
   {
     title: "Fiqh",
+    arabic: "الفقه الإسلامي",
     icon: Landmark,
     color: "text-orange-600",
     bg: "bg-orange-100",
+    countText: "Practical Rulings",
+    desc: "Authentic jurisprudence",
   },
   {
     title: "Tajweed",
+    arabic: "أحكام التجويد",
     icon: Palette,
     color: "text-fuchsia-600",
     bg: "bg-fuchsia-100",
+    countText: "Pronunciation Rules",
+    desc: "Makharij & articulation points",
   },
-  { title: "Manners", icon: Users, color: "text-pink-600", bg: "bg-pink-100" },
+  {
+    title: "Manners",
+    arabic: "الأخلاق والآداب",
+    icon: Users,
+    color: "text-pink-600",
+    bg: "bg-pink-100",
+    countText: "Adab & Character",
+    desc: "Islamic etiquette & dealings",
+  },
 ];
 
 // Fallback topics for other categories
@@ -129,7 +191,7 @@ const OTHER_TOPICS = {
     {
       id: "wudu-basics",
       title: "How to perform Wudu (Ablution)",
-      desc: "Step-by-step authentic minor ablution guide.",
+      desc: "Step-by-step authentic minor ablution guide according to the Sunnah.",
       totalRakahs: 1,
       youtubeId: "8b7g5J2Y84M",
       steps: [
@@ -202,6 +264,58 @@ const OTHER_TOPICS = {
       ],
     },
   ],
+  Duas: [
+    {
+      id: "dua-morning-evening",
+      title: "Essential Morning & Evening Adhkar",
+      desc: "Authentic daily remembrances for protection, blessings, and peace.",
+      totalRakahs: 1,
+      steps: [
+        {
+          rakah: 1,
+          title: "Ayat al-Kursi (Surah Al-Baqarah 2:255)",
+          text: "Recited after every prayer and in the morning/evening for divine protection.",
+          arabic: "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ",
+          transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm, lā ta'khudhuhū sinatuw-wa lā nawm...",
+          translation: "Allah! There is no deity except Him, the Ever-Living, the Sustainer of all existence.",
+        },
+        {
+          rakah: 1,
+          title: "Sayyidul Istighfar (Master of Forgiveness)",
+          text: "The supreme supplication of repentance taught by the Prophet ﷺ.",
+          arabic: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ ، خَلَقْتَنِي وَأَنَا عَبْدُكَ",
+          transliteration: "Allāhumma anta Rabbī lā ilāha illā anta, khalaqtanī wa anā 'abduka...",
+          translation: "O Allah, You are my Lord; there is none worthy of worship except You. You created me and I am Your servant...",
+        },
+      ],
+    },
+  ],
+  Quran: [
+    {
+      id: "quran-fatihah-mastery",
+      title: "Surah Al-Fatihah Mastery & Tajweed",
+      desc: "Perfect the recitation of the Pillar of Salah verse by verse.",
+      totalRakahs: 1,
+      steps: [
+        {
+          rakah: 1,
+          title: "Verse 1: Bismillah",
+          text: "Begin with calm articulation of the 'Ha' in Allah and smooth 'R' in Ar-Rahman.",
+          arabic: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+          transliteration: "Bismillāhir-Raḥmānir-Raḥīm",
+          translation: "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+        },
+        {
+          rakah: 1,
+          title: "Verse 2: Al-Hamdulillah",
+          text: "Clear pronunciation of the throat letter 'Ḥa' (ح) in Al-Hamdu.",
+          arabic: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+          transliteration: "Al-ḥamdu lillāhi Rabbil-'ālamīn",
+          translation: "All praise is due to Allah, Lord of the worlds.",
+        },
+      ],
+    },
+  ],
   default: [
     {
       id: "default-1",
@@ -219,9 +333,7 @@ const OTHER_TOPICS = {
   ],
 };
 
-// --- Helper Components ---
-
-// Fully Accessible Step Card — Always Displays Arabic, Audio & Gender Notes
+// --- Fully Accessible Step Card with Copy Action & Visual Polish ---
 function InteractiveStepCard({
   step,
   index,
@@ -229,6 +341,24 @@ function InteractiveStepCard({
   isCompleted,
   onToggleComplete,
 }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const textToCopy = [
+      step.arabic || "",
+      step.transliteration || "",
+      step.translation ? `"${step.translation}"` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    if (navigator.clipboard && textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="relative flex flex-col pl-14 transition-all duration-200">
       {/* Clickable step circle — users can tap to toggle completion */}
@@ -257,7 +387,7 @@ function InteractiveStepCard({
               Step {index + 1}
             </span>
             {step.rakah && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border">
                 Rak'ah {step.rakah}
               </span>
             )}
@@ -266,7 +396,7 @@ function InteractiveStepCard({
         </div>
 
         {/* Step Detailed Text */}
-        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line font-medium">
           {step.text}
         </p>
 
@@ -315,12 +445,26 @@ function InteractiveStepCard({
         {/* Arabic Text & Audio Player — Permanently Displayed Without Hide/Unhide */}
         {(step.arabic || step.translation) && (
           <div className="bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 space-y-4">
-            {/* Functional Audio Player */}
-            <AudioStepPlayer
-              arabicText={step.arabic}
-              transliteration={step.transliteration}
-              audioUrl={step.audioUrl}
-            />
+            {/* Header row with Audio Player & Copy Button */}
+            <div className="flex items-center justify-between gap-2 border-b border-emerald-200/40 dark:border-emerald-900/40 pb-3">
+              <AudioStepPlayer
+                arabicText={step.arabic}
+                transliteration={step.transliteration}
+                audioUrl={step.audioUrl}
+              />
+              <button
+                onClick={handleCopy}
+                title="Copy Arabic & translation"
+                className="px-2.5 py-1 rounded-lg bg-emerald-100/80 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 flex-shrink-0"
+              >
+                {copied ? (
+                  <Check size={12} className="text-emerald-700" />
+                ) : (
+                  <Copy size={12} />
+                )}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
+            </div>
 
             {/* Arabic Script */}
             {step.arabic && (
@@ -359,7 +503,7 @@ function InteractiveStepCard({
   );
 }
 
-// --- Main Component ---
+// --- Main Learn Component ---
 export default function Learn() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -408,6 +552,17 @@ export default function Learn() {
     return OTHER_TOPICS[selectedCategory.title] || OTHER_TOPICS.default;
   }, [selectedCategory]);
 
+  // Category completion metrics
+  const categoryCompletion = useMemo(() => {
+    if (!selectedCategory || !currentCategoryTopics.length) return null;
+    const doneCount = currentCategoryTopics.filter((t) =>
+      completedLessons.includes(t.id),
+    ).length;
+    const total = currentCategoryTopics.length;
+    const percent = Math.round((doneCount / total) * 100);
+    return { doneCount, total, percent };
+  }, [selectedCategory, currentCategoryTopics, completedLessons]);
+
   // Global Search across all topics
   const allTopics = useMemo(() => {
     const list = [];
@@ -437,6 +592,34 @@ export default function Learn() {
         ),
     );
   }, [searchQuery, allTopics]);
+
+  // Calculate dynamic progress for recent lesson card
+  const recentLessonProgress = useMemo(() => {
+    if (!recentLesson) return null;
+    let topic = null;
+    if (recentLesson.category === "Salah") {
+      topic = SALAH_CURRICULUM.find((t) => t.id === recentLesson.id);
+    } else {
+      const catTopics =
+        OTHER_TOPICS[recentLesson.category] || OTHER_TOPICS.default;
+      topic = catTopics.find((t) => t.id === recentLesson.id);
+    }
+    if (!topic || !topic.steps || topic.steps.length === 0) return null;
+
+    const totalSteps = topic.steps.length;
+    const completedCount = topic.steps.filter((s, idx) => {
+      const stepId = `${topic.id}-step-${s.rakah || 1}-${idx}`;
+      return completedStepIds.includes(stepId);
+    }).length;
+
+    const percentage = Math.round((completedCount / totalSteps) * 100);
+    return {
+      topic,
+      totalSteps,
+      completedCount,
+      percentage,
+    };
+  }, [recentLesson, completedStepIds]);
 
   // Handlers
   const openCategory = (category) => {
@@ -479,7 +662,9 @@ export default function Learn() {
 
   const toggleStepCompletion = (stepIdentifier) => {
     if (completedStepIds.includes(stepIdentifier)) {
-      setCompletedStepIds(completedStepIds.filter((id) => id !== stepIdentifier));
+      setCompletedStepIds(
+        completedStepIds.filter((id) => id !== stepIdentifier),
+      );
     } else {
       setCompletedStepIds([...completedStepIds, stepIdentifier]);
     }
@@ -496,7 +681,7 @@ export default function Learn() {
     <div className="min-h-screen bg-background pb-28">
       {/* Header / Breadcrumbs */}
       <div className="bg-background border-b border-border sticky top-0 z-40 shadow-sm">
-        <div className="max-w-md mx-auto px-6 py-4">
+        <div className="max-w-md mx-auto px-5 py-4">
           {selectedCategory || selectedTopic ? (
             <div className="flex items-center gap-3 animate-in slide-in-from-left-4 fade-in">
               <button
@@ -571,13 +756,18 @@ export default function Learn() {
               )}
             </div>
           ) : (
-            <div className="animate-in fade-in">
-              <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-                Learn
-              </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Master your faith, step by step.
-              </p>
+            <div className="animate-in fade-in flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+                  Learn
+                </h1>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Master your faith, step by step.
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-800">
+                <GraduationCap size={22} />
+              </div>
             </div>
           )}
         </div>
@@ -609,7 +799,7 @@ export default function Learn() {
                 onClick={() =>
                   setGenderTrack(genderTrack === "men" ? "women" : "men")
                 }
-                className="px-2.5 py-1 rounded-xl bg-secondary border border-border text-xs font-bold text-foreground flex items-center gap-1 hover:bg-muted transition-colors flex-shrink-0"
+                className="px-3 py-1.5 rounded-xl bg-secondary border border-border text-xs font-bold text-foreground flex items-center gap-1.5 hover:bg-muted transition-colors flex-shrink-0"
               >
                 <span>{genderTrack === "men" ? "👨 Men" : "🧕 Women"}</span>
               </button>
@@ -632,7 +822,7 @@ export default function Learn() {
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
                   <button
                     onClick={() => setSelectedRakahFilter("all")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                       selectedRakahFilter === "all"
                         ? "bg-primary text-white shadow-sm"
                         : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -648,7 +838,7 @@ export default function Learn() {
                         <button
                           key={rakahNum}
                           onClick={() => setSelectedRakahFilter(rakahNum)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                             selectedRakahFilter === rakahNum
                               ? "bg-primary text-white shadow-sm"
                               : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -731,30 +921,50 @@ export default function Learn() {
             )}
 
             {/* Interactive 10-Question Quiz Card */}
-            <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/40 rounded-3xl p-6 mt-8 flex flex-col items-center text-center">
-              <Trophy size={32} className="text-indigo-500 mb-3" />
-              <h3 className="font-bold text-indigo-900 dark:text-indigo-100 text-lg mb-1">
+            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/60 dark:from-indigo-950/30 dark:to-indigo-900/20 border border-indigo-200 dark:border-indigo-900/50 rounded-3xl p-6 mt-8 flex flex-col items-center text-center shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 mb-3">
+                <Trophy size={28} />
+              </div>
+              <h3 className="font-black text-indigo-950 dark:text-indigo-100 text-lg mb-1">
                 Test Your Knowledge
               </h3>
-              <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-4">
-                Take a 10-question quiz to lock in what you've learned.
+              <p className="text-xs text-indigo-800/80 dark:text-indigo-300 max-w-xs mb-4">
+                Reinforce your understanding with 10 authentic questions covering obligations, postures, and duas.
               </p>
 
               {quizScore && (
-                <div className="mb-4 px-4 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 text-xs font-bold flex items-center gap-1.5">
-                  <Award size={14} />
-                  <span>
-                    Best Score: {quizScore.score} / {quizScore.total} (
-                    {Math.round((quizScore.score / quizScore.total) * 100)}%)
-                  </span>
+                <div
+                  className={`mb-4 px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 border ${
+                    quizScore.score === quizScore.total
+                      ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200"
+                      : "bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800"
+                  }`}
+                >
+                  {quizScore.score === quizScore.total ? (
+                    <>
+                      <span>🌟</span>
+                      <span>
+                        Perfect Score: {quizScore.score} / {quizScore.total} (100%) — Masha'Allah!
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Award size={15} />
+                      <span>
+                        Best Score: {quizScore.score} / {quizScore.total} (
+                        {Math.round((quizScore.score / quizScore.total) * 100)}%)
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
 
               <button
                 onClick={() => setIsQuizOpen(true)}
-                className="bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-md active:scale-95"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-7 py-3 rounded-2xl transition-all shadow-md active:scale-95 flex items-center gap-2 text-sm"
               >
-                {quizScore ? "Retake Quiz" : "Start Quiz"}
+                <Trophy size={16} />
+                <span>{quizScore ? "Retake Quiz" : "Start 10-Question Quiz"}</span>
               </button>
             </div>
 
@@ -786,8 +996,37 @@ export default function Learn() {
             <HadithCollectionsView onBack={goBack} />
           ) : (
             <div className="space-y-4 animate-in slide-in-from-right-8 fade-in duration-300">
+              {/* Category Overview & Progress Banner */}
+              <div className="bg-gradient-to-br from-emerald-900 to-emerald-800 rounded-3xl p-5 text-white shadow-md flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <selectedCategory.icon size={18} className="text-emerald-300" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                      {selectedCategory.title} Curriculum
+                    </span>
+                  </div>
+                  <p className="text-base font-black">
+                    {categoryCompletion?.doneCount || 0} of {categoryCompletion?.total || 0} Lessons Completed
+                  </p>
+                  <div className="w-44 bg-white/20 h-2 rounded-full overflow-hidden mt-2">
+                    <div
+                      className="bg-emerald-400 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${categoryCompletion?.percent || 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-black text-emerald-300">
+                    {categoryCompletion?.percent || 0}%
+                  </span>
+                  <p className="text-[10px] uppercase font-bold text-white/70">
+                    Mastery
+                  </p>
+                </div>
+              </div>
+
               {/* Header info bar */}
-              <div className="px-1 flex items-center justify-between">
+              <div className="px-1 flex items-center justify-between pt-1">
                 <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                   <ListOrdered size={16} /> Syllabus & Lessons
                 </h2>
@@ -849,61 +1088,99 @@ export default function Learn() {
           )
         ) : (
           /* --- LAYER 1: MAIN DASHBOARD VIEW --- */
-          <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-            {/* Global Search */}
-            <div className="relative">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search prayers, steps, topics..."
-                className="w-full rounded-2xl border border-border bg-card pl-11 pr-4 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary transition-all shadow-sm"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft size={16} className="rotate-180" />
-                </button>
+          <div className="space-y-7 animate-in fade-in zoom-in-95 duration-300">
+            {/* Global Search with Clear Button */}
+            <div className="space-y-2.5">
+              <div className="relative">
+                <Search
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search prayers, steps, topics, adhkar..."
+                  className="w-full rounded-2xl border border-border bg-card pl-11 pr-10 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary transition-all shadow-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Instant Search Recommendation Chips when search is empty */}
+              {!searchQuery && (
+                <div className="pt-0.5">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1 flex-shrink-0 mr-1">
+                      <Sparkles size={12} className="text-emerald-600" /> Quick:
+                    </span>
+                    {[
+                      "Fajr Sunnah",
+                      "Wudu Steps",
+                      "Dhuhr 12 Rak'ahs",
+                      "Ghusl",
+                      "Tashahhud",
+                      "Sahih Bukhari",
+                      "Sayyidul Istighfar",
+                    ].map((queryText) => (
+                      <button
+                        key={queryText}
+                        onClick={() => setSearchQuery(queryText)}
+                        className="px-3 py-1 rounded-xl bg-card border border-border text-xs font-semibold text-foreground hover:border-primary/50 hover:bg-primary/5 transition-all whitespace-nowrap active:scale-95 shadow-xs"
+                      >
+                        {queryText}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Search Results */}
             {searchQuery ? (
               <div>
-                <h2 className="text-xs font-bold tracking-widest text-primary uppercase mb-4 px-1">
-                  Search Results
-                </h2>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h2 className="text-xs font-bold tracking-widest text-primary uppercase">
+                    Search Results ({searchResults.length})
+                  </h2>
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    Reset Search
+                  </button>
+                </div>
                 {searchResults.length > 0 ? (
                   <div className="space-y-3">
                     {searchResults.map((topic, i) => (
                       <button
                         key={i}
                         onClick={() => {
-                          setSelectedCategory(
+                          const targetCat =
                             CATEGORIES.find(
                               (c) => c.title === topic.categoryName,
-                            ) || CATEGORIES[0],
-                          );
+                            ) || CATEGORIES[0];
+                          setSelectedCategory(targetCat);
                           openTopic(topic, topic.categoryName);
                         }}
-                        className="w-full bg-card border border-border rounded-2xl p-4 text-left shadow-sm flex items-center justify-between"
+                        className="w-full bg-card border border-border rounded-2xl p-4 text-left shadow-sm flex items-center justify-between hover:border-primary/40 hover:shadow-md transition-all group"
                       >
                         <div>
-                          <p className="text-xs text-primary font-bold mb-1 uppercase">
+                          <p className="text-xs text-primary font-bold mb-1 uppercase tracking-wider">
                             {topic.categoryName}
                           </p>
-                          <p className="font-bold text-foreground">
+                          <p className="font-bold text-foreground text-base group-hover:text-primary transition-colors">
                             {topic.title}
                           </p>
                         </div>
                         <ArrowRight
                           size={16}
-                          className="text-muted-foreground"
+                          className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all"
                         />
                       </button>
                     ))}
@@ -915,44 +1192,75 @@ export default function Learn() {
                       className="mx-auto text-muted-foreground/50 mb-3"
                     />
                     <p className="text-foreground font-bold">
-                      No exact matches
+                      No exact matches found for "{searchQuery}"
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Try searching "Fajr", "Wudu", "Bukhari", or "Salah"
                     </p>
                   </div>
                 )}
               </div>
             ) : (
               <>
-                {/* Beginner Roadmap Banner */}
+                {/* Interactive Beginner Roadmap Banner */}
                 <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 shadow-xl text-white relative overflow-hidden">
                   <div className="absolute -right-4 -top-4 opacity-10">
                     <Map size={120} />
                   </div>
                   <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <GraduationCap size={16} className="text-emerald-400" />
-                      <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-                        Start Here
-                      </p>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap size={16} className="text-emerald-400" />
+                        <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                          Guided Learning Path
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        Recommended
+                      </span>
                     </div>
-                    <h2 className="text-2xl font-black mb-4">
+
+                    <h2 className="text-2xl font-black mb-1">
                       Beginner Roadmap
                     </h2>
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                      {["① Purity", "② Salah", "③ Duas", "④ Quran"].map(
-                        (step, i) => (
-                          <span
+                    <p className="text-xs text-white/70 mb-4">
+                      Follow the authentic sequence of Islamic practice. Tap any stage to begin:
+                    </p>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        { step: "① Purity", cat: "Purification", desc: "Wudu & Ghusl" },
+                        { step: "② Salah", cat: "Salah", desc: "All 5 Prayers" },
+                        { step: "③ Duas", cat: "Duas", desc: "Daily Adhkar" },
+                        { step: "④ Quran", cat: "Quran", desc: "Tajweed & Rules" },
+                      ].map((item, i) => {
+                        const catObj =
+                          CATEGORIES.find((c) => c.title === item.cat) ||
+                          CATEGORIES[0];
+                        return (
+                          <button
                             key={i}
-                            className="flex-shrink-0 bg-white/10 border border-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap"
+                            onClick={() => openCategory(catObj)}
+                            className="flex flex-col text-left bg-white/10 hover:bg-emerald-600/30 border border-white/20 hover:border-emerald-400/50 backdrop-blur-sm p-3 rounded-2xl transition-all active:scale-95 group"
                           >
-                            {step}
-                          </span>
-                        ),
-                      )}
+                            <span className="font-extrabold text-xs text-white group-hover:text-emerald-300 flex items-center justify-between">
+                              {item.step}
+                              <ArrowRight
+                                size={12}
+                                className="opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+                              />
+                            </span>
+                            <span className="text-[10px] text-white/60 group-hover:text-white/80 mt-1">
+                              {item.desc}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
 
-                {/* Continue Learning / Recent */}
+                {/* Continue Learning / Recent Lesson with Dynamic Progress Bar */}
                 {recentLesson && (
                   <div>
                     <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-3 px-1">
@@ -978,47 +1286,96 @@ export default function Learn() {
                           }
                         }
                       }}
-                      className="w-full bg-card border border-primary/30 rounded-3xl p-5 text-left shadow-md flex items-center justify-between group"
+                      className="w-full bg-card border border-primary/30 rounded-3xl p-5 text-left shadow-md hover:shadow-lg transition-all group space-y-3"
                     >
-                      <div>
-                        <p className="text-xs text-primary font-bold uppercase mb-1">
-                          {recentLesson.category}
-                        </p>
-                        <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
-                          {recentLesson.title}
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-primary font-bold uppercase tracking-wider mb-1">
+                            {recentLesson.category}
+                          </p>
+                          <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
+                            {recentLesson.title}
+                          </p>
+                        </div>
+                        <PlayCircle
+                          size={28}
+                          className="text-primary group-hover:scale-110 transition-transform flex-shrink-0"
+                        />
                       </div>
-                      <PlayCircle
-                        size={28}
-                        className="text-primary group-hover:scale-110 transition-transform"
-                      />
+
+                      {/* Dynamic Progress indicator */}
+                      {recentLessonProgress && (
+                        <div className="pt-1">
+                          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground mb-1.5">
+                            <span>
+                              {recentLessonProgress.completedCount} of{" "}
+                              {recentLessonProgress.totalSteps} steps completed
+                            </span>
+                            <span className="text-primary">
+                              {recentLessonProgress.percentage}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                            <div
+                              className="bg-primary h-full rounded-full transition-all duration-300"
+                              style={{
+                                width: `${recentLessonProgress.percentage}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </button>
                   </div>
                 )}
 
-                {/* 13 Categories Grid */}
+                {/* 13 Categories Knowledge Library Grid */}
                 <div>
-                  <h2 className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase mb-4 px-1">
-                    Knowledge Library
-                  </h2>
+                  <div className="flex items-center justify-between mb-4 px-1">
+                    <h2 className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                      Knowledge Library
+                    </h2>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      13 Topics Available
+                    </span>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     {CATEGORIES.map((category) => (
                       <button
                         key={category.title}
                         onClick={() => openCategory(category)}
-                        className="bg-card border border-border rounded-3xl p-5 text-left hover:-translate-y-1 hover:shadow-md active:scale-95 transition-all duration-300 group"
+                        className="bg-card border border-border rounded-3xl p-5 text-left hover:-translate-y-1 hover:border-primary/40 hover:shadow-md active:scale-95 transition-all duration-300 group flex flex-col justify-between"
                       >
-                        <div
-                          className={`w-12 h-12 rounded-2xl ${category.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mb-4`}
-                        >
-                          <category.icon size={22} className={category.color} />
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div
+                              className={`w-12 h-12 rounded-2xl ${category.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+                            >
+                              <category.icon size={22} className={category.color} />
+                            </div>
+                            {category.arabic && (
+                              <span className="text-sm font-arabic text-muted-foreground/60 group-hover:text-primary transition-colors">
+                                {category.arabic}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="font-bold text-base text-foreground leading-tight group-hover:text-primary transition-colors">
+                            {category.title}
+                          </h3>
+                          <p className="text-xs font-medium text-muted-foreground mt-1 line-clamp-1">
+                            {category.desc}
+                          </p>
                         </div>
-                        <h3 className="font-bold text-base text-foreground leading-tight">
-                          {category.title}
-                        </h3>
-                        <p className="text-xs font-medium text-muted-foreground mt-1">
-                          Explore courses
-                        </p>
+
+                        <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-xs font-bold text-primary">
+                          <span>{category.countText}</span>
+                          <ArrowRight
+                            size={14}
+                            className="group-hover:translate-x-1 transition-transform opacity-70 group-hover:opacity-100"
+                          />
+                        </div>
                       </button>
                     ))}
                   </div>
