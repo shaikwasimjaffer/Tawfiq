@@ -24,6 +24,7 @@ import {
   BookText,
   Volume2,
   Palette,
+  SlidersHorizontal,
   ArrowRight,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
@@ -284,6 +285,7 @@ const TABS = [
 export default function QuranPage() {
   const [tab, setTab] = useState("read");
   const [view, setView] = useState("list");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [browseMode, setBrowseMode] = useState("surah");
 
   const [selectedSurah, setSelectedSurah] = useState(null);
@@ -486,7 +488,14 @@ export default function QuranPage() {
                       : ""}
                 </p>
               </div>
-              <div className="w-9 h-9"></div>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                title="Reading Settings"
+                aria-label="Reading Settings"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground hover:bg-muted cursor-pointer"
+              >
+                <SlidersHorizontal size={17} />
+              </button>
             </>
           ) : (
             <>
@@ -739,6 +748,287 @@ const TajweedText = ({ text, active }) => {
   return <span dangerouslySetInnerHTML={{ __html: applyTajweed(text) }} />;
 };
 
+// ─── Quran Reading Settings Bottom Sheet / Modal ──────────────────────────────
+function QuranSettingsModal({
+  isOpen,
+  onClose,
+  readingMode,
+  setReadingMode,
+  fontSize,
+  adjustFontSize,
+  showTransliteration,
+  setShowTransliteration,
+  showWordByWord,
+  setShowWordByWord,
+  showTajweed,
+  setShowTajweed,
+  edition,
+  setEdition,
+  editions,
+  verses = [],
+  verseRefs,
+}) {
+  const [jumpAyah, setJumpAyah] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleJump = (e) => {
+    if (e) e.preventDefault();
+    const num = parseInt(jumpAyah, 10);
+    const target = verses.find((v) => v.number === num);
+    if (target && verseRefs.current[target.globalNumber]) {
+      verseRefs.current[target.globalNumber].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      onClose();
+    } else {
+      toast.error(`Ayah ${jumpAyah} not found in this Surah.`);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 select-none">
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+      />
+
+      {/* Sheet Content */}
+      <div className="relative bg-card border border-border rounded-t-3xl sm:rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl z-10 text-left space-y-5 animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex items-center gap-2 text-primary">
+            <SlidersHorizontal size={18} />
+            <div>
+              <h3 className="font-bold text-foreground text-base">Reading Settings</h3>
+              <p className="text-xs text-muted-foreground">Customize your Quran experience</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Setting 1: Reading Layout (Translation vs Mushaf) */}
+        <div className="flex items-center justify-between py-2 border-b border-border/60 gap-3">
+          <div>
+            <h4 className="text-sm font-bold text-foreground">Reading Layout</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Switch between verse-by-verse and continuous page
+            </p>
+          </div>
+          <div className="flex bg-secondary p-1 rounded-2xl border border-border flex-shrink-0">
+            <button
+              onClick={() => setReadingMode("translation")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                readingMode === "translation"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <AlignRight size={13} />
+              <span>Translation</span>
+            </button>
+            <button
+              onClick={() => setReadingMode("mushaf")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                readingMode === "mushaf"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <BookText size={13} />
+              <span>Mushaf</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Setting 2: Arabic Font Size */}
+        <div className="py-2 border-b border-border/60 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-bold text-foreground">Arabic Font Size</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Scale Arabic text size for comfortable reading
+              </p>
+            </div>
+            <div className="flex items-center bg-secondary p-1 rounded-2xl border border-border gap-2 flex-shrink-0">
+              <button
+                onClick={() => adjustFontSize(false)}
+                title="Decrease font size"
+                className="w-8 h-8 rounded-xl hover:bg-background text-foreground flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+              >
+                A⁻
+              </button>
+              <span className="text-xs font-bold text-foreground px-1 tabular-nums">
+                {fontSize}px
+              </span>
+              <button
+                onClick={() => adjustFontSize(true)}
+                title="Increase font size"
+                className="w-8 h-8 rounded-xl hover:bg-background text-foreground flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+              >
+                A⁺
+              </button>
+            </div>
+          </div>
+          {/* Live Arabic font preview */}
+          <div className="bg-secondary/40 rounded-2xl p-3 text-right border border-border/50">
+            <span
+              className="font-arabic text-foreground leading-relaxed block"
+              style={{ fontSize: `${fontSize}px` }}
+            >
+              بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+            </span>
+          </div>
+        </div>
+
+        {/* Setting 3: Phonetics (Transliteration) */}
+        <div className="flex items-center justify-between py-2 border-b border-border/60 gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Type size={15} className="text-emerald-700 dark:text-emerald-400" />
+              <h4 className="text-sm font-bold text-foreground">Phonetics (Transliteration)</h4>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Display Latin script pronunciation under Arabic verses
+            </p>
+          </div>
+          <button
+            onClick={() => setShowTransliteration(!showTransliteration)}
+            disabled={readingMode === "mushaf"}
+            className={`w-12 h-7 rounded-full p-1 transition-colors flex-shrink-0 cursor-pointer disabled:opacity-40 ${
+              showTransliteration && readingMode !== "mushaf"
+                ? "bg-primary"
+                : "bg-secondary border border-border"
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                showTransliteration && readingMode !== "mushaf"
+                  ? "translate-x-5"
+                  : "translate-x-0 shadow-xs"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Setting 4: Word by Word Translation */}
+        <div className="flex items-center justify-between py-2 border-b border-border/60 gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <BookOpen size={15} className="text-blue-700 dark:text-blue-400" />
+              <h4 className="text-sm font-bold text-foreground">Word by Word Translation</h4>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Display English meaning under individual Arabic words
+            </p>
+          </div>
+          <button
+            onClick={() => setShowWordByWord(!showWordByWord)}
+            disabled={readingMode === "mushaf"}
+            className={`w-12 h-7 rounded-full p-1 transition-colors flex-shrink-0 cursor-pointer disabled:opacity-40 ${
+              showWordByWord && readingMode !== "mushaf"
+                ? "bg-primary"
+                : "bg-secondary border border-border"
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                showWordByWord && readingMode !== "mushaf"
+                  ? "translate-x-5"
+                  : "translate-x-0 shadow-xs"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Setting 5: Tajweed Color Rules */}
+        <div className="flex items-center justify-between py-2 border-b border-border/60 gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Palette size={15} className="text-amber-700 dark:text-amber-400" />
+              <h4 className="text-sm font-bold text-foreground">Tajweed Pronunciation Colors</h4>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Color-code letters for Ghunnah, Ikhfa, Qalqalah, and Madd
+            </p>
+          </div>
+          <button
+            onClick={() => setShowTajweed(!showTajweed)}
+            className={`w-12 h-7 rounded-full p-1 transition-colors flex-shrink-0 cursor-pointer ${
+              showTajweed ? "bg-primary" : "bg-secondary border border-border"
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                showTajweed ? "translate-x-5" : "translate-x-0 shadow-xs"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Setting 6: English Translation Edition */}
+        {editions && editions.length > 0 && (
+          <div className="flex items-center justify-between py-2 border-b border-border/60 gap-3">
+            <div>
+              <h4 className="text-sm font-bold text-foreground">Translation Source</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Scholarly English translation edition
+              </p>
+            </div>
+            <select
+              value={edition}
+              onChange={(e) => setEdition(e.target.value)}
+              className="bg-secondary text-xs font-bold text-foreground rounded-2xl border border-border px-3 py-2 outline-none focus:ring-1 focus:ring-primary flex-shrink-0 max-w-[160px] truncate"
+            >
+              {editions.map((ed) => (
+                <option key={ed.id} value={ed.id}>
+                  {ed.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Setting 7: Jump to Specific Verse (Ayah) */}
+        {verses.length > 0 && (
+          <div className="flex items-center justify-between pt-2 gap-3">
+            <div>
+              <h4 className="text-sm font-bold text-foreground">Jump to Ayah</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Navigate directly to any verse (1 to ${verses.length})
+              </p>
+            </div>
+            <form onSubmit={handleJump} className="flex items-center gap-1.5 flex-shrink-0">
+              <input
+                type="number"
+                min="1"
+                max={verses.length}
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                placeholder="Ayah #"
+                className="w-20 bg-secondary rounded-xl border border-border px-2.5 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-center"
+              />
+              <button
+                type="submit"
+                className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold shadow-xs active:scale-95 cursor-pointer"
+              >
+                Go
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Reader View ─────────────────────────────────────────────────────────────
 function ReaderView({
   isJuzMode,
@@ -806,144 +1096,6 @@ function ReaderView({
       >
         <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-semibold">
           <CheckCircle2 size={16} /> Ayah Copied
-        </div>
-      </div>
-
-      <div className="bg-card border border-border rounded-3xl p-4 shadow-sm mb-4 space-y-3.5">
-        {/* Tier 1: Reading Mode (Translation vs Mushaf) + Typography Font Sizing */}
-        <div className="flex items-center justify-between gap-3">
-          {/* Segmented View Mode Toggle */}
-          <div className="flex items-center bg-secondary p-1 rounded-2xl border border-border/80 shadow-xs">
-            <button
-              onClick={() => setReadingMode("translation")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                readingMode === "translation"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <AlignRight size={13} />
-              <span>Translation</span>
-            </button>
-            <button
-              onClick={() => setReadingMode("mushaf")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                readingMode === "mushaf"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <BookText size={13} />
-              <span>Mushaf</span>
-            </button>
-          </div>
-
-          {/* Typography Sizing Pill */}
-          <div className="flex items-center bg-secondary p-1 rounded-2xl border border-border/80 gap-1 flex-shrink-0">
-            <button
-              onClick={() => adjustFontSize(false)}
-              title="Decrease Arabic text size"
-              aria-label="Decrease text size"
-              className="w-7 h-7 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
-            >
-              A⁻
-            </button>
-            <span className="text-[11px] font-bold text-muted-foreground px-1 tabular-nums">
-              {fontSize}px
-            </span>
-            <button
-              onClick={() => adjustFontSize(true)}
-              title="Increase Arabic text size"
-              aria-label="Increase text size"
-              className="w-7 h-7 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
-            >
-              A⁺
-            </button>
-          </div>
-        </div>
-
-        {/* Tier 2: Study Aids (Phonetics, Word-by-Word, Tajweed) + Direct Ayah Jump */}
-        <div className="flex items-center justify-between pt-3 border-t border-border gap-2">
-          {/* Study Layer Toggles */}
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
-            {readingMode === "translation" && (
-              <>
-                {/* Phonetics / Transliteration */}
-                <button
-                  onClick={() => setShowTransliteration(!showTransliteration)}
-                  title="Toggle English phonetics & pronunciation"
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap border ${
-                    showTransliteration
-                      ? "bg-primary text-white border-primary shadow-xs"
-                      : "bg-secondary text-muted-foreground border-border hover:border-primary/40"
-                  }`}
-                >
-                  <Type size={12} />
-                  <span>Phonetics</span>
-                  {showTransliteration && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 ml-0.5" />
-                  )}
-                </button>
-
-                {/* Word by Word (W×W) */}
-                <button
-                  onClick={() => setShowWordByWord(!showWordByWord)}
-                  title="Toggle Word by Word vocabulary breakdown"
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap border ${
-                    showWordByWord
-                      ? "bg-primary text-white border-primary shadow-xs"
-                      : "bg-secondary text-muted-foreground border-border hover:border-primary/40"
-                  }`}
-                >
-                  <span>Word by Word</span>
-                  {showWordByWord && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 ml-0.5" />
-                  )}
-                </button>
-              </>
-            )}
-
-            {/* Tajweed Rules */}
-            <button
-              onClick={() => setShowTajweed(!showTajweed)}
-              title="Toggle color-coded Tajweed pronunciation rules"
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap border ${
-                showTajweed
-                  ? "bg-primary text-white border-primary shadow-xs"
-                  : "bg-secondary text-muted-foreground border-border hover:border-primary/40"
-              }`}
-            >
-              <Palette size={12} />
-              <span>Tajweed</span>
-              {showTajweed && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 ml-0.5" />
-              )}
-            </button>
-          </div>
-
-          {/* Direct Ayah Jump Field with Go Arrow */}
-          <div className="relative flex items-center bg-secondary rounded-xl border border-border px-2 py-1 flex-shrink-0 w-28 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
-            <Hash size={12} className="text-muted-foreground flex-shrink-0 mr-1" />
-            <input
-              type="number"
-              min="1"
-              max={verses.length}
-              value={jumpTo}
-              onChange={(e) => setJumpTo(e.target.value)}
-              onKeyDown={handleJump}
-              placeholder="Ayah #"
-              className="w-full bg-transparent text-xs font-bold text-foreground focus:outline-none placeholder:text-muted-foreground placeholder:font-normal"
-            />
-            {jumpTo && (
-              <button
-                onClick={handleJump}
-                title="Jump to verse"
-                className="w-5 h-5 rounded-lg bg-primary text-white flex items-center justify-center text-[10px] ml-1 flex-shrink-0 active:scale-90 cursor-pointer"
-              >
-                <ArrowRight size={10} />
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
